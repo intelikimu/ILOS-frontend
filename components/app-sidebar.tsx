@@ -44,7 +44,7 @@ const navigationItems = [
         icon: UserPlus,
       },
       {
-        title: "Document Upload",
+        title: "User Documents",
         url: "/dashboard/documents",
         icon: Upload,
       },
@@ -69,6 +69,11 @@ const navigationItems = [
         url: "/dashboard/queries",
         icon: Bell,
         badge: "2",
+      },
+      {
+        title: "Verification",
+        url: "/dashboard/verification",
+        icon: UserPlus,
       },
     ],
   },

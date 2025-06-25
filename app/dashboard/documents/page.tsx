@@ -4,9 +4,16 @@ import React, { useState } from 'react';
 import { Upload, FileText, Eye, Check, X, Download } from 'lucide-react';
 import { mockApplications } from '../../data/mockData';
 import StatusBadge from '../verification/StatusBadge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const DocumentManagement: React.FC = () => {
   const [selectedApplication, setSelectedApplication] = useState<string | null>(null);
+  const [searchName, setSearchName] = useState("");
+  const [searchLoanNumber, setSearchLoanNumber] = useState("");
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-PK', {
@@ -20,11 +27,55 @@ const DocumentManagement: React.FC = () => {
     return <FileText className="h-5 w-5 text-blue-600" />;
   };
 
+  const filteredApplications = mockApplications
+    .filter(app => {
+      const matchesName = app.applicantName.toLowerCase().includes(searchName.toLowerCase());
+      const matchesLoan = app.loanNumber.toLowerCase().includes(searchLoanNumber.toLowerCase());
+      return matchesName && matchesLoan;
+    })
+    .sort((a, b) => {
+      return sortOrder === 'asc' ? a.loanAmount - b.loanAmount : b.loanAmount - a.loanAmount;
+    });
+
   return (
     <div className="p-6">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Document Management</h2>
         <p className="text-gray-600">Upload, verify, and manage loan application documents</p>
+      </div>
+
+      {/* Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div>
+          <Label htmlFor="name">Search by Name</Label>
+          <Input
+            id="name"
+            placeholder="e.g. Ali Raza"
+            value={searchName}
+            onChange={(e) => setSearchName(e.target.value)}
+          />
+        </div>
+        <div>
+          <Label htmlFor="loanNumber">Loan Number</Label>
+          <Input
+            id="loanNumber"
+            placeholder="e.g. LN-2024-1234"
+            value={searchLoanNumber}
+            onChange={(e) => setSearchLoanNumber(e.target.value)}
+          />
+        </div>
+        <div>
+          <Label>Sort by Loan Amount</Label>
+          <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as 'asc' | 'desc')}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Sort order" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="asc">Ascending</SelectItem>
+              <SelectItem value="desc">Descending</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -35,7 +86,7 @@ const DocumentManagement: React.FC = () => {
               <h3 className="text-lg font-semibold text-gray-900">Applications</h3>
             </div>
             <div className="divide-y divide-gray-200">
-              {mockApplications.map((app) => (
+              {filteredApplications.map((app) => (
                 <div
                   key={app.id}
                   onClick={() => setSelectedApplication(app.id)}
@@ -56,6 +107,7 @@ const DocumentManagement: React.FC = () => {
             </div>
           </div>
         </div>
+
 
         {/* Document Details */}
         <div className="lg:col-span-2">

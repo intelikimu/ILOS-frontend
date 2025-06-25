@@ -4,9 +4,18 @@ import React, { useState } from 'react';
 import { Check, Clock, User, Calendar } from 'lucide-react';
 import { mockApplications } from '../../data/mockData';
 import StatusBadge from './StatusBadge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 const VerificationWorkflow: React.FC = () => {
   const [selectedApplication, setSelectedApplication] = useState<string | null>(null);
+  const [searchName, setSearchName] = useState("");
+  const [searchLoanNumber, setSearchLoanNumber] = useState("");
+  const [minLoanAmount, setMinLoanAmount] = useState("");
+  const [maxLoanAmount, setMaxLoanAmount] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const workflowSteps = [
     { id: 1, name: 'Data Entry', description: 'Initial application data entry and validation' },
@@ -30,15 +39,90 @@ const VerificationWorkflow: React.FC = () => {
     }).format(amount);
   };
 
-  const inProgressApplications = mockApplications.filter(app => 
-    app.status === 'in-verification' || app.status === 'pending'
-  );
+  const inProgressApplications = mockApplications.filter(app => {
+    const statusMatch = ['in-verification', 'pending', 'disbursed', 'approved', 'rejected'].includes(app.status);
+    const nameMatch = app.applicantName.toLowerCase().includes(searchName.toLowerCase());
+    const loanMatch = app.loanNumber.toLowerCase().includes(searchLoanNumber.toLowerCase());
+    const minMatch = minLoanAmount === "" || app.loanAmount >= parseInt(minLoanAmount);
+    const maxMatch = maxLoanAmount === "" || app.loanAmount <= parseInt(maxLoanAmount);
+    const date = new Date(app.lastUpdated);
+    const fromMatch = dateFrom === "" || date >= new Date(dateFrom);
+    const toMatch = dateTo === "" || date <= new Date(dateTo);
+
+    return statusMatch && nameMatch && loanMatch && minMatch && maxMatch && fromMatch && toMatch;
+  });
 
   return (
     <div className="p-6">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Verification Workflow</h2>
         <p className="text-gray-600">Track loan applications through the verification process</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div>
+          <Label htmlFor="name">Search by Name</Label>
+          <Input
+            id="name"
+            placeholder="e.g. Ali Raza"
+            value={searchName}
+            onChange={(e) => setSearchName(e.target.value)}
+          />
+        </div>
+        <div>
+          <Label htmlFor="loanNumber">Loan Number</Label>
+          <Input
+            id="loanNumber"
+            placeholder="e.g. LN-2024-1234"
+            value={searchLoanNumber}
+            onChange={(e) => setSearchLoanNumber(e.target.value)}
+          />
+        </div>
+        <div>
+          <Label htmlFor="minLoanAmount">Min Loan Amount</Label>
+          <Input
+            id="minLoanAmount"
+            type="number"
+            placeholder="e.g. 100000"
+            value={minLoanAmount}
+            onChange={(e) => setMinLoanAmount(e.target.value)}
+          />
+        </div>
+        <div>
+          <Label htmlFor="maxLoanAmount">Max Loan Amount</Label>
+          <Input
+            id="maxLoanAmount"
+            type="number"
+            placeholder="e.g. 500000"
+            value={maxLoanAmount}
+            onChange={(e) => setMaxLoanAmount(e.target.value)}
+          />
+        </div>
+        <div>
+          <Label htmlFor="dateFrom">Date From</Label>
+          <Input
+            id="dateFrom"
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+          />
+        </div>
+        <div>
+          <Label htmlFor="dateTo">Date To</Label>
+          <Input
+            id="dateTo"
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+          />
+        </div>
+        <div>
+          <Button onClick={()=>{setDateFrom(""),setDateTo("")
+            setMaxLoanAmount(""),setMinLoanAmount(""),
+            setSearchLoanNumber(""),setSearchName("")
+          }}>clear </Button>
+        </div>
+
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

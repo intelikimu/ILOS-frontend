@@ -26,12 +26,13 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-4 w-4" />
-            <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs">
+          <Button variant="ghost" size="icon" className="relative p-0">
+            <Bell className="h-5 w-5 text-gray-700" />
+            <Badge variant="destructive" className="absolute top-0 right-0 inline-flex items-center justify-center h-5 w-5 bg-red-500 text-white rounded-full text-xs font-semibold">
               5
             </Badge>
           </Button>
+
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

@@ -1,66 +1,111 @@
 "use client";
 
 import { useState } from "react";
-import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { Building2, User, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { UserRole } from "../types";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const router = useRouter();
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState<UserRole>("pb");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      // In a real app, this would be an API call to authenticate
+      // For demo purposes, we'll just simulate a login
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Store user role in localStorage
+      localStorage.setItem("userRole", role);
+
+      // Redirect to the appropriate dashboard
+      router.push(`/dashboard/${role}`);
+    } catch (error) {
+      console.error("Login failed:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-blue-50 via-white to-blue-100 px-4">
-      <motion.div
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 space-y-6 border border-blue-100"
-      >
-        <div className="text-center">
-          <motion.h2
-            className="text-3xl font-bold text-blue-600"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            Welcome Back
-          </motion.h2>
-          <p className="text-gray-500 text-sm mt-2">Login to your account</p>
-        </div>
-
-        <form className="space-y-4">
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+    <div className="flex h-screen w-full items-center justify-center bg-gray-50">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1">
+          <div className="flex items-center justify-center mb-4">
+            <Building2 className="h-10 w-10 text-primary" />
           </div>
-          <div>
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-            Login
-          </Button>
+          <CardTitle className="text-2xl text-center">UBL ILOS</CardTitle>
+          <CardDescription className="text-center">
+            Immutable Loan Origination System
+          </CardDescription>
+        </CardHeader>
+        <form onSubmit={handleLogin}>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="username"
+                  placeholder="Enter your username"
+                  className="pl-10"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  className="pl-10"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Login As</Label>
+              <Select value={role} onValueChange={(value) => setRole(value as UserRole)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select your role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pb">Personal Banking (PB)</SelectItem>
+                  <SelectItem value="spu">Scrutiny Processing Unit (SPU)</SelectItem>
+                  <SelectItem value="cops">Consumer Operations (COPS)</SelectItem>
+                  <SelectItem value="eamvu">External Asset Management (EAMVU)</SelectItem>
+                  <SelectItem value="ciu">Central Investigation Unit (CIU)</SelectItem>
+                  <SelectItem value="rru">Rejection Review Unit (RRU)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Logging in..." : "Login"}
+            </Button>
+          </CardFooter>
         </form>
-
-        <div className="text-sm text-center text-gray-500">
-          Don’t have an account? <a href="#" className="text-blue-600 hover:underline">Sign up</a>
-        </div>
-      </motion.div>
+      </Card>
     </div>
   );
 }

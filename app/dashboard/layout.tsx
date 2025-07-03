@@ -1,21 +1,59 @@
 "use client"
 
-import type React from "react"
-
+import { useEffect, useState } from "react"
+import { usePathname, useRouter } from "next/navigation"
 import { AppSidebar } from "@/components/app-sidebar"
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { Header } from "@/components/header"
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
+import { UserRole } from "../types"
 
 export default function DashboardLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode
-}) {
+}>) {
+  const pathname = usePathname()
+  const router = useRouter()
+  const [userRole, setUserRole] = useState<UserRole>('pb')
+
+  useEffect(() => {
+    // Get user role from localStorage
+    const storedRole = localStorage.getItem('userRole') as UserRole
+    if (storedRole) {
+      setUserRole(storedRole)
+    } else {
+      // If no role is set, redirect to login
+      router.push('/login')
+    }
+  }, [router])
+
+  // Check if the user is trying to access a role-specific page they don't have access to
+  useEffect(() => {
+    if (!pathname.includes('/dashboard')) return
+    
+    const rolePatterns = {
+      'pb': /^\/dashboard\/pb/,
+      'spu': /^\/dashboard\/spu/,
+      'cops': /^\/dashboard\/cops/,
+      'eamvu': /^\/dashboard\/eamvu/,
+      'ciu': /^\/dashboard\/ciu/,
+      'rru': /^\/dashboard\/rru/,
+    }
+
+    // If the user is trying to access a role-specific page they don't have access to
+    Object.entries(rolePatterns).forEach(([role, pattern]) => {
+      if (pattern.test(pathname) && role !== userRole) {
+        // Redirect to their dashboard
+        router.push(`/dashboard/${userRole}`)
+      }
+    })
+  }, [pathname, userRole, router])
+
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar userRole={userRole} />
       <SidebarInset>
-        <Header />
+        <Header userRole={userRole} />
         <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">{children}</div>
       </SidebarInset>
     </SidebarProvider>

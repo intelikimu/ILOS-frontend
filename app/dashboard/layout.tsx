@@ -29,7 +29,7 @@ export default function DashboardLayout({
 
   // Check if the user is trying to access a role-specific page they don't have access to
   useEffect(() => {
-    if (!pathname.includes('/dashboard')) return
+    if (!pathname.includes('/dashboard') || !userRole) return
     
     const rolePatterns = {
       'pb': /^\/dashboard\/pb/,
@@ -40,13 +40,16 @@ export default function DashboardLayout({
       'rru': /^\/dashboard\/rru/,
     }
 
-    // If the user is trying to access a role-specific page they don't have access to
-    Object.entries(rolePatterns).forEach(([role, pattern]) => {
-      if (pattern.test(pathname) && role !== userRole) {
-        // Redirect to their dashboard
+    // Check if user is accessing a role-specific page
+    const isRoleSpecificPage = Object.values(rolePatterns).some(pattern => pattern.test(pathname))
+    
+    // If it's a role-specific page and doesn't match user's role, redirect
+    if (isRoleSpecificPage) {
+      const currentRole = Object.entries(rolePatterns).find(([role, pattern]) => pattern.test(pathname))?.[0]
+      if (currentRole && currentRole !== userRole) {
         router.push(`/dashboard/${userRole}`)
       }
-    })
+    }
   }, [pathname, userRole, router])
 
   return (

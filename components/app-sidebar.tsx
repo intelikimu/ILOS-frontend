@@ -281,20 +281,20 @@ const navigationByRole: Record<UserRole, any[]> = {
           icon: LayoutDashboard,
         },
         {
-          title: "Pending Investigations",
-          url: "/dashboard/ciu/pending",
+          title: "Pending Applications",
+          url: "/dashboard/ciu/pending-applications",
           icon: Search,
           badge: "10",
         },
         {
-          title: "Flagged Applications",
-          url: "/dashboard/ciu/flagged",
+          title: "Flag Application",
+          url: "/dashboard/ciu/flag-application",
           icon: AlertTriangle,
           badge: "3",
         },
         {
-          title: "Verified Applications",
-          url: "/dashboard/ciu/verified",
+          title: "Verification Application",
+          url: "/dashboard/ciu/verification-application",
           icon: Shield,
         },
       ],
@@ -303,18 +303,18 @@ const navigationByRole: Record<UserRole, any[]> = {
       title: "Verification",
       items: [
         {
-          title: "NADRA Verification",
-          url: "/dashboard/ciu/nadra",
+          title: "NADRA Checklist",
+          url: "/dashboard/ciu/nadra-checklist",
           icon: Database,
         },
         {
           title: "Blacklist Check",
-          url: "/dashboard/ciu/blacklist",
+          url: "/dashboard/ciu/blacklist-check",
           icon: AlertOctagon,
         },
         {
           title: "Final Approval",
-          url: "/dashboard/ciu/approval",
+          url: "/dashboard/ciu/final-approval",
           icon: Stamp,
         },
       ],
@@ -324,7 +324,7 @@ const navigationByRole: Record<UserRole, any[]> = {
       items: [
         {
           title: "Investigation Reports",
-          url: "/dashboard/ciu/reports",
+          url: "/dashboard/ciu/investigation-report",
           icon: BarChart3,
         },
       ],
@@ -341,18 +341,18 @@ const navigationByRole: Record<UserRole, any[]> = {
         },
         {
           title: "Under Review",
-          url: "/dashboard/rru/review",
+          url: "/dashboard/rru/under-review",
           icon: Pause,
           badge: "12",
         },
         {
-          title: "Resumed Applications",
-          url: "/dashboard/rru/resumed",
+          title: "Resume Application",
+          url: "/dashboard/rru/resume-application",
           icon: RotateCcw,
         },
         {
-          title: "Returned Applications",
-          url: "/dashboard/rru/returned",
+          title: "Returned Application",
+          url: "/dashboard/rru/returned-application",
           icon: AlertTriangle,
         },
       ],
@@ -362,7 +362,7 @@ const navigationByRole: Record<UserRole, any[]> = {
       items: [
         {
           title: "Rejection Analysis",
-          url: "/dashboard/rru/analysis",
+          url: "/dashboard/rru/rejection-analysis",
           icon: BarChart3,
         },
       ],

@@ -123,7 +123,7 @@ const DocumentManagement: React.FC = () => {
                         <h3 className="text-xl font-semibold text-gray-900">{app.applicantName}</h3>
                         <p className="text-gray-600">{app.loanNumber}</p>
                       </div>
-                      <StatusBadge status={app.status} />
+                      <StatusBadge status={app.status as 'pending' | 'in-verification' | 'approved' | 'rejected' | 'disbursed' | 'verified' | 'missing' | 'error'} />
                     </div>
                     
                     {/* Upload Area */}

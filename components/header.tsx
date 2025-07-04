@@ -27,7 +27,7 @@ export function Header({ userRole = 'pb' }: HeaderProps) {
   // Map role to display name
   const roleDisplayNames: Record<UserRole, string> = {
     'pb': 'Personal Banking',
-    'spu': 'Scrutiny Processing Unit',
+    'spu': 'Sales Processing Unit',
     'cops': 'Consumer Operations',
     'eamvu': 'External Asset Management',
     'ciu': 'Central Investigation Unit',

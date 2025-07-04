@@ -151,6 +151,23 @@ const navigationByRole: Record<UserRole, any[]> = {
         },
       ],
     },
+    {
+      title: "Notifications",
+      items: [
+        {
+          title: "Alerts",
+          url: "/dashboard//spu/alerts",
+          icon: Bell,
+          badge: "3",
+        },
+        {
+          title: "Assignment",
+          url: "/dashboard//spu/assignments",
+          icon: Bell,
+          badge: "3",
+        },
+      ],
+    },
   ],
   'cops': [
     {

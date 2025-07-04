@@ -189,7 +189,7 @@ export default function SPUDashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Scrutiny Processing Unit Dashboard</h1>
+        <h1 className="text-2xl font-bold">Sales Processing Unit Dashboard</h1>
         <Button>Process Next</Button>
       </div>
       
@@ -312,7 +312,8 @@ export default function SPUDashboardPage() {
                             <DialogHeader>
                               <DialogTitle>Application Verification</DialogTitle>
                               <DialogDescription>
-                                Verify application details and documents for {selectedApplication?.applicantName}
+                                Verify application details and documents for {selectedApplication ? `Verify application for ${selectedApplication.applicantName}` : "Loading..."
+}
                               </DialogDescription>
                             </DialogHeader>
 

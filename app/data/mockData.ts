@@ -1,4 +1,36 @@
-import { LoanApplication } from '../types';
+export interface Document {
+  id: string
+  name: string
+  type: string
+  status: 'pending' | 'in-verification' | 'approved' | 'rejected' | 'disbursed' | 'verified' | 'missing' | 'error'
+  uploadDate: string
+  size: string
+}
+
+export interface VehicleDetails {
+  make: string
+  model: string
+  year: number
+  price: number
+}
+
+export interface LoanApplication {
+  id: string
+  loanNumber: string
+  losanNumber?: string
+  applicantName: string
+  cnic: string
+  loanAmount: number
+  loanType: string
+  status: string
+  priority: 'low' | 'medium' | 'high'
+  applicationDate: string
+  lastUpdated: string
+  currentStep: number
+  rejectionReason?: string
+  documents: Document[]
+  vehicleDetails: VehicleDetails
+}
 
 export const mockApplications: LoanApplication[] = [
   {
@@ -121,7 +153,7 @@ export const mockApplications: LoanApplication[] = [
       price: 6000000
     }
   }
-];
+]
 
 export const workflowSteps = [
   { id: 1, name: 'Data Entry', status: 'completed' as const },
@@ -129,4 +161,4 @@ export const workflowSteps = [
   { id: 3, name: 'CIU Checks', status: 'current' as const },
   { id: 4, name: 'Final Approval', status: 'pending' as const },
   { id: 5, name: 'Disbursement', status: 'pending' as const }
-];
+]

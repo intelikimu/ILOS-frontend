@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { CheckCircle, AlertCircle, Clock, FileText, Eye, MessageSquare, AlertTriangle, Info } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import type { ChecklistItem, DocumentData } from "@/app/dashboard/applicant/enhanced/page"
+import type { ChecklistItem, DocumentData } from "@/app/dashboard/applicant/auto/autoloans/page"
 
 interface InteractiveChecklistStepProps {
   items: ChecklistItem[]

@@ -388,7 +388,7 @@ export function AppSidebar({ userRole = 'pb', ...props }: AppSidebarProps) {
   };
 
   return (
-    <Sidebar {...props}>
+    <Sidebar {...props} >
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>

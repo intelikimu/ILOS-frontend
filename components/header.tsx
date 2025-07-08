@@ -16,6 +16,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { UserRole } from "@/app/types"
+import Image from "next/image"
 
 interface HeaderProps {
   userRole?: UserRole;
@@ -43,6 +44,27 @@ export function Header({ userRole = 'pb' }: HeaderProps) {
   };
 
   return (
+  <>
+  
+    <nav className="bg-[#03bafc] shadow-lg">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center h-16">
+          <div className="flex items-center space-x-2">
+            <Image
+              src="/ublimage.png" // <-- Replace this path with your actual logo path
+              alt="UBL Logo"
+              width={100}
+              height={100}
+            />
+ 
+          </div>
+        </div>
+      </div>
+    </nav>
+
+
+
+
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="mr-2 h-4" />
@@ -90,5 +112,6 @@ export function Header({ userRole = 'pb' }: HeaderProps) {
         </div>
       </div>
     </header>
+  </>
   )
 }

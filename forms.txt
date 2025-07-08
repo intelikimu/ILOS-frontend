@@ -1,0 +1,6 @@
+AUTO-LOAN done
+
+nextcmd:
+see these documents and scan it proper and make the 
+form(UI) for our project and remember our project is on nextjs
+ and remeber all thing what we have done these before in all forms

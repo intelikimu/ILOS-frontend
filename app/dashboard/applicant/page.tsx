@@ -1,74 +1,133 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import { ArrowRight, Zap, FileText, CheckSquare, Send } from "lucide-react"
+import { ArrowRight } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export default function ApplicantPage() {
+  const [cnic, setCnic] = useState("")
+  const [product, setProduct] = useState("")
+  const [subOption, setSubOption] = useState("")
+  const router = useRouter()
+
+  // Next button action
+  const handleNext = () => {
+    if (!cnic || !product) return
+    // Example navigation (adjust for your routes)
+    let url = `/dashboard/applicant/${product.toLowerCase()}`
+    if (product === "auto" && subOption) url += `/${subOption.toLowerCase().replace(/\s/g, "-")}`
+    if (product === "creditcard" && subOption) url += `/${subOption.toLowerCase().replace(/\s/g, "-")}`
+    router.push(url)
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="max-w-xl mx-auto space-y-8">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">New Applicant Intake</h2>
-        <p className="text-muted-foreground">Choose your preferred application intake method</p>
+        <p className="text-muted-foreground">Enter your CNIC and choose your preferred product</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-blue-500" />
-              Enhanced Workflow
-            </CardTitle>
-            <CardDescription>Streamlined document processing with step-by-step guidance</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <FileText className="h-4 w-4 text-green-500" />
-                <span>Integrated document upload & parsing</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CheckSquare className="h-4 w-4 text-green-500" />
-                <span>Interactive checklist with auto-verification</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Send className="h-4 w-4 text-green-500" />
-                <span>Guided submission process</span>
-              </div>
-            </div>
-            <Button asChild className="w-full">
-              <Link href="/dashboard/applicant/enhanced">
-                Start Enhanced Intake
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Start Application</CardTitle>
+          <CardDescription>Begin by entering applicant details</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* CNIC Field */}
+          <div>
+            <label className="block text-sm font-medium mb-1">CNIC No.</label>
+            <input
+              type="text"
+              placeholder="e.g. 12345-1234567-1"
+              className="w-full rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-gray-50 px-4 py-2 text-base shadow transition placeholder:text-gray-400"
+              value={cnic}
+              onChange={e => setCnic(e.target.value)}
+              maxLength={15}
+            />
+          </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Standard Process</CardTitle>
-            <CardDescription>Traditional step-by-step application process</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <span>• Manual document handling</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <span>• Separate verification steps</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <span>• Traditional workflow</span>
+          {/* Product Dropdown */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Choose Product</label>
+            <select
+              className="w-full rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-gray-50 px-4 py-2 text-base shadow transition"
+              value={product}
+              onChange={e => {
+                setProduct(e.target.value)
+                setSubOption("")
+              }}
+            >
+              <option value="">Select...</option>
+              <option value="auto">Auto</option>
+              <option value="creditcard">Credit Card</option>
+              <option value="cashplus">Cashplus</option>
+              <option value="ameendrive">Ameen Drive</option>
+            </select>
+          </div>
+
+          {/* Conditional sub-dropdowns */}
+          {product === "auto" && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Auto Subtype</label>
+              <select
+                className="w-full rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-gray-50 px-4 py-2 text-base shadow transition"
+                value={subOption}
+                onChange={e => setSubOption(e.target.value)}
+              >
+                <option value="">Select...</option>
+                 <option value="Autoloans">Auto loans</option>
+                <option value="Financial Vehicles">Financial Vehicles</option>
+                <option value="SME Loans">SME Loans</option>
+              </select>
+            </div>
+          )}
+
+          {product === "creditcard" && (
+            <div>
+              <label className="block text-sm font-medium mb-2">Credit Card Type</label>
+              <div className="flex gap-8">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="creditcard-type"
+                    value="Platinum Credit Card"
+                    checked={subOption === "Platinum Credit Card"}
+                    onChange={e => setSubOption(e.target.value)}
+                  />
+                  Platinum Credit Card
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="creditcard-type"
+                    value="Gold Credit Card"
+                    checked={subOption === "Gold Credit Card"}
+                    onChange={e => setSubOption(e.target.value)}
+                  />
+                  Gold Credit Card
+                </label>
               </div>
             </div>
-            <Button variant="outline" className="w-full" disabled>
-              Coming Soon
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+          )}
+
+          {/* Next Button */}
+          <Button
+            className="w-full mt-4"
+            disabled={
+              !cnic ||
+              !product ||
+              ((product === "auto" || product === "creditcard") && !subOption)
+            }
+            onClick={handleNext}
+            type="button"
+          >
+            Next
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   )
 }

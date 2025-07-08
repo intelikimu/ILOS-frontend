@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Separator } from "@/components/ui/separator"
 import { CheckCircle, AlertTriangle, FileText, User, CreditCard, Send, Eye } from "lucide-react"
-import type { ApplicantData, DocumentData, ChecklistItem } from "@/app/dashboard/applicant/enhanced/page"
+import type { ApplicantData, DocumentData, ChecklistItem } from "@/app/dashboard/applicant/auto/autoloans/page"
 
 interface ReviewSubmitStepProps {
   applicantData: ApplicantData

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { MapPin, Phone, Mail } from "lucide-react"
-import type { ApplicantData } from "@/app/dashboard/applicant/enhanced/page"
+import type { ApplicantData } from "@/app/dashboard/applicant/auto/autoloans/page"
 
 interface AddressContactStepProps {
   data: ApplicantData

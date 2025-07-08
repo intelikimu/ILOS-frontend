@@ -88,6 +88,16 @@ export default function ApplicantPage() {
             <div>
               <label className="block text-sm font-medium mb-2">Credit Card Type</label>
               <div className="flex gap-8">
+                  <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="creditcard-type"
+                    value="Credit Card"
+                    checked={subOption === "Credit Card"}
+                    onChange={e => setSubOption(e.target.value)}
+                  />
+                  Credit Card
+                </label>
                 <label className="flex items-center gap-2">
                   <input
                     type="radio"

@@ -1,6 +1,16 @@
 AUTO-LOAN done
+with 2 subform Done
 
 nextcmd:
-see these documents and scan it proper and make the 
-form(UI) for our project and remember our project is on nextjs
- and remeber all thing what we have done these before in all forms
+see these documents and scan it proper
+ and make the  form(UI) for our project
+  and remember our project is on
+   nextjs and remeber all thing what 
+   we have done these before in all 
+   forms like labbel input fields are 
+   same and clear visuall and give a 
+   code in component wise
+
+
+
+input fields are not visisble make sure these are vissible  and also remeber we have some chechboxes replace checkboxes with radio button :

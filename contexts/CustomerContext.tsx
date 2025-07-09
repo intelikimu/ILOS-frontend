@@ -115,7 +115,7 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
     setError(null);
     
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'https://ilos-backend.vercel.app' ) ;
       const response = await axios.post(`${API_URL}/getNTB_ETB`, {
         cnic: cnic
       });

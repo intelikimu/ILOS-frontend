@@ -1,7 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+
+// Force dynamic rendering to prevent static generation issues with useSearchParams
+export const dynamic = 'force-dynamic';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,7 +39,7 @@ interface DocumentItem {
   priority: 'High' | 'Medium' | 'Low';
 }
 
-export default function DocumentChecklistPage() {
+function DocumentChecklistContent() {
   const searchParams = useSearchParams();
   const appFilter = searchParams.get('app');
   
@@ -413,5 +416,20 @@ export default function DocumentChecklistPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+export default function DocumentChecklistPage() {
+  return (
+    <Suspense fallback={<div className="flex-1 space-y-6 p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Document Checklist</h2>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    </div>}>
+      <DocumentChecklistContent />
+    </Suspense>
   );
 } 

@@ -115,22 +115,62 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
     setError(null);
     
     try {
-      const response = await axios.post('http://localhost:5000/getNTB_ETB', {
-        cnic: cnic
-      });
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const response = await axios.get(`${API_URL}/api/getNTB_ETB/${cnic}`);
 
-      const { isETB, consumerId, customerData: cifData } = response.data;
+      const { isETB, customer } = response.data;
       
       const customerInfo: CustomerData = {
-        consumerId,
+        consumerId: customer?.cif || '',
         isETB,
         customerType: isETB ? 'ETB' : 'NTB',
-        personalDetails: cifData?.personalDetails || {},
-        addressDetails: cifData?.addressDetails || {},
-        employmentDetails: cifData?.employmentDetails || {},
-        bankingDetails: cifData?.bankingDetails || {},
-        referenceContacts: cifData?.referenceContacts || [],
-        nextOfKin: cifData?.nextOfKin || {}
+        personalDetails: customer ? {
+          title: customer.title,
+          firstName: customer.firstName,
+          lastName: customer.lastName,
+          cnic: customer.cnic,
+          fatherName: customer.fatherName,
+          motherName: customer.motherName,
+          dateOfBirth: customer.dateOfBirth,
+          gender: customer.gender,
+          maritalStatus: customer.maritalStatus,
+          education: customer.education,
+          mobileNumber: customer.mobileNumber,
+          email: customer.emailAddress,
+        } : {},
+        addressDetails: customer ? {
+          currentAddress: {
+            houseNo: customer.residentialAddress?.split(',')[0] || '',
+            street: customer.residentialAddress?.split(',')[1] || '',
+            area: customer.residentialAddress?.split(',')[2] || '',
+            city: customer.residentialAddress?.split(',')[3] || '',
+          },
+        } : {},
+        employmentDetails: customer ? {
+          employerName: customer.profession,
+          monthlySalary: customer.income,
+          officeAddress: customer.officeAddress,
+        } : {},
+        bankingDetails: customer ? {
+          bankName: customer.bankName,
+          branchName: customer.branchName,
+          accountNumber: customer.accountNumber,
+        } : {},
+        referenceContacts: customer ? [
+          {
+            name: customer.referenceContact1?.split('-')[0] || '',
+            mobileNumber: customer.referenceContact1?.split('-')[1] || '',
+          },
+          {
+            name: customer.referenceContact2?.split('-')[0] || '',
+            mobileNumber: customer.referenceContact2?.split('-')[1] || '',
+          }
+        ] : [],
+        nextOfKin: customer ? {
+          name: customer.nextOfKinName,
+          relationship: customer.nextOfKinRelation,
+          contactNumber: customer.nextOfKinContact,
+        } : {}
       };
 
       setCustomerData(customerInfo);

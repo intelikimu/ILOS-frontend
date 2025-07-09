@@ -1,30 +1,54 @@
-# Personal Banker Dashboard
+# ILOS Frontend
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+## Deployment Instructions
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/developer-9334s-projects/v0-personal-banker-dashboard)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/PZEHGgfuKOh)
+### Local Development
 
-## Overview
+1. Install dependencies:
+```bash
+npm install
+# or
+pnpm install
+```
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+2. Create `.env.local` file with:
+```
+NEXT_PUBLIC_API_URL=http://localhost:5000
+NEXT_PUBLIC_APP_NAME=ILOS
+NEXT_PUBLIC_ENVIRONMENT=development
+```
 
-## Deployment
+3. Run the development server:
+```bash
+npm run dev
+# or
+pnpm dev
+```
 
-Your project is live at:
+### Vercel Deployment
 
-**[https://vercel.com/developer-9334s-projects/v0-personal-banker-dashboard](https://vercel.com/developer-9334s-projects/v0-personal-banker-dashboard)**
+1. Push code to GitHub
+2. Import project in Vercel
+3. Set environment variables:
+   - `NEXT_PUBLIC_API_URL` = your backend URL
+   - `NEXT_PUBLIC_APP_NAME` = ILOS
+   - `NEXT_PUBLIC_ENVIRONMENT` = production
 
-## Build your app
+See `DEPLOYMENT-GUIDE.md` for detailed instructions.
 
-Continue building your app on:
+## Features
 
-**[https://v0.dev/chat/projects/PZEHGgfuKOh](https://v0.dev/chat/projects/PZEHGgfuKOh)**
+- Customer lookup by CNIC
+- ETB/NTB customer detection
+- Multiple loan application types
+- Form validation and submission
+- Dashboard with multiple modules
 
-## How It Works
+## Integration with Backend
 
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+The frontend connects to the ILOS backend API for:
+- Customer lookup
+- Form submissions
+- Data retrieval
+
+For full deployment instructions of both frontend and backend, see `COMPLETE-DEPLOYMENT-GUIDE.md` in the root directory.

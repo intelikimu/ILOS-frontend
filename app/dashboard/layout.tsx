@@ -34,6 +34,7 @@ export default function DashboardLayout({
     const rolePatterns = {
       'pb': /^\/dashboard\/pb/,
       'spu': /^\/dashboard\/spu/,
+      'spu_officer': /^\/dashboard\/spu_officer/,
       'cops': /^\/dashboard\/cops/,
       'eamvu': /^\/dashboard\/eamvu/,
       'ciu': /^\/dashboard\/ciu/,
@@ -53,6 +54,8 @@ export default function DashboardLayout({
   }, [pathname, userRole, router])
 
   return (
+
+    
     <SidebarProvider>
       <AppSidebar userRole={userRole} />
       <SidebarInset>

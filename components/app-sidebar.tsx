@@ -1,4 +1,4 @@
-"use client"
+"use client"; // ✅ Required for using usePathname and React hooks
 
 import type * as React from "react"
 import { usePathname } from "next/navigation"
@@ -25,7 +25,11 @@ import {
   RotateCcw,
   ThumbsUp,
   ThumbsDown,
-  AlertOctagon
+  AlertOctagon,
+  ClipboardList,
+  FileSearch,
+  StickyNote,
+  History
 } from "lucide-react"
 
 import {
@@ -41,7 +45,9 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { Badge } from "@/components/ui/badge"
-import { UserRole } from "@/app/types"
+import { UserRole as OriginalUserRole } from "@/app/types"
+
+type UserRole = OriginalUserRole | 'spu_officer';
 
 // Navigation items by role
 const navigationByRole: Record<UserRole, any[]> = {
@@ -156,19 +162,80 @@ const navigationByRole: Record<UserRole, any[]> = {
       items: [
         {
           title: "Alerts",
-          url: "/dashboard//spu/alerts",
+          url: "/dashboard/spu/alerts", // Fixed double slash
           icon: Bell,
           badge: "3",
         },
         {
           title: "Assignment",
-          url: "/dashboard//spu/assignments",
+          url: "/dashboard/spu/assignments", // Fixed double slash
           icon: Bell,
           badge: "3",
         },
       ],
     },
   ],
+  'spu_officer': [
+    {
+      title: "Main",
+      items: [
+        {
+          title: "Dashboard",
+          url: "/dashboard/officer",
+          icon: LayoutDashboard,
+        },
+        {
+          title: "Assigned Applications",
+          url: "/dashboard/officer/assigned",
+          icon: ClipboardList,
+          badge: "8",
+        },
+        {
+          title: "In Review",
+          url: "/dashboard/officer/in-review",
+          icon: FileSearch,
+          badge: "3",
+        },
+        {
+          title: "Completed Reviews",
+          url: "/dashboard/officer/completed",
+          icon: CheckCircle,
+        },
+      ],
+    },
+    {
+      title: "Verification",
+      items: [
+        {
+          title: "Document Checklist",
+          url: "/dashboard/officer/document-checklist",
+          icon: ClipboardList,
+        },
+        {
+          title: "Add Comments",
+          url: "/dashboard/officer/comments",
+          icon: StickyNote,
+        },
+      ],
+    },
+    {
+      title: "Activity",
+      items: [
+        {
+          title: "My Review Logs",
+          url: "/dashboard/officer/logs",
+          icon: History,
+        },
+        {
+          title: "Notifications",
+          url: "/dashboard/officer/notifications",
+          icon: Bell,
+          badge: "5",
+        },
+      ],
+    },
+  ],
+
   'cops': [
     {
       title: "Main",
@@ -380,7 +447,8 @@ export function AppSidebar({ userRole = 'pb', ...props }: AppSidebarProps) {
   
   const roleDisplayNames: Record<UserRole, string> = {
     'pb': 'Personal Banking',
-    'spu': 'Scrutiny Processing Unit',
+    'spu': 'Sales Processing Unit',
+    'spu_officer': 'Sales Processing Officer',
     'cops': 'Consumer Operations',
     'eamvu': 'External Asset Management',
     'ciu': 'Central Investigation Unit',
@@ -412,7 +480,7 @@ export function AppSidebar({ userRole = 'pb', ...props }: AppSidebarProps) {
             <SidebarGroupLabel>{group.title}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.map((item) => (
+                {group.items.map((item: any) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={pathname === item.url}>
                       <Link href={item.url}>

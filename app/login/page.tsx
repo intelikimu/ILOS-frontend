@@ -91,6 +91,7 @@ export default function LoginPage() {
                 <SelectContent>
                   <SelectItem value="pb">Personal Banking (PB)</SelectItem>
                   <SelectItem value="spu">Scrutiny Processing Unit (SPU)</SelectItem>
+                  <SelectItem value="spu_officer">Scrutiny Processing Unit Officer (SPU Officer)</SelectItem>
                   <SelectItem value="cops">Consumer Operations (COPS)</SelectItem>
                   <SelectItem value="eamvu">External Asset Management (EAMVU)</SelectItem>
                   <SelectItem value="ciu">Central Investigation Unit (CIU)</SelectItem>

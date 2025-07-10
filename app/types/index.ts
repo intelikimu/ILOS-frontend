@@ -1,9 +1,10 @@
 export interface LoanApplication {
   id: string;
-  loanNumber: string;
-  losanNumber?: string;
+  losId: string; // Changed from loanNumber to losId
+  loanNumber?: string; // Keep as optional for backward compatibility
   applicantName: string;
   cnic: string;
+  customerId: string; // Changed from applicantId to customerId
   loanAmount: number;
   loanType: string;
   status: ApplicationStatus;
@@ -248,4 +249,206 @@ export interface User {
   role: UserRole;
   branch?: string;
   department?: string;
+}
+
+// CIF Data Types
+export interface CifData {
+  customerId: string;
+  cnic?: string;
+  status: string;
+  category?: string;
+  controlBranch?: string;
+  creationDate?: string;
+  credtingRating?: string;
+  customerType?: string;
+  domicileCountry?: string;
+  domicileState?: string;
+  fullname?: string;
+  indicator?: string;
+  industry?: string;
+  internalFlag?: string;
+  profitCenter?: string;
+  relManager?: string;
+  residentFlag?: string;
+  riskCountry?: string;
+  shortName?: string;
+  tableInd?: string;
+  typeIndicator?: string;
+  class1?: string;
+  class2?: string;
+  class4?: string;
+  business?: string;
+  district?: string;
+  city?: string;
+  clientNoCmc?: string;
+  ftRateCategory?: string;
+  reclass?: string;
+  oenaceCode?: string;
+  reporting?: string;
+  stopSc?: string;
+  clientVersion?: string;
+  taxRegCompFlag?: string;
+  incorporationCountry?: string;
+  location?: string;
+  aminusB?: string;
+  annualSales?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  // Related CIF data
+  customerIdType?: CustomerIdType;
+  relationship?: Relationship;
+  dirDetails?: DirDetails;
+  clientBanks?: ClientBanks;
+  postal?: Postal;
+  email?: EmailData;
+  phone?: PhoneData;
+  fax?: FaxData;
+  swift?: SwiftData;
+  collect?: CollectData;
+  individualInfo?: IndividualInfo;
+}
+
+export interface CustomerIdType {
+  customerId: string;
+  position?: string;
+  expiryDate?: string;
+  idNo?: string;
+  idType?: string;
+}
+
+export interface Relationship {
+  customerId: string;
+  position?: string;
+  counterRelation?: string;
+  customerIdRelated?: string;
+  equityPercentage?: string;
+  relatedCustomerId?: string;
+  relateCustomerName?: string;
+  relationshipType?: string;
+  relVersion?: string;
+}
+
+export interface DirDetails {
+  customerId: string;
+  position?: string;
+  clientNoDir?: string;
+  directorName?: string;
+  address?: string;
+  ntn?: string;
+  dateAppointment?: string;
+  pgDirector?: string;
+  estimatedNetWorth?: string;
+  declaredNetWorth?: string;
+  assessedNetWorth?: string;
+  sharePct?: string;
+  nic?: string;
+  nomineeInd?: string;
+  fatherName?: string;
+  husbandName?: string;
+  dateExclusion?: string;
+  waiveInd?: string;
+  nationality?: string;
+  version?: string;
+}
+
+export interface ClientBanks {
+  customerId: string;
+  position?: string;
+  acttNo?: string;
+  bankName?: string;
+  branch?: string;
+  version?: string;
+}
+
+export interface Postal {
+  customerId: string;
+  position?: string;
+  contactSubType?: string;
+  address?: string;
+  addressCountryCode?: string;
+  postalCode?: string;
+  holdMailCode?: string;
+  clientLang?: string;
+  contactRefNo?: string;
+  dftlToLoanStmt?: string;
+  dftlToRbStmt?: string;
+  contactVersion?: string;
+}
+
+export interface EmailData {
+  customerId: string;
+  position?: string;
+  contactSubType?: string;
+  address?: string;
+  clientLang?: string;
+  contactRefNo?: string;
+  dftlToLoanStmt?: string;
+  dftlToRbStmt?: string;
+  contactVersion?: string;
+}
+
+export interface PhoneData {
+  customerId: string;
+  position?: string;
+  contactSubType?: string;
+  phoneNo?: string;
+  clientLang?: string;
+  contactRefNo?: string;
+  dftToLoanStmt?: string;
+  dftlToRbStmt?: string;
+  contactVersion?: string;
+}
+
+export interface FaxData {
+  customerId: string;
+  position?: string;
+  contactSubType?: string;
+  faxNo?: string;
+  clientLang?: string;
+  contactRefNo?: string;
+  dftlToLoanStmt?: string;
+  dftlToRbStmt?: string;
+  contactVersion?: string;
+}
+
+export interface SwiftData {
+  customerId: string;
+  position?: string;
+  contactSubType?: string;
+  message?: string;
+  clientLang?: string;
+  contactRefNo?: string;
+  dftlToLoanStmt?: string;
+  dftlToRbStmt?: string;
+  contactVersion?: string;
+}
+
+export interface CollectData {
+  customerId: string;
+  position?: string;
+  contactSubType?: string;
+  remarks?: string;
+  contactVersion?: string;
+}
+
+export interface IndividualInfo {
+  customerId: string;
+  position?: string;
+  countryCitizenship?: string;
+  countryOfBirth?: string;
+  dateOfBirth?: string;
+  givenName1?: string;
+  givenName2?: string;
+  givenName3?: string;
+  surname?: string;
+  maritialStatus?: string;
+  sex?: string;
+  residentStatus?: string;
+  maidenName?: string;
+  title?: string;
+  palceOfBirth?: string;
+  surnameFirst?: string;
+  occupationCode?: string;
+  fatherHusbandName?: string;
+  indvlVersion?: string;
 }

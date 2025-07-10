@@ -100,16 +100,16 @@ export default function ApplicantPage() {
             <Card className="bg-blue-50 border-blue-200">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3 mb-3">
-                  {customerData.customerType === 'ETB' ? (
+                  {customerData.isETB ? (
                     <User className="w-5 h-5 text-green-600" />
                   ) : (
                     <CreditCard className="w-5 h-5 text-blue-600" />
                   )}
                   <div>
                     <div className="font-semibold text-lg">
-                      {customerData.customerType === 'ETB' ? 'Existing Customer' : 'New Customer'}
+                      {customerData.isETB ? 'Existing Customer' : 'New Customer'}
                     </div>
-                    <div className="text-sm text-gray-600">Consumer ID: {customerData.consumerId}</div>
+                    <div className="text-sm text-gray-600">Customer ID: {customerData.customerId}</div>
                   </div>
                 </div>
                 
@@ -129,11 +129,11 @@ export default function ApplicantPage() {
                 
                 <div className="mt-3 flex justify-between items-center">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    customerData.customerType === 'ETB' 
+                    customerData.isETB 
                       ? 'bg-green-100 text-green-800' 
                       : 'bg-blue-100 text-blue-800'
                   }`}>
-                    {customerData.customerType === 'ETB' ? 'Data will be pre-filled' : 'Manual data entry required'}
+                    {customerData.isETB ? 'Data will be pre-filled' : 'Manual data entry required'}
                   </span>
                   <Button 
                     variant="outline" 

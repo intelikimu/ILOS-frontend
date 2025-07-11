@@ -37,6 +37,16 @@ interface CustomerData {
     currentAddress?: any;
     permanentAddress?: any;
   };
+  clientBanks?: {
+  customer_id?: string;
+  position?: string;
+  actt_no?: string;
+  bank_name?: string;
+  branch?: string;
+  version?: string;
+  created_at?: string;
+};
+
   employmentDetails?: any;
   bankingDetails?: any;
   referenceContacts?: Array<any>;
@@ -137,6 +147,24 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
             // Map more fields if needed
           },
           cifData: customerResponse.customer // Store all original fields for future mapping
+        });
+      }
+      // ------------------- NTB (NEW CUSTOMER) HANDLING -------------------
+      // These are all possible NTB shapes:
+      else if (
+        (typeof customerResponse.isETB === 'boolean' && customerResponse.isETB === false) ||
+        (typeof customerResponse.status === 'string' && customerResponse.status === 'NTB') ||
+        (typeof customerResponse.isExisting === 'boolean' && customerResponse.isExisting === false) ||
+        (customerResponse.customer === null && customerResponse.isETB === false)
+      ) {
+        // Generate NTB customerId
+        setCustomerData({
+          isETB: false,
+          customerType: 'NTB',
+          customerId: `NTB-${cleanCnic}`,
+          cnic: cleanCnic,
+          status: 'NTB',
+          personalDetails: {},
         });
       }
       // 2. Customer status API: { cnic, status, customerId, isExisting }

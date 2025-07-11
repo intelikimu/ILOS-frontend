@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation';
 
 export default function CashplusPage() {
   const { customerData } = useCustomer();
+  console.log("Customer Data:", customerData?.cifData);
   const router = useRouter();
 
   if (!customerData) {
@@ -54,7 +55,7 @@ export default function CashplusPage() {
                 </h2>
                 <div className="flex items-center gap-4 mt-2">
                   <span className="text-lg font-semibold text-gray-700">
-                    Consumer ID: {customerData.consumerId}
+                    Consumer ID: {customerData?.cifData?.customerId || 'N/A'}
                   </span>
                   <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                     customerData.isETB 

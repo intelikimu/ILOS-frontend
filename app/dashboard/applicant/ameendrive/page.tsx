@@ -55,7 +55,7 @@ export default function AmeenDrivePage() {
                                 </h2>
                                 <div className="flex items-center gap-4 mt-2">
                                     <span className="text-lg font-semibold text-gray-700">
-                                        Consumer ID: {customerData.consumerId}
+                                        Consumer ID: {customerData.customerId || 'N/A'}
                                     </span>
                                                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                     customerData.isETB 

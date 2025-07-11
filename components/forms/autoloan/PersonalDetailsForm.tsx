@@ -46,7 +46,19 @@ export const PersonalDetailsForm = () => {
     permanentArea: '',
     permanentCity: '',
     permanentCountry: '',
-    permanentPostalCode: ''
+    permanentPostalCode: '',
+    // Additional fields from CIF
+    occupationCode: '',
+    nationality: '',
+    placeOfBirth: '',
+    industry: '',
+    business: '',
+    employmentStatus: '',
+    bankAccount: '',
+    bankName: '',
+    branchName: '',
+    isUBLCustomer: '',
+    ublAccountNumber: ''
   });
 
   const [prefilledFields, setPrefilledFields] = useState<Set<string>>(new Set());
@@ -82,7 +94,9 @@ export const PersonalDetailsForm = () => {
         prefilled.add('ntn');
       }
       if (customerData.personalDetails.dateOfBirth) {
-        newFormData.dateOfBirth = customerData.personalDetails.dateOfBirth;
+        // Format date for input field (YYYY-MM-DD)
+        const formattedDate = new Date(customerData.personalDetails.dateOfBirth).toISOString().split('T')[0];
+        newFormData.dateOfBirth = formattedDate;
         prefilled.add('dateOfBirth');
       }
       if (customerData.personalDetails.passportNumber) {
@@ -108,6 +122,18 @@ export const PersonalDetailsForm = () => {
       if (customerData.personalDetails.maritalStatus) {
         newFormData.maritalStatus = customerData.personalDetails.maritalStatus;
         prefilled.add('maritalStatus');
+      }
+      if (customerData.personalDetails.occupationCode) {
+        newFormData.occupationCode = customerData.personalDetails.occupationCode;
+        prefilled.add('occupationCode');
+      }
+      if (customerData.personalDetails.nationality) {
+        newFormData.nationality = customerData.personalDetails.nationality;
+        prefilled.add('nationality');
+      }
+      if (customerData.personalDetails.placeOfBirth) {
+        newFormData.placeOfBirth = customerData.personalDetails.placeOfBirth;
+        prefilled.add('placeOfBirth');
       }
       if (customerData.personalDetails.numberOfChildren) {
         newFormData.numberOfChildren = customerData.personalDetails.numberOfChildren.toString();
@@ -142,6 +168,46 @@ export const PersonalDetailsForm = () => {
       if (customerData.nextOfKin?.contactNumber) {
         newFormData.nextOfKinContact = customerData.nextOfKin.contactNumber;
         prefilled.add('nextOfKinContact');
+      }
+      
+      // Employment Details
+      if (customerData.employmentDetails?.occupationCode) {
+        newFormData.occupationCode = customerData.employmentDetails.occupationCode;
+        prefilled.add('occupationCode');
+      }
+      if (customerData.employmentDetails?.industry) {
+        newFormData.industry = customerData.employmentDetails.industry;
+        prefilled.add('industry');
+      }
+      if (customerData.employmentDetails?.business) {
+        newFormData.business = customerData.employmentDetails.business;
+        prefilled.add('business');
+      }
+      if (customerData.employmentDetails?.employmentStatus) {
+        newFormData.employmentStatus = customerData.employmentDetails.employmentStatus;
+        prefilled.add('employmentStatus');
+      }
+      
+      // Banking Details
+      if (customerData.bankingDetails?.accountNumber) {
+        newFormData.bankAccount = customerData.bankingDetails.accountNumber;
+        prefilled.add('bankAccount');
+      }
+      if (customerData.bankingDetails?.bankName) {
+        newFormData.bankName = customerData.bankingDetails.bankName;
+        prefilled.add('bankName');
+      }
+      if (customerData.bankingDetails?.branchName) {
+        newFormData.branchName = customerData.bankingDetails.branchName;
+        prefilled.add('branchName');
+      }
+      if (customerData.bankingDetails?.isUBLCustomer) {
+        newFormData.isUBLCustomer = customerData.bankingDetails.isUBLCustomer;
+        prefilled.add('isUBLCustomer');
+      }
+      if (customerData.bankingDetails?.ublAccountNumber) {
+        newFormData.ublAccountNumber = customerData.bankingDetails.ublAccountNumber;
+        prefilled.add('ublAccountNumber');
       }
       
       // Address Details
@@ -179,15 +245,15 @@ export const PersonalDetailsForm = () => {
           newFormData.residentialStatus = currentAddr.residentialStatus;
           prefilled.add('residentialStatus');
         }
-        if (currentAddr.monthlyRent) {
+        if (currentAddr.monthlyRent && currentAddr.monthlyRent > 0) {
           newFormData.monthlyRent = currentAddr.monthlyRent.toString();
           prefilled.add('monthlyRent');
         }
-        if (currentAddr.yearsAtAddress) {
+        if (currentAddr.yearsAtAddress && currentAddr.yearsAtAddress > 0) {
           newFormData.yearsAtAddress = currentAddr.yearsAtAddress.toString();
           prefilled.add('yearsAtAddress');
         }
-        if (currentAddr.yearsInCity) {
+        if (currentAddr.yearsInCity && currentAddr.yearsInCity > 0) {
           newFormData.yearsInCity = currentAddr.yearsInCity.toString();
           prefilled.add('yearsInCity');
         }
@@ -241,7 +307,7 @@ export const PersonalDetailsForm = () => {
   return (
     <section className="bg-white rounded-2xl shadow p-8 mb-10">
       <h2 className="text-2xl font-bold text-primary mb-6">5. Personal Details</h2>
-      {customerData?.customerType === 'ETB' && prefilledFields.size > 0 && (
+      {customerData?.isETB && prefilledFields.size > 0 && (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <div className="text-sm text-yellow-800">
             <strong>Note:</strong> Fields highlighted in yellow are pre-filled from your existing customer data. You can edit them if needed.

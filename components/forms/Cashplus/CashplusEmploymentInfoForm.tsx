@@ -131,7 +131,7 @@ export const CashplusEmploymentInfoForm = () => {
   return (
     <section className="mb-10">
       <h3 className="text-xl font-semibold mb-4">4. Employment / Occupational Details</h3>
-      {customerData?.customerType === 'ETB' && prefilledFields.size > 0 && (
+      {customerData?.isETB && prefilledFields.size > 0 && (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <div className="text-sm text-yellow-800">
             <strong>Note:</strong> Fields highlighted in yellow are pre-filled from your existing customer data. You can edit them if needed.

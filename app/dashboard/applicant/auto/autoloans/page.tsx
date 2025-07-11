@@ -45,7 +45,7 @@ export default function AutoLoanPage() {
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {customerData.customerType === 'ETB' ? (
+              {customerData.isETB ? (
                 <User className="w-8 h-8 text-green-600" />
               ) : (
                 <CreditCard className="w-8 h-8 text-blue-600" />
@@ -56,14 +56,14 @@ export default function AutoLoanPage() {
                 </h2>
                 <div className="flex items-center gap-4 mt-2">
                   <span className="text-lg font-semibold text-gray-700">
-                    Consumer ID: {customerData.consumerId}
+                    Customer ID: {customerData.customerId}
                   </span>
                   <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    customerData.customerType === 'ETB' 
+                    customerData.isETB 
                       ? 'bg-green-100 text-green-800' 
                       : 'bg-blue-100 text-blue-800'
                   }`}>
-                    {customerData.customerType === 'ETB' ? 'Existing Customer (ETB)' : 'New Customer (NTB)'}
+                    {customerData.isETB ? 'Existing Customer (ETB)' : 'New Customer (NTB)'}
                   </span>
                 </div>
               </div>
@@ -80,10 +80,10 @@ export default function AutoLoanPage() {
           
           {customerData.personalDetails && (
             <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              {customerData.personalDetails.firstName && (
+              {customerData.personalDetails.fullName && (
                 <div>
                   <span className="font-medium text-gray-600">Name:</span>
-                  <div className="text-gray-900">{customerData.personalDetails.firstName} {customerData.personalDetails.lastName}</div>
+                  <div className="text-gray-900">{customerData.personalDetails.fullName}</div>
                 </div>
               )}
               {customerData.personalDetails.cnic && (

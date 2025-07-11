@@ -43,7 +43,7 @@ export default function CashplusPage() {
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {customerData.customerType === 'ETB' ? (
+              {customerData.isETB ? (
                 <User className="w-8 h-8 text-green-600" />
               ) : (
                 <CreditCard className="w-8 h-8 text-blue-600" />
@@ -57,11 +57,11 @@ export default function CashplusPage() {
                     Consumer ID: {customerData.consumerId}
                   </span>
                   <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    customerData.customerType === 'ETB' 
+                    customerData.isETB 
                       ? 'bg-green-100 text-green-800' 
                       : 'bg-blue-100 text-blue-800'
                   }`}>
-                    {customerData.customerType === 'ETB' ? 'Existing Customer (ETB)' : 'New Customer (NTB)'}
+                    {customerData.isETB ? 'Existing Customer (ETB)' : 'New Customer (NTB)'}
                   </span>
                 </div>
               </div>

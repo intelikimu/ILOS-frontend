@@ -39,7 +39,17 @@ export const CashplusPersonalInfoForm = () => {
     telephonePermanent: '',
     mobile: '',
     mobileType: '',
-    other: ''
+    other: '',
+    // Additional fields from CIF
+    occupationCode: '',
+    nationality: '',
+    placeOfBirth: '',
+    industry: '',
+    business: '',
+    ublCustomer: '',
+    ublAccountNumber: '',
+    branchName: '',
+    country: ''
   });
 
   const [prefilledFields, setPrefilledFields] = useState<Set<string>>(new Set());
@@ -75,7 +85,9 @@ export const CashplusPersonalInfoForm = () => {
         prefilled.add('ntn');
       }
       if (customerData.personalDetails.dateOfBirth) {
-        newFormData.dateOfBirth = customerData.personalDetails.dateOfBirth;
+        // Format date for input field (YYYY-MM-DD)
+        const formattedDate = new Date(customerData.personalDetails.dateOfBirth).toISOString().split('T')[0];
+        newFormData.dateOfBirth = formattedDate;
         prefilled.add('dateOfBirth');
       }
       if (customerData.personalDetails.gender) {
@@ -106,12 +118,56 @@ export const CashplusPersonalInfoForm = () => {
         newFormData.mobile = customerData.personalDetails.mobileNumber;
         prefilled.add('mobile');
       }
+      if (customerData.personalDetails.occupationCode) {
+        newFormData.occupationCode = customerData.personalDetails.occupationCode;
+        prefilled.add('occupationCode');
+      }
+      if (customerData.personalDetails.nationality) {
+        newFormData.nationality = customerData.personalDetails.nationality;
+        prefilled.add('nationality');
+      }
+      if (customerData.personalDetails.placeOfBirth) {
+        newFormData.placeOfBirth = customerData.personalDetails.placeOfBirth;
+        prefilled.add('placeOfBirth');
+      }
+      
+      // Employment Details
+      if (customerData.employmentDetails?.employmentStatus) {
+        newFormData.employmentStatus = customerData.employmentDetails.employmentStatus;
+        prefilled.add('employmentStatus');
+      }
+      if (customerData.employmentDetails?.occupationCode) {
+        newFormData.occupationCode = customerData.employmentDetails.occupationCode;
+        prefilled.add('occupationCode');
+      }
+      if (customerData.employmentDetails?.industry) {
+        newFormData.industry = customerData.employmentDetails.industry;
+        prefilled.add('industry');
+      }
+      if (customerData.employmentDetails?.business) {
+        newFormData.business = customerData.employmentDetails.business;
+        prefilled.add('business');
+      }
+      
+      // Banking Details
+      if (customerData.bankingDetails?.isUBLCustomer) {
+        newFormData.ublCustomer = customerData.bankingDetails.isUBLCustomer;
+        prefilled.add('ublCustomer');
+      }
+      if (customerData.bankingDetails?.ublAccountNumber) {
+        newFormData.ublAccountNumber = customerData.bankingDetails.ublAccountNumber;
+        prefilled.add('ublAccountNumber');
+      }
+      if (customerData.bankingDetails?.branchName) {
+        newFormData.branchName = customerData.bankingDetails.branchName;
+        prefilled.add('branchName');
+      }
       
       // Address Details
       if (customerData.addressDetails?.currentAddress) {
         const currentAddr = customerData.addressDetails.currentAddress;
-        if (currentAddr.houseNo && currentAddr.street) {
-          newFormData.address = `${currentAddr.houseNo}, ${currentAddr.street}`;
+        if (currentAddr.fullAddress) {
+          newFormData.address = currentAddr.fullAddress;
           prefilled.add('address');
         }
         if (currentAddr.nearestLandmark) {
@@ -126,7 +182,15 @@ export const CashplusPersonalInfoForm = () => {
           newFormData.postalCode = currentAddr.postalCode;
           prefilled.add('postalCode');
         }
-        if (currentAddr.yearsAtAddress) {
+        if (currentAddr.country) {
+          newFormData.country = currentAddr.country;
+          prefilled.add('country');
+        }
+        if (currentAddr.telephone) {
+          newFormData.telephoneCurrent = currentAddr.telephone;
+          prefilled.add('telephoneCurrent');
+        }
+        if (currentAddr.yearsAtAddress && currentAddr.yearsAtAddress > 0) {
           newFormData.residingSince = `${currentAddr.yearsAtAddress} years`;
           prefilled.add('residingSince');
         }
@@ -134,7 +198,7 @@ export const CashplusPersonalInfoForm = () => {
           newFormData.accommodationType = currentAddr.residentialStatus;
           prefilled.add('accommodationType');
         }
-        if (currentAddr.monthlyRent) {
+        if (currentAddr.monthlyRent && currentAddr.monthlyRent > 0) {
           newFormData.monthlyRent = currentAddr.monthlyRent.toString();
           prefilled.add('monthlyRent');
         }
@@ -180,7 +244,7 @@ export const CashplusPersonalInfoForm = () => {
   return (
     <section className="mb-10">
       <h3 className="text-xl font-semibold mb-4">3. Personal Information</h3>
-      {customerData?.customerType === 'ETB' && prefilledFields.size > 0 && (
+      {customerData?.isETB && prefilledFields.size > 0 && (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <div className="text-sm text-yellow-800">
             <strong>Note:</strong> Fields highlighted in yellow are pre-filled from your existing customer data. You can edit them if needed.

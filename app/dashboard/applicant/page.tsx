@@ -114,15 +114,24 @@ export default function ApplicantPage() {
                 </div>
                 
                 {customerData.personalDetails && (
-                  <div className="space-y-1 text-sm">
-                    {customerData.personalDetails.firstName && (
-                      <div><span className="font-medium">Name:</span> {customerData.personalDetails.firstName} {customerData.personalDetails.lastName}</div>
+                  <div className="space-y-2 text-sm">
+                    {customerData.personalDetails.fullName && (
+                      <div><span className="font-medium">Name:</span> {customerData.personalDetails.fullName}</div>
+                    )}
+                    {customerData.personalDetails.fatherName && (
+                      <div><span className="font-medium">Father's Name:</span> {customerData.personalDetails.fatherName}</div>
+                    )}
+                    {customerData.personalDetails.dateOfBirth && (
+                      <div><span className="font-medium">Date of Birth:</span> {new Date(customerData.personalDetails.dateOfBirth).toLocaleDateString()}</div>
                     )}
                     {customerData.personalDetails.mobileNumber && (
                       <div><span className="font-medium">Mobile:</span> {customerData.personalDetails.mobileNumber}</div>
                     )}
                     {customerData.personalDetails.email && (
                       <div><span className="font-medium">Email:</span> {customerData.personalDetails.email}</div>
+                    )}
+                    {customerData.addressDetails?.currentAddress?.fullAddress && (
+                      <div><span className="font-medium">Address:</span> {customerData.addressDetails.currentAddress.fullAddress}</div>
                     )}
                   </div>
                 )}

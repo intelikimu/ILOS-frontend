@@ -1,7 +1,6 @@
 "use client"
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import axios from 'axios';
 
 interface CustomerData {
   customerId: string | null;
@@ -10,56 +9,7 @@ interface CustomerData {
   cnic?: string;
   status?: string;
   losId?: string;
-  cifData?: {
-    category?: string;
-    controlBranch?: string;
-    creationDate?: string;
-    credtingRating?: string;
-    customerType?: string;
-    domicileCountry?: string;
-    domicileState?: string;
-    fullname?: string;
-    indicator?: string;
-    industry?: string;
-    internalFlag?: string;
-    profitCenter?: string;
-    relManager?: string;
-    residentFlag?: string;
-    riskCountry?: string;
-    shortName?: string;
-    tableInd?: string;
-    typeIndicator?: string;
-    class1?: string;
-    class2?: string;
-    class4?: string;
-    business?: string;
-    district?: string;
-    city?: string;
-    clientNoCmc?: string;
-    ftRateCategory?: string;
-    reclass?: string;
-    oenaceCode?: string;
-    reporting?: string;
-    stopSc?: string;
-    clientVersion?: string;
-    taxRegCompFlag?: string;
-    incorporationCountry?: string;
-    location?: string;
-    aminusB?: string;
-    annualSales?: string;
-    // Related CIF data
-    customerIdType?: any;
-    relationship?: any;
-    dirDetails?: any;
-    clientBanks?: any;
-    postal?: any;
-    email?: any;
-    phone?: any;
-    fax?: any;
-    swift?: any;
-    collect?: any;
-    individualInfo?: any;
-  };
+  cifData?: any;
   personalDetails?: {
     title?: string;
     firstName?: string;
@@ -84,63 +34,13 @@ interface CustomerData {
     occupationCode?: string;
   };
   addressDetails?: {
-    currentAddress?: {
-      houseNo?: string;
-      street?: string;
-      area?: string;
-      address?: string;
-      city?: string;
-      country?: string;
-      postalCode?: string;
-      district?: string;
-      state?: string;
-      nearestLandmark?: string;
-      residentialStatus?: string;
-      monthlyRent?: number;
-      yearsAtAddress?: number;
-      yearsInCity?: number;
-    };
-    permanentAddress?: {
-      houseNo?: string;
-      street?: string;
-      area?: string;
-      address?: string;
-      city?: string;
-      country?: string;
-      postalCode?: string;
-    };
+    currentAddress?: any;
+    permanentAddress?: any;
   };
-  employmentDetails?: {
-    employerName?: string;
-    designation?: string;
-    department?: string;
-    employmentType?: string;
-    businessType?: string;
-    workExperience?: number;
-    monthlySalary?: number;
-    officeAddress?: string;
-    officePhone?: string;
-  };
-  bankingDetails?: {
-    bankName?: string;
-    branchName?: string;
-    accountNumber?: string;
-    accountType?: string;
-    relationshipDuration?: number;
-  };
-  referenceContacts?: Array<{
-    name?: string;
-    relationship?: string;
-    cnic?: string;
-    mobileNumber?: string;
-    address?: string;
-  }>;
-  nextOfKin?: {
-    name?: string;
-    relationship?: string;
-    cnic?: string;
-    contactNumber?: string;
-  };
+  employmentDetails?: any;
+  bankingDetails?: any;
+  referenceContacts?: Array<any>;
+  nextOfKin?: any;
 }
 
 interface CustomerContextType {
@@ -171,226 +71,218 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const getBaseUrl = () => {
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+      return process.env.NEXT_PUBLIC_API_URL || 'https://ilos-backend.vercel.app' || 'http://localhost:5000';
+    }
+    return 'http://localhost:5000';
+  };
+
   const fetchCustomerData = async (cnic: string) => {
     setLoading(true);
     setError(null);
-    
+    setCustomerData(null);
+
     try {
-      // Automatically detect backend URL based on environment
-      const getBackendURL = () => {
-        // If running in production (deployed), use the deployed backend
-        if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-          return process.env.NEXT_PUBLIC_API_URL || 'https://ilos-backend.vercel.app';
-        }
-        // If running locally, try local backend first, fallback to deployed
-        return 'http://localhost:5000';
-      };
-      
-      const API_URL = getBackendURL();
-      
-      // First check customer status with intelligent endpoint detection
-      // Remove dashes from CNIC for API call
       const cleanCnic = cnic.replace(/-/g, '');
-      
-      let statusResponse;
-      let isExisting, customerId, status, customerCnic;
-      
+      let response, customerResponse;
+
+      // 1. Try customer-status endpoint first
       try {
-        // Try local backend endpoint first
-        console.log('Trying local endpoint:', `${API_URL}/customer-status/${cleanCnic}`);
-        statusResponse = await axios.get(`${API_URL}/customer-status/${cleanCnic}`);
-        console.log('Local endpoint response:', statusResponse.data);
-        ({ isExisting, customerId, status, cnic: customerCnic } = statusResponse.data);
-      } catch (error) {
-        // If local fails, try deployed backend endpoint
-        console.log('Local endpoint failed, trying deployed endpoint:', `https://ilos-backend.vercel.app/api/getNTB_ETB/${cleanCnic}`);
+        response = await fetch(`${getBaseUrl()}/customer-status/${cleanCnic}`);
+        if (response.ok) {
+          customerResponse = await response.json();
+        } else {
+          throw new Error(`Customer status API error: ${response.status}`);
+        }
+      } catch (customerStatusError) {
+        // 2. Fallback to getNTB_ETB endpoint
         try {
-          statusResponse = await axios.get(`https://ilos-backend.vercel.app/api/getNTB_ETB/${cleanCnic}`);
-          console.log('Deployed endpoint response:', statusResponse.data);
-          
-          // Handle deployed backend response format
-          if (statusResponse.data.hasOwnProperty('isETB')) {
-            isExisting = statusResponse.data.isETB;
-            customerCnic = cleanCnic;
-            status = isExisting ? statusResponse.data.customer?.status || 'A' : 'NTB';
-            customerId = isExisting && statusResponse.data.customer ? statusResponse.data.customer.customerId || statusResponse.data.customer.cif : null;
+          response = await fetch(`${getBaseUrl()}/api/getNTB_ETB/${cleanCnic}`);
+          if (response.ok) {
+            customerResponse = await response.json();
           } else {
-            ({ isExisting, customerId, status, cnic: customerCnic } = statusResponse.data);
+            throw new Error(`getNTB_ETB API error: ${response.status}`);
           }
-        } catch (deployedError) {
-          throw new Error('Both local and deployed backends are unreachable');
+        } catch (getNTBError) {
+          // 3. Final fallback for deployed backend
+          if (getBaseUrl().includes('vercel.app')) {
+            setError('Customer lookup service is being updated. Please try again later or contact support.');
+            setLoading(false);
+            return;
+          }
+          throw new Error('Both customer-status and getNTB_ETB endpoints are unavailable');
         }
       }
-      
-      console.log('Parsed status response:', { isExisting, customerId, status, customerCnic });
-      
-      let cifData = null;
-      let autoFilledData: any = {};
-      
-      // If customer exists (ETB), fetch complete CIF details
-      if (isExisting && customerId) {
-        try {
-          // Try local CIF endpoint first
-          console.log('Trying local CIF endpoint:', `${API_URL}/cif/${customerId}`);
+
+      // --------- Unified Response Handling ---------
+      console.log("DEBUG: Backend response shape:", customerResponse);
+
+      if (!customerResponse) {
+        throw new Error('No customer data received');
+      }
+
+      // 1. New API style: { isETB: boolean, customer: { ... } }
+      if (typeof customerResponse.isETB === 'boolean' && customerResponse.customer) {
+        setCustomerData({
+          isETB: customerResponse.isETB,
+          customerType: customerResponse.isETB ? 'ETB' : 'NTB',
+          customerId: customerResponse.customer.customerId || customerResponse.customer.id || null,
+          cnic: customerResponse.customer.cnic || cleanCnic,
+          status: customerResponse.customer.status || '',
+          personalDetails: {
+            fullName: customerResponse.customer.fullname || '',
+            firstName: customerResponse.customer.firstName || '',
+            lastName: customerResponse.customer.lastName || '',
+            // Map more fields if needed
+          },
+          cifData: customerResponse.customer // Store all original fields for future mapping
+        });
+      }
+      // 2. Customer status API: { cnic, status, customerId, isExisting }
+      else if (customerResponse.cnic && customerResponse.customerId && typeof customerResponse.isExisting === 'boolean') {
+        // If customer exists, fetch detailed data
+        if (customerResponse.isExisting) {
           try {
-            const cifResponse = await axios.get(`${API_URL}/cif/${customerId}`);
-            console.log('Local CIF response:', cifResponse.data);
-            cifData = cifResponse.data;
-          } catch (localError) {
-            // If local fails, try deployed backend CIF endpoint
-            console.log('Local CIF failed, trying deployed CIF endpoint:', `https://ilos-backend.vercel.app/api/cif/details/${customerId}`);
-            try {
-              const cifResponse = await axios.get(`https://ilos-backend.vercel.app/api/cif/details/${customerId}`);
-              console.log('Deployed CIF response:', cifResponse.data);
-              cifData = cifResponse.data;
-            } catch (deployedError) {
-              console.log('Both CIF endpoints failed, continuing without CIF data');
-              cifData = null;
-            }
-          }
-          
-                    // Auto-fill form fields from CIF data - handle both local and deployed formats
-          const isLocalFormat = cifData.hasOwnProperty('individualInfo');
-          
-          autoFilledData = {
-            personalDetails: {
-              firstName: isLocalFormat 
-                ? (cifData.individualInfo?.given_name1 || cifData.fullname?.split(' ')[0] || '')
-                : (cifData.customer?.firstName || cifData.fullname?.split(' ')[0] || ''),
-              lastName: isLocalFormat
-                ? (cifData.individualInfo?.surname || cifData.fullname?.split(' ').slice(-1)[0] || '')
-                : (cifData.customer?.lastName || cifData.fullname?.split(' ').slice(-1)[0] || ''),
-              fullName: cifData.fullname || cifData.customer?.fullname || '',
-              cnic: cifData.cnic || cifData.customer?.cnic || cleanCnic,
-              fatherName: isLocalFormat 
-                ? (cifData.individualInfo?.father_husband_name || '')
-                : (cifData.customer?.fatherName || ''),
-              dateOfBirth: isLocalFormat
-                ? (cifData.individualInfo?.date_of_birth || '')
-                : (cifData.customer?.dateOfBirth || ''),
-              gender: isLocalFormat
-                ? (cifData.individualInfo?.sex === 'M' ? 'Male' : cifData.individualInfo?.sex === 'F' ? 'Female' : '')
-                : (cifData.customer?.gender || ''),
-              maritalStatus: isLocalFormat
-                ? (cifData.individualInfo?.maritial_status === 'M' ? 'Married' : cifData.individualInfo?.maritial_status === 'S' ? 'Single' : '')
-                : (cifData.customer?.maritalStatus || ''),
-              mobileNumber: isLocalFormat
-                ? (cifData.phone?.phone_no || '')
-                : (cifData.customer?.mobileNumber || ''),
-              email: isLocalFormat
-                ? (cifData.email?.address || '')
-                : (cifData.customer?.emailAddress || ''),
-              nationality: isLocalFormat
-                ? (cifData.individualInfo?.country_citizenship || '')
-                : (cifData.customer?.nationality || ''),
-              placeOfBirth: cifData.individualInfo?.palce_of_birth || '',
-              occupationCode: cifData.individualInfo?.occupation_code || '',
-                          },
-              addressDetails: {
+            const detailResponse = await fetch(`${getBaseUrl()}/cif/${customerResponse.customerId}`);
+            const detailData = detailResponse.ok ? await detailResponse.json() : null;
+            
+            setCustomerData({
+              isETB: customerResponse.isExisting,
+              customerType: customerResponse.isExisting ? 'ETB' : 'NTB',
+              customerId: customerResponse.customerId,
+              cnic: customerResponse.cnic,
+              status: customerResponse.status || '',
+              personalDetails: detailData ? {
+                fullName: detailData.fullname || '',
+                firstName: detailData.individualInfo?.given_name1 || detailData.fullname?.split(' ')[0] || '',
+                middleName: detailData.individualInfo?.given_name2 !== 'N' ? detailData.individualInfo?.given_name2 || '' : '',
+                lastName: detailData.individualInfo?.surname || detailData.fullname?.split(' ').slice(1).join(' ') || '',
+                fatherName: detailData.individualInfo?.father_husband_name || detailData.dirDetails?.father_name || '',
+                motherName: detailData.individualInfo?.maiden_name || '',
+                dateOfBirth: detailData.individualInfo?.date_of_birth || '',
+                gender: detailData.individualInfo?.sex === 'M' ? 'Male' : detailData.individualInfo?.sex === 'F' ? 'Female' : '',
+                maritalStatus: detailData.individualInfo?.maritial_status === 'M' ? 'Married' : detailData.individualInfo?.maritial_status === 'S' ? 'Single' : '',
+                mobileNumber: detailData.phone?.phone_no || '',
+                email: detailData.email?.address || '',
+                ntn: detailData.dirDetails?.ntn || '',
+                passportNumber: detailData.customerIdType?.id_type === 'PASSPORT' ? detailData.customerIdType?.id_no : '',
+                nationality: detailData.individualInfo?.country_citizenship === 'PK' ? 'Pakistani' : detailData.individualInfo?.country_citizenship || '',
+                placeOfBirth: detailData.individualInfo?.palce_of_birth || '',
+                occupationCode: detailData.individualInfo?.occupation_code || '',
+                cnic: customerResponse.cnic,
+                title: detailData.individualInfo?.title || '',
+                education: '', // Not available in CIF response
+                numberOfChildren: 0, // Not available in CIF response
+                numberOfDependents: 0, // Not available in CIF response
+              } : {},
+              addressDetails: detailData ? {
                 currentAddress: {
-                  address: isLocalFormat 
-                    ? (cifData.postal?.address || '')
-                    : (cifData.customer?.residentialAddress || ''),
-                  city: cifData.city || cifData.customer?.city || '',
-                  country: cifData.domicileCountry || cifData.customer?.domicileCountry || '',
-                  postalCode: cifData.postal?.postal_code || '',
-                  district: cifData.district || cifData.customer?.district || '',
-                  state: cifData.domicileState || cifData.customer?.domicileState || '',
+                  fullAddress: detailData.postal?.address || '',
+                  city: detailData.city || '',
+                  area: detailData.district || '',
+                  postalCode: detailData.postal?.postal_code || '',
+                  country: detailData.postal?.address_country_code || detailData.domicileCountry || 'PK',
+                  houseNo: '', // Will be parsed from full address if possible
+                  street: detailData.postal?.address || '',
+                  nearestLandmark: '',
+                  yearsAtAddress: 0,
+                  yearsInCity: 0,
+                  residentialStatus: '',
+                  monthlyRent: 0,
+                  telephone: detailData.phone?.phone_no || '',
+                  email: detailData.email?.address || ''
                 },
                 permanentAddress: {
-                  address: isLocalFormat 
-                    ? (cifData.postal?.address || '')
-                    : (cifData.customer?.residentialAddress || ''),
-                  city: cifData.city || cifData.customer?.city || '',
-                  country: cifData.domicileCountry || cifData.customer?.domicileCountry || '',
-                  postalCode: cifData.postal?.postal_code || '',
+                  fullAddress: detailData.postal?.address || '',
+                  city: detailData.city || '',
+                  area: detailData.district || '',
+                  postalCode: detailData.postal?.postal_code || '',
+                  country: detailData.postal?.address_country_code || detailData.domicileCountry || 'PK',
+                  houseNo: '',
+                  street: detailData.postal?.address || '',
                 }
-              },
-              employmentDetails: {
-                businessType: cifData.business || cifData.customer?.business || '',
-                industry: cifData.industry || cifData.customer?.industry || '',
-                occupation: isLocalFormat 
-                  ? (cifData.individualInfo?.occupation_code || '')
-                  : (cifData.customer?.profession || ''),
-                monthlySalary: cifData.customer?.income || '',
-                officeAddress: cifData.customer?.officeAddress || '',
-              },
-              bankingDetails: {
-                bankName: isLocalFormat
-                  ? (cifData.clientBanks?.bank_name || '')
-                  : (cifData.customer?.bankName || ''),
-                branchName: isLocalFormat
-                  ? (cifData.clientBanks?.branch || '')
-                  : (cifData.customer?.branchName || ''),
-                accountNumber: isLocalFormat
-                  ? (cifData.clientBanks?.actt_no || '')
-                  : (cifData.customer?.accountNumber || ''),
-                customerId: cifData.customerId || cifData.customer?.customerId || '',
-                clientNumber: cifData.clientNoCmc || '',
-              },
-              referenceContacts: isLocalFormat && cifData.relationship ? [{
-                name: cifData.relationship.relate_customer_name || '',
-                relationship: cifData.relationship.relationship_type || '',
-                customerId: cifData.relationship.related_customer_id || '',
-              }] : (cifData.customer ? [
-                { name: cifData.customer.referenceContact1 || '', relationship: '', mobileNumber: '' },
-                { name: cifData.customer.referenceContact2 || '', relationship: '', mobileNumber: '' }
-              ] : []),
-              nextOfKin: isLocalFormat && cifData.relationship ? {
-                name: cifData.relationship.relate_customer_name || '',
-                relationship: cifData.relationship.relationship_type || '',
-                customerId: cifData.relationship.related_customer_id || '',
-              } : (cifData.customer ? {
-                name: cifData.customer.nextOfKinName || '',
-                relationship: cifData.customer.nextOfKinRelation || '',
-                contactNumber: cifData.customer.nextOfKinContact || '',
-              } : {}),
-            directorDetails: cifData.dirDetails ? {
-              name: cifData.dirDetails.director_name || '',
-              address: cifData.dirDetails.address || '',
-              ntn: cifData.dirDetails.ntn || '',
-              cnic: cifData.dirDetails.nic || '',
-              fatherName: cifData.dirDetails.father_name || '',
-              nationality: cifData.dirDetails.nationality || '',
-              netWorth: cifData.dirDetails.estimated_net_worth || '',
-              appointmentDate: cifData.dirDetails.date_appointment || '',
-            } : {},
-            contactDetails: {
-              phone: cifData.phone?.phone_no || '',
-              email: cifData.email?.address || '',
-              fax: cifData.fax?.fax_no || '',
-              postalAddress: cifData.postal?.address || '',
-              language: cifData.postal?.client_lang || '',
-            }
-          };
-            
-          } catch (cifError) {
-          console.error('Error fetching CIF details:', cifError);
+              } : {},
+              employmentDetails: detailData ? {
+                occupationCode: detailData.individualInfo?.occupation_code || '',
+                industry: detailData.industry || '',
+                business: detailData.business || '',
+                monthlyIncome: detailData.dirDetails?.estimated_net_worth || '',
+                estimatedNetWorth: detailData.dirDetails?.estimated_net_worth || '',
+                declaredNetWorth: detailData.dirDetails?.declared_net_worth || '',
+                assessedNetWorth: detailData.dirDetails?.assessed_net_worth || '',
+                annualSales: detailData.annualSales || '',
+                employmentStatus: 'Employed', // Default assumption for existing customers
+              } : {},
+              bankingDetails: detailData ? {
+                accountNumber: detailData.clientBanks?.actt_no || '',
+                bankName: detailData.clientBanks?.bank_name || '',
+                branchName: detailData.clientBanks?.branch || '',
+                accountType: 'Current', // Default assumption
+                isUBLCustomer: detailData.clientBanks?.bank_name === 'UBL' ? 'Yes' : 'No',
+                ublAccountNumber: detailData.clientBanks?.bank_name === 'UBL' ? detailData.clientBanks?.actt_no : '',
+              } : {},
+              nextOfKin: detailData?.relationship ? {
+                name: detailData.relationship.relate_customer_name || '',
+                relationship: detailData.relationship.relationship_type || '',
+                contactNumber: '', // Not available in CIF response
+                cnic: '', // Not available in CIF response
+              } : {},
+              cifData: detailData // Store all original fields
+            });
+          } catch (detailError) {
+            // If detailed fetch fails, just use basic info
+            setCustomerData({
+              isETB: customerResponse.isExisting,
+              customerType: customerResponse.isExisting ? 'ETB' : 'NTB',
+              customerId: customerResponse.customerId,
+              cnic: customerResponse.cnic,
+              status: customerResponse.status || '',
+            });
+          }
+        } else {
+          setCustomerData({
+            isETB: customerResponse.isExisting,
+            customerType: customerResponse.isExisting ? 'ETB' : 'NTB',
+            customerId: customerResponse.customerId,
+            cnic: customerResponse.cnic,
+            status: customerResponse.status || '',
+          });
         }
       }
-      
-      const customerInfo: CustomerData = {
-        customerId,
-        isETB: isExisting,
-        customerType: isExisting ? 'ETB' : 'NTB',
-        cnic: customerCnic,
-        status,
-        cifData: cifData || {},
-        ...autoFilledData,
-        // Initialize empty structures for NTB customers
-        personalDetails: autoFilledData.personalDetails || {},
-        addressDetails: autoFilledData.addressDetails || {},
-        employmentDetails: autoFilledData.employmentDetails || {},
-        bankingDetails: autoFilledData.bankingDetails || {},
-        referenceContacts: autoFilledData.referenceContacts || [],
-        nextOfKin: autoFilledData.nextOfKin || {}
-      };
+      // 3. Legacy or local mock API: { status, consumerId, ... }
+      else if (
+        (typeof customerResponse.status === "string" && customerResponse.consumerId) ||
+        (typeof customerResponse.status === "string" && customerResponse.customerId)
+      ) {
+        setCustomerData({
+          isETB: customerResponse.status === 'ETB',
+          customerType: customerResponse.status === 'ETB' ? 'ETB' : 'NTB',
+          customerId: customerResponse.consumerId || customerResponse.customerId,
+          cnic: cleanCnic,
+          status: customerResponse.status,
+        });
+      }
+      // 4. Fully expanded backend with all nested data (very rare but possible)
+      else if (customerResponse.cnic && customerResponse.customerId) {
+        setCustomerData({
+          isETB: true,
+          customerType: 'ETB',
+          customerId: customerResponse.customerId,
+          cnic: customerResponse.cnic,
+          status: customerResponse.status || '',
+          cifData: customerResponse, // keep all nested details
+        });
+      }
+      // 5. Fallback, nothing matched
+      else {
+        console.error("DEBUG: Unexpected backend response shape!", customerResponse);
+        throw new Error('Unexpected response format from server. Check backend or mapping logic.');
+      }
 
-      console.log('Final customerInfo object:', customerInfo);
-      setCustomerData(customerInfo);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to fetch customer data');
-      console.error('Error fetching customer data:', err);
+    } catch (error) {
+      console.error('Error checking customer status:', error);
+      setError(error instanceof Error ? error.message : 'Failed to fetch customer data');
     } finally {
       setLoading(false);
     }
@@ -419,4 +311,4 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
       {children}
     </CustomerContext.Provider>
   );
-}; 
+};

@@ -12,8 +12,17 @@ export default function ApplicantPage() {
   const [product, setProduct] = useState("")
   const [subOption, setSubOption] = useState("")
   const [cnicEntered, setCnicEntered] = useState(false)
+  const [accountType, setAccountType] = useState("")
+  const [selectedAccount, setSelectedAccount] = useState("")
   const router = useRouter()
   const { customerData, loading, error, fetchCustomerData, clearCustomerData } = useCustomer()
+
+  // Define if account type is required for the selected product
+  const requireAccountType = false // Set to true if you want to require account type for any product
+
+  // Add your account dropdowns
+  const conventionalOptions = ["Personal", "Business"]
+  const islamicOptions = ["Ameen Personal", "Ameen Business"]
 
   // Format CNIC input
   const formatCNIC = (value: string) => {
@@ -40,6 +49,8 @@ export default function ApplicantPage() {
     setCnic("")
     setProduct("")
     setSubOption("")
+    setAccountType("")
+    setSelectedAccount("")
     setCnicEntered(false)
     clearCustomerData()
   }
@@ -50,6 +61,7 @@ export default function ApplicantPage() {
     let url = `/dashboard/applicant/${product.toLowerCase()}`
     if (product === "auto" && subOption) url += `/${subOption.toLowerCase().replace(/\s/g, "-")}`
     if (product === "creditcard" && subOption) url += `/${subOption.toLowerCase().replace(/\s/g, "-")}`
+    // Add accountType and selectedAccount to url if needed, or to global state/context
     router.push(url)
   }
 
@@ -97,64 +109,107 @@ export default function ApplicantPage() {
 
           {/* Customer Info Display */}
           {customerData && (
-            <Card className="bg-blue-50 border-blue-200">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  {customerData.isETB ? (
-                    <User className="w-5 h-5 text-green-600" />
-                  ) : (
-                    <CreditCard className="w-5 h-5 text-blue-600" />
-                  )}
-                  <div>
-                    <div className="font-semibold text-lg">
-                      {customerData.isETB ? 'Existing Customer' : 'New Customer'}
+            <>
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    {customerData.isETB ? (
+                      <User className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <CreditCard className="w-5 h-5 text-blue-600" />
+                    )}
+                    <div>
+                      <div className="font-semibold text-lg">
+                        {customerData.isETB ? 'Existing Customer' : 'New Customer'}
+                      </div>
+                      <div className="text-sm text-gray-600">Customer ID: {customerData.customerId}</div>
                     </div>
-                    <div className="text-sm text-gray-600">Customer ID: {customerData.customerId}</div>
                   </div>
-                </div>
-                
-                {customerData.personalDetails && (
-                  <div className="space-y-2 text-sm">
-                    {customerData.personalDetails.fullName && (
-                      <div><span className="font-medium">Name:</span> {customerData.personalDetails.fullName}</div>
-                    )}
-                    {customerData.personalDetails.fatherName && (
-                      <div><span className="font-medium">Father's Name:</span> {customerData.personalDetails.fatherName}</div>
-                    )}
-                    {customerData.personalDetails.dateOfBirth && (
-                      <div><span className="font-medium">Date of Birth:</span> {new Date(customerData.personalDetails.dateOfBirth).toLocaleDateString()}</div>
-                    )}
-                    {customerData.personalDetails.mobileNumber && (
-                      <div><span className="font-medium">Mobile:</span> {customerData.personalDetails.mobileNumber}</div>
-                    )}
-                    {customerData.personalDetails.email && (
-                      <div><span className="font-medium">Email:</span> {customerData.personalDetails.email}</div>
-                    )}
-                    {customerData.addressDetails?.currentAddress?.fullAddress && (
-                      <div><span className="font-medium">Address:</span> {customerData.addressDetails.currentAddress.fullAddress}</div>
-                    )}
+                  {customerData.personalDetails && (
+                    <div className="space-y-2 text-sm">
+                      {customerData.personalDetails.fullName && (
+                        <div><span className="font-medium">Name:</span> {customerData.personalDetails.fullName}</div>
+                      )}
+                      {customerData.personalDetails.fatherName && (
+                        <div><span className="font-medium">Father's Name:</span> {customerData.personalDetails.fatherName}</div>
+                      )}
+                      {customerData.personalDetails.dateOfBirth && (
+                        <div><span className="font-medium">Date of Birth:</span> {new Date(customerData.personalDetails.dateOfBirth).toLocaleDateString()}</div>
+                      )}
+                      {customerData.personalDetails.mobileNumber && (
+                        <div><span className="font-medium">Mobile:</span> {customerData.personalDetails.mobileNumber}</div>
+                      )}
+                      {customerData.personalDetails.email && (
+                        <div><span className="font-medium">Email:</span> {customerData.personalDetails.email}</div>
+                      )}
+                      {customerData.addressDetails?.currentAddress?.fullAddress && (
+                        <div><span className="font-medium">Address:</span> {customerData.addressDetails.currentAddress.fullAddress}</div>
+                      )}
+                    </div>
+                  )}
+                  <div className="mt-3 flex justify-between items-center">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      customerData.isETB 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {customerData.isETB ? 'Data will be pre-filled' : 'Manual data entry required'}
+                    </span>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleReset}
+                      className="text-xs"
+                    >
+                      Reset
+                    </Button>
                   </div>
-                )}
-                
-                <div className="mt-3 flex justify-between items-center">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    customerData.isETB 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-blue-100 text-blue-800'
-                  }`}>
-                    {customerData.isETB ? 'Data will be pre-filled' : 'Manual data entry required'}
-                  </span>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleReset}
-                    className="text-xs"
+                </CardContent>
+              </Card>
+
+              {/* --- BEAUTIFUL BUTTONS + DROPDOWN HERE --- */}
+              <div className="flex gap-4 mt-6 justify-center">
+                <Button
+                  type="button"
+                  variant={accountType === "conventional" ? "default" : "outline"}
+                  className={`w-1/4 px-6 py-2 rounded-full text-base shadow ${accountType === "conventional" ? " text-white" : ""}`}
+                  onClick={() => {
+                    setAccountType("conventional")
+                    setSelectedAccount("")
+                  }}
+                >
+                  Conventional
+                </Button>
+                <Button
+                  type="button"
+                  variant={accountType === "islamic" ? "default" : "outline"}
+                  className={`w-1/4 px-6 py-2 rounded-full text-base shadow ${accountType === "islamic" ? " text-white" : ""}`}
+                  onClick={() => {
+                    setAccountType("islamic")
+                    setSelectedAccount("")
+                  }}
+                >
+                  Islamic
+                </Button>
+              </div>
+              {/* {accountType && (
+                <div className="mt-5">
+                  <label className="block text-sm font-medium mb-1">
+                    {accountType === "conventional" ? "Conventional Account Type" : "Islamic Account Type"}
+                  </label>
+                  <select
+                    className="w-full rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-gray-50 px-4 py-2 text-base shadow transition"
+                    value={selectedAccount}
+                    onChange={e => setSelectedAccount(e.target.value)}
                   >
-                    Reset
-                  </Button>
+                    <option value="">Select...</option>
+                    {(accountType === "conventional" ? conventionalOptions : islamicOptions).map(opt => (
+                      <option value={opt} key={opt}>{opt}</option>
+                    ))}
+                  </select>
                 </div>
-              </CardContent>
-            </Card>
+              )} */}
+            </>
           )}
 
           {/* Product Dropdown */}
@@ -169,7 +224,7 @@ export default function ApplicantPage() {
               }}
             >
               <option value="">Select...</option>
-              <option value="auto">Auto</option>
+              <option value="auto">Auto Loan</option>
               <option value="creditcard">Credit Card</option>
               <option value="cashplus">Cashplus</option>
               <option value="ameendrive">Ameen Drive</option>
@@ -186,7 +241,7 @@ export default function ApplicantPage() {
                 onChange={e => setSubOption(e.target.value)}
               >
                 <option value="">Select...</option>
-                <option value="Autoloans">Auto loans</option>
+                <option value="Autoloans">Auto's</option>
                 <option value="Financial Vehicles">Financial Vehicles</option>
                 <option value="SME Loans">SME Loans</option>
               </select>
@@ -196,50 +251,29 @@ export default function ApplicantPage() {
           {product === "creditcard" && (
             <div>
               <label className="block text-sm font-medium mb-2">Credit Card Type</label>
-              <div className="flex gap-8">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="creditcard-type"
-                    value="Credit Card"
-                    checked={subOption === "Credit Card"}
-                    onChange={e => setSubOption(e.target.value)}
-                  />
-                  Credit Card
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="creditcard-type"
-                    value="Platinum Credit Card"
-                    checked={subOption === "Platinum Credit Card"}
-                    onChange={e => setSubOption(e.target.value)}
-                  />
-                  Platinum Credit Card
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="creditcard-type"
-                    value="Gold Credit Card"
-                    checked={subOption === "Gold Credit Card"}
-                    onChange={e => setSubOption(e.target.value)}
-                  />
-                  Gold Credit Card
-                </label>
-              </div>
+              <select
+                className="w-full rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-gray-50 px-4 py-2 text-base shadow transition"
+                value={subOption}
+                onChange={e => setSubOption(e.target.value)}
+              >
+                <option value="">Select...</option>
+                <option value="Credit Card">ClassicCard</option>
+                <option value="Gold Credit Card">Gold Credit Card</option>
+                <option value="Platinum Credit Card">Platinum Credit Card</option>
+              </select>
             </div>
           )}
 
           {/* Next Button */}
-          <Button
+            <Button
             className="w-full mt-4"
             disabled={
               !cnic ||
               !product ||
               !customerData ||
               loading ||
-              ((product === "auto" || product === "creditcard") && !subOption)
+              ((product === "auto" || product === "creditcard") && !subOption) ||
+              (requireAccountType && (!accountType || !selectedAccount))
             }
             onClick={handleNext}
             type="button"
@@ -256,7 +290,7 @@ export default function ApplicantPage() {
               </>
             )}
           </Button>
-          
+
           {/* Help text for Next button */}
           {!customerData && cnic.length === 15 && !loading && (
             <div className="text-sm text-gray-600 mt-2 text-center">

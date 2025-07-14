@@ -1,131 +1,358 @@
-// components/forms/CreditCardAddressForm.tsx
-export const CreditCardAddressForm = () => (
-  <section className="mb-10">
-    <h3 className="text-2xl font-bold text-primary mb-6">4. Address Details (CBS)</h3>
-    {/* A. Current Residential Address */}
-    <div>
-      <h4 className="text-2xl font-bold text-primary mb-6">A. Current Residential Address</h4>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div>
-          <label className="block text-sm font-medium mb-1">House/Apt</label>
-          <input type="text" className="w-full rounded-xl border border-gray-300 px-4 py-2" placeholder="House/Apt" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Street</label>
-          <input type="text" className="w-full rounded-xl border border-gray-300 px-4 py-2" placeholder="Street" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Tehsil / District</label>
-          <input type="text" className="w-full rounded-xl border border-gray-300 px-4 py-2" placeholder="Tehsil / District" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Nearest Landmark</label>
-          <input type="text" className="w-full rounded-xl border border-gray-300 px-4 py-2" placeholder="Nearest Landmark" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">City</label>
-          <input type="text" className="w-full rounded-xl border border-gray-300 px-4 py-2" placeholder="City" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Postal Code</label>
-          <input type="text" className="w-full rounded-xl border border-gray-300 px-4 py-2" placeholder="Postal Code" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Telephone (Res)</label>
-          <input type="text" className="w-full rounded-xl border border-gray-300 px-4 py-2" placeholder="Telephone (Res)" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Mobile</label>
-          <input type="text" className="w-full rounded-xl border border-gray-300 px-4 py-2" placeholder="Mobile" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">NTN</label>
-          <input type="text" className="w-full rounded-xl border border-gray-300 px-4 py-2" placeholder="NTN" />
-        </div>
-        {/* Type of Residence */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Type of Residence</label>
-          <div className="flex gap-6 mt-2">
-            <label className="flex items-center gap-2"><input type="checkbox" /> House</label>
-            <label className="flex items-center gap-2"><input type="checkbox" /> Apartment</label>
-          </div>
-        </div>
-        {/* Nature of Residence */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Nature of Residence</label>
-          <div className="flex flex-wrap gap-4 mt-2">
-            <label className="flex items-center gap-2"><input type="checkbox" /> Owned</label>
-            <label className="flex items-center gap-2"><input type="checkbox" /> Rented</label>
-            <label className="flex items-center gap-2"><input type="checkbox" /> Parents</label>
-            <label className="flex items-center gap-2"><input type="checkbox" /> Mortgaged</label>
-            <label className="flex items-center gap-2"><input type="checkbox" /> Company Property</label>
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Residing Since</label>
-          <input type="text" className="w-full rounded-xl border border-gray-300 px-4 py-2" placeholder="Residing Since" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Email</label>
-          <input type="email" className="w-full rounded-xl border border-gray-300 px-4 py-2" placeholder="Email" />
-        </div>
-      </div>
-    </div>
+"use client";
+import React, { useEffect, useState } from "react";
+import { useCustomer } from "@/contexts/CustomerContext";
 
-    {/* B. Permanent Address */}
-    <div className="mt-10">
-      <h4 className="text-2xl font-bold text-primary mb-6">B. Permanent Address</h4>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div>
-          <label className="block text-sm font-medium mb-1">Street</label>
-          <input type="text" className="w-full rounded-xl border border-gray-300 px-4 py-2" placeholder="Street" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Tehsil / District</label>
-          <input type="text" className="w-full rounded-xl border border-gray-300 px-4 py-2" placeholder="Tehsil / District" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Nearest Landmark</label>
-          <input type="text" className="w-full rounded-xl border border-gray-300 px-4 py-2" placeholder="Nearest Landmark" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">City</label>
-          <input type="text" className="w-full rounded-xl border border-gray-300 px-4 py-2" placeholder="City" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Postal Code</label>
-          <input type="text" className="w-full rounded-xl border border-gray-300 px-4 py-2" placeholder="Postal Code" />
-        </div>
-      </div>
-    </div>
+// Helper for highlight classes
+const getFieldClasses = (field: string, prefilled: Set<string>) =>
+  `w-full rounded-xl border border-gray-300 px-4 py-2 ${
+    prefilled.has(field) ? "bg-yellow-50 border-yellow-300" : "bg-white"
+  }`;
 
-    {/* Car Details */}
-    <div className="mt-10">
-      <h4 className="text-base font-semibold mb-2">Car Details (If Applicable)</h4>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div>
-          <label className="block text-sm font-medium mb-1">Car Year</label>
-          <input type="number" className="w-full rounded-xl border border-gray-300 px-4 py-2" placeholder="Year" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Model</label>
-          <input type="text" className="w-full rounded-xl border border-gray-300 px-4 py-2" placeholder="Model" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Registration #</label>
-          <input type="text" className="w-full rounded-xl border border-gray-300 px-4 py-2" placeholder="Registration #" />
-        </div>
-        {/* Ownership */}
-        <div className="md:col-span-3">
-          <label className="block text-sm font-medium mb-1">Ownership</label>
-          <div className="flex flex-wrap gap-4 mt-2">
-            <label className="flex items-center gap-2"><input type="checkbox" /> Owned</label>
-            <label className="flex items-center gap-2"><input type="checkbox" /> Leased</label>
-            <label className="flex items-center gap-2"><input type="checkbox" /> Company</label>
-            <label className="flex items-center gap-2"><input type="checkbox" /> N/A</label>
+export const CreditCardAddressForm = () => {
+  const { customerData } = useCustomer();
+
+  // Extract address data from backend
+  const postal = customerData?.cifData?.postal || {};
+  const email = customerData?.cifData?.email || {};
+  const phone = customerData?.cifData?.phone || {};
+  const individualInfo = customerData?.cifData?.individualInfo || {};
+
+  // Default state
+  const [formData, setFormData] = useState({
+    houseApt: "",
+    street: "",
+    tehsil: "",
+    landmark: "",
+    city: "",
+    postalCode: "",
+    telephoneRes: "",
+    mobile: "",
+    ntn: "",
+    residenceType: "",     // House/Apartment
+    natureOfResidence: "", // Owned/Rented etc
+    residingSince: "",
+    email: "",
+    // Permanent
+    pStreet: "",
+    pTehsil: "",
+    pLandmark: "",
+    pCity: "",
+    pPostalCode: "",
+    // Car
+    carYear: "",
+    carModel: "",
+    carReg: "",
+    carOwnership: "",
+  });
+  console.log("Initial Form Data==>:", customerData?.cifData?.dirDetails.ntn);
+
+  // Track which fields are prefilled
+  const [prefilled, setPrefilled] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const pf = new Set<string>();
+    const f = { ...formData };
+
+    // --- CURRENT ADDRESS ---
+    // Try to parse house/apt/street from postal.address if it looks like comma separated
+    if (postal.address) {
+      // Example: "VPO THANA MOH:BADAM BAGHCHA TEH:BATKHELA MALAKAND THANA"
+      const addressParts = postal.address.split(",");
+      if (addressParts.length >= 2) {
+        f.houseApt = addressParts[0]?.trim();
+        f.street = addressParts[1]?.trim();
+        pf.add("houseApt");
+        pf.add("street");
+      } else {
+        // Fallback, put all in street
+        f.street = postal.address;
+        pf.add("street");
+      }
+    }
+    if (postal.tehsil) { f.tehsil = postal.tehsil; pf.add("tehsil"); }
+    if (customerData?.cifData.city || individualInfo.city) {
+      f.city = customerData?.cifData.city || individualInfo.city; pf.add("city");
+    }
+    if (postal.postal_code) { f.postalCode = postal.postal_code; pf.add("postalCode"); }
+    if (postal.landmark) { f.landmark = postal.landmark; pf.add("landmark"); }
+    if (phone.phone_no) { f.telephoneRes = phone.phone_no; pf.add("telephoneRes"); }
+    if (customerData?.cifData?.mobile) { f.mobile = customerData.cifData.mobile; pf.add("mobile"); }
+    // Mobile fallback: try phone.phone_no if not set
+    if (!f.mobile && phone.phone_no) { f.mobile = phone.phone_no; pf.add("mobile"); }
+    if (customerData?.cifData?.dirDetails.ntn) { f.ntn = customerData.cifData.dirDetails.ntn; pf.add("ntn"); }
+    if (email.address) { f.email = email.address; pf.add("email"); }
+    // TODO: ResidenceType/NatureOfResidence/ResidingSince if available
+
+    // --- PERMANENT ADDRESS ---
+    // If you have a separate permanent address key, use it here. For demo, we copy from postal.
+    if (postal.permanent_street) { f.pStreet = postal.permanent_street; pf.add("pStreet"); }
+    if (postal.permanent_tehsil) { f.pTehsil = postal.permanent_tehsil; pf.add("pTehsil"); }
+    if (postal.permanent_landmark) { f.pLandmark = postal.permanent_landmark; pf.add("pLandmark"); }
+    if (customerData?.cifData?.city) { f.pCity = customerData.cifData.city; pf.add("City"); }
+    if (postal.permanent_postal_code) { f.pPostalCode = postal.permanent_postal_code; pf.add("pPostalCode"); }
+
+    setFormData(f);
+    setPrefilled(pf);
+    // eslint-disable-next-line
+  }, [customerData]);
+
+  // Handler for controlled fields
+  const handleChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  return (
+    <section className="mb-10">
+      <h3 className="text-2xl font-bold text-primary mb-6">4. Address Details (CBS)</h3>
+      {/* A. Current Residential Address */}
+      <div>
+        <h4 className="text-2xl font-bold text-primary mb-6">A. Current Residential Address</h4>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <label className="block text-sm font-medium mb-1">House/Apt</label>
+            <input
+              type="text"
+              className={getFieldClasses("houseApt", prefilled)}
+              value={formData.houseApt}
+              placeholder="House/Apt"
+              onChange={e => handleChange("houseApt", e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Street</label>
+            <input
+              type="text"
+              className={getFieldClasses("street", prefilled)}
+              value={formData.street}
+              placeholder="Street"
+              onChange={e => handleChange("street", e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Tehsil / District</label>
+            <input
+              type="text"
+              className={getFieldClasses("tehsil", prefilled)}
+              value={formData.tehsil}
+              placeholder="Tehsil / District"
+              onChange={e => handleChange("tehsil", e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Nearest Landmark</label>
+            <input
+              type="text"
+              className={getFieldClasses("landmark", prefilled)}
+              value={formData.landmark}
+              placeholder="Nearest Landmark"
+              onChange={e => handleChange("landmark", e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">City</label>
+            <input
+              type="text"
+              className={getFieldClasses("city", prefilled)}
+              value={formData.city}
+              placeholder="City"
+              onChange={e => handleChange("city", e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Postal Code</label>
+            <input
+              type="text"
+              className={getFieldClasses("postalCode", prefilled)}
+              value={formData.postalCode}
+              placeholder="Postal Code"
+              onChange={e => handleChange("postalCode", e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Telephone (Res)</label>
+            <input
+              type="text"
+              className={getFieldClasses("telephoneRes", prefilled)}
+              value={formData.telephoneRes}
+              placeholder="Telephone (Res)"
+              onChange={e => handleChange("telephoneRes", e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Mobile</label>
+            <input
+              type="text"
+              className={getFieldClasses("mobile", prefilled)}
+              value={formData.mobile}
+              placeholder="Mobile"
+              onChange={e => handleChange("mobile", e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">NTN</label>
+            <input
+              type="text"
+              className={getFieldClasses("ntn", prefilled)}
+              value={formData.ntn}
+              placeholder="NTN"
+              onChange={e => handleChange("ntn", e.target.value)}
+            />
+          </div>
+          {/* Residence/Nature checkboxes could be mapped if backend provides this data */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Type of Residence</label>
+            <div className="flex gap-6 mt-2">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" checked={formData.residenceType === "House"} onChange={() => handleChange("residenceType", "House")} />
+                House
+              </label>
+              <label className="flex items-center gap-2">
+                <input type="checkbox" checked={formData.residenceType === "Apartment"} onChange={() => handleChange("residenceType", "Apartment")} />
+                Apartment
+              </label>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Nature of Residence</label>
+            <div className="flex flex-wrap gap-4 mt-2">
+              {["Owned", "Rented", "Parents", "Mortgaged", "Company Property"].map(option => (
+                <label key={option} className="flex items-center gap-2">
+                  <input type="checkbox" checked={formData.natureOfResidence === option} onChange={() => handleChange("natureOfResidence", option)} />
+                  {option}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Residing Since</label>
+            <input
+              type="text"
+              className={getFieldClasses("residingSince", prefilled)}
+              value={formData.residingSince}
+              placeholder="Residing Since"
+              onChange={e => handleChange("residingSince", e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Email</label>
+            <input
+              type="email"
+              className={getFieldClasses("email", prefilled)}
+              value={formData.email}
+              placeholder="Email"
+              onChange={e => handleChange("email", e.target.value)}
+            />
           </div>
         </div>
       </div>
-    </div>
-  </section>
-);
+
+      {/* B. Permanent Address */}
+      <div className="mt-10">
+        <h4 className="text-2xl font-bold text-primary mb-6">B. Permanent Address</h4>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <label className="block text-sm font-medium mb-1">Street</label>
+              <input
+              type="text"
+              className={getFieldClasses("street", prefilled)}
+              value={formData.street}
+              placeholder="Street"
+              onChange={e => handleChange("street", e.target.value)}
+            />
+            {/* <input
+              type="text"
+              className={getFieldClasses("pStreet", prefilled)}
+              value={formData.pStreet}
+              placeholder="Street"
+              onChange={e => handleChange("pStreet", e.target.value)}
+            /> */}
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Tehsil / District</label>
+            <input
+              type="text"
+              className={getFieldClasses("pTehsil", prefilled)}
+              value={formData.pTehsil}
+              placeholder="Tehsil / District"
+              onChange={e => handleChange("pTehsil", e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Nearest Landmark</label>
+            <input
+              type="text"
+              className={getFieldClasses("pLandmark", prefilled)}
+              value={formData.pLandmark}
+              placeholder="Nearest Landmark"
+              onChange={e => handleChange("pLandmark", e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">City</label>
+               <input
+              type="text"
+              className={getFieldClasses("city", prefilled)}
+              value={formData.city}
+              placeholder="City"
+              onChange={e => handleChange("city", e.target.value)}
+            />
+            {/* <input
+              type="text"
+              className={getFieldClasses("pCity", prefilled)}
+              value={formData.pCity}
+              placeholder="City"
+              onChange={e => handleChange("pCity", e.target.value)}
+            /> */}
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Postal Code</label>
+              <input
+              type="text"
+              className={getFieldClasses("postalCode", prefilled)}
+              value={formData.postalCode}
+              placeholder="Postal Code"
+              onChange={e => handleChange("postalCode", e.target.value)}
+            />
+            {/* <input
+              type="text"
+              className={getFieldClasses("pPostalCode", prefilled)}
+              value={formData.pPostalCode}
+              placeholder="Postal Code"
+              onChange={e => handleChange("pPostalCode", e.target.value)}
+            /> */}
+          </div>
+        </div>
+      </div>
+
+      {/* Car Details (left blank - can be attached if you get backend car info) */}
+      <div className="mt-10">
+        <h4 className="text-base font-semibold mb-2">Car Details (If Applicable)</h4>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <label className="block text-sm font-medium mb-1">Car Year</label>
+            <input type="number" className={getFieldClasses("carYear", prefilled)} value={formData.carYear} onChange={e => handleChange("carYear", e.target.value)} placeholder="Year" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Model</label>
+            <input type="text" className={getFieldClasses("carModel", prefilled)} value={formData.carModel} onChange={e => handleChange("carModel", e.target.value)} placeholder="Model" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Registration #</label>
+            <input type="text" className={getFieldClasses("carReg", prefilled)} value={formData.carReg} onChange={e => handleChange("carReg", e.target.value)} placeholder="Registration #" />
+          </div>
+          <div className="md:col-span-3">
+            <label className="block text-sm font-medium mb-1">Ownership</label>
+            <div className="flex flex-wrap gap-4 mt-2">
+              {["Owned", "Leased", "Company", "N/A"].map(option => (
+                <label key={option} className="flex items-center gap-2">
+                  <input type="checkbox" checked={formData.carOwnership === option} onChange={() => handleChange("carOwnership", option)} />
+                  {option}
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};

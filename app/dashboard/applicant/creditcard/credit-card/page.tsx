@@ -22,6 +22,7 @@ import { useRouter } from 'next/navigation';
 
 export default function CreditCardApplicationPage() {
   const { customerData } = useCustomer();
+  console.log("Customer Data: Credit card==> ", customerData?.cifData.customerId);
   const router = useRouter();
 
   if (!customerData) {
@@ -56,7 +57,7 @@ export default function CreditCardApplicationPage() {
                 </h2>
                 <div className="flex items-center gap-4 mt-2">
                   <span className="text-lg font-semibold text-gray-700">
-                    Consumer ID: {customerData.consumerId}
+                    Consumer ID: {customerData?.cifData?.customerId || 'N/A'}
                   </span>
                   <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                     customerData.isETB 

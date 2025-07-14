@@ -64,11 +64,13 @@ export const PersonalDetailsForm = () => {
   const [prefilledFields, setPrefilledFields] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (customerData?.personalDetails) {
-      const prefilled = new Set<string>();
-      const newFormData = { ...formData };
-      
-      // Map customer data to form fields
+    if (!customerData) return;
+
+    const prefilled = new Set<string>();
+    const newFormData = { ...formData };
+
+    // Personal Details
+    if (customerData.personalDetails) {
       if (customerData.personalDetails.title) {
         newFormData.title = customerData.personalDetails.title;
         prefilled.add('title');
@@ -94,26 +96,9 @@ export const PersonalDetailsForm = () => {
         prefilled.add('ntn');
       }
       if (customerData.personalDetails.dateOfBirth) {
-        // Format date for input field (YYYY-MM-DD)
         const formattedDate = new Date(customerData.personalDetails.dateOfBirth).toISOString().split('T')[0];
         newFormData.dateOfBirth = formattedDate;
         prefilled.add('dateOfBirth');
-      }
-      if (customerData.personalDetails.passportNumber) {
-        newFormData.passportNumber = customerData.personalDetails.passportNumber;
-        prefilled.add('passportNumber');
-      }
-      if (customerData.personalDetails.education) {
-        newFormData.education = customerData.personalDetails.education;
-        prefilled.add('education');
-      }
-      if (customerData.personalDetails.motherName) {
-        newFormData.motherName = customerData.personalDetails.motherName;
-        prefilled.add('motherName');
-      }
-      if (customerData.personalDetails.fatherName) {
-        newFormData.fatherName = customerData.personalDetails.fatherName;
-        prefilled.add('fatherName');
       }
       if (customerData.personalDetails.gender) {
         newFormData.gender = customerData.personalDetails.gender;
@@ -123,9 +108,29 @@ export const PersonalDetailsForm = () => {
         newFormData.maritalStatus = customerData.personalDetails.maritalStatus;
         prefilled.add('maritalStatus');
       }
-      if (customerData.personalDetails.occupationCode) {
-        newFormData.occupationCode = customerData.personalDetails.occupationCode;
-        prefilled.add('occupationCode');
+      if (customerData.personalDetails.numberOfChildren) {
+        newFormData.numberOfChildren = customerData.personalDetails.numberOfChildren.toString();
+        prefilled.add('numberOfChildren');
+      }
+      if (customerData.personalDetails.numberOfDependents) {
+        newFormData.numberOfDependents = customerData.personalDetails.numberOfDependents.toString();
+        prefilled.add('numberOfDependents');
+      }
+      if (customerData.personalDetails.education) {
+        newFormData.education = customerData.personalDetails.education;
+        prefilled.add('education');
+      }
+      if (customerData.personalDetails.fatherName) {
+        newFormData.fatherName = customerData.personalDetails.fatherName;
+        prefilled.add('fatherName');
+      }
+      if (customerData.personalDetails.motherName) {
+        newFormData.motherName = customerData.personalDetails.motherName;
+        prefilled.add('motherName');
+      }
+      if (customerData.personalDetails.passportNumber) {
+        newFormData.passportNumber = customerData.personalDetails.passportNumber;
+        prefilled.add('passportNumber');
       }
       if (customerData.personalDetails.nationality) {
         newFormData.nationality = customerData.personalDetails.nationality;
@@ -135,161 +140,120 @@ export const PersonalDetailsForm = () => {
         newFormData.placeOfBirth = customerData.personalDetails.placeOfBirth;
         prefilled.add('placeOfBirth');
       }
-      if (customerData.personalDetails.numberOfChildren) {
-        newFormData.numberOfChildren = customerData.personalDetails.numberOfChildren.toString();
-        prefilled.add('numberOfChildren');
-      }
-      if (customerData.personalDetails.numberOfDependents) {
-        newFormData.numberOfDependents = customerData.personalDetails.numberOfDependents.toString();
-        prefilled.add('numberOfDependents');
-      }
-      if (customerData.personalDetails.mobileNumber) {
-        newFormData.currentMobile = customerData.personalDetails.mobileNumber;
-        prefilled.add('currentMobile');
-      }
-      if (customerData.personalDetails.email) {
-        newFormData.currentEmail = customerData.personalDetails.email;
-        prefilled.add('currentEmail');
-      }
-      
-      // Next of Kin
-      if (customerData.nextOfKin?.name) {
+    }
+
+    // Next of Kin
+    if (customerData.nextOfKin) {
+      if (customerData.nextOfKin.name) {
         newFormData.nextOfKin = customerData.nextOfKin.name;
         prefilled.add('nextOfKin');
       }
-      if (customerData.nextOfKin?.relationship) {
-        newFormData.nextOfKinRelation = customerData.nextOfKin.relationship;
+      if (customerData.nextOfKin.relation) {
+        newFormData.nextOfKinRelation = customerData.nextOfKin.relation;
         prefilled.add('nextOfKinRelation');
       }
-      if (customerData.nextOfKin?.cnic) {
+      if (customerData.nextOfKin.cnic) {
         newFormData.nextOfKinCnic = customerData.nextOfKin.cnic;
         prefilled.add('nextOfKinCnic');
       }
-      if (customerData.nextOfKin?.contactNumber) {
-        newFormData.nextOfKinContact = customerData.nextOfKin.contactNumber;
+      if (customerData.nextOfKin.contact) {
+        newFormData.nextOfKinContact = customerData.nextOfKin.contact;
         prefilled.add('nextOfKinContact');
       }
-      
-      // Employment Details
-      if (customerData.employmentDetails?.occupationCode) {
-        newFormData.occupationCode = customerData.employmentDetails.occupationCode;
-        prefilled.add('occupationCode');
-      }
-      if (customerData.employmentDetails?.industry) {
-        newFormData.industry = customerData.employmentDetails.industry;
-        prefilled.add('industry');
-      }
-      if (customerData.employmentDetails?.business) {
-        newFormData.business = customerData.employmentDetails.business;
-        prefilled.add('business');
-      }
-      if (customerData.employmentDetails?.employmentStatus) {
-        newFormData.employmentStatus = customerData.employmentDetails.employmentStatus;
-        prefilled.add('employmentStatus');
-      }
-      
-      // Banking Details
-      if (customerData.bankingDetails?.accountNumber) {
-        newFormData.bankAccount = customerData.bankingDetails.accountNumber;
-        prefilled.add('bankAccount');
-      }
-      if (customerData.bankingDetails?.bankName) {
-        newFormData.bankName = customerData.bankingDetails.bankName;
-        prefilled.add('bankName');
-      }
-      if (customerData.bankingDetails?.branchName) {
-        newFormData.branchName = customerData.bankingDetails.branchName;
-        prefilled.add('branchName');
-      }
-      if (customerData.bankingDetails?.isUBLCustomer) {
-        newFormData.isUBLCustomer = customerData.bankingDetails.isUBLCustomer;
-        prefilled.add('isUBLCustomer');
-      }
-      if (customerData.bankingDetails?.ublAccountNumber) {
-        newFormData.ublAccountNumber = customerData.bankingDetails.ublAccountNumber;
-        prefilled.add('ublAccountNumber');
-      }
-      
-      // Address Details
-      if (customerData.addressDetails?.currentAddress) {
-        const currentAddr = customerData.addressDetails.currentAddress;
-        if (currentAddr.houseNo) {
-          newFormData.currentHouseNo = currentAddr.houseNo;
-          prefilled.add('currentHouseNo');
-        }
-        if (currentAddr.street) {
-          newFormData.currentStreet = currentAddr.street;
-          prefilled.add('currentStreet');
-        }
-        if (currentAddr.area) {
-          newFormData.currentArea = currentAddr.area;
-          prefilled.add('currentArea');
-        }
-        if (currentAddr.nearestLandmark) {
-          newFormData.currentLandmark = currentAddr.nearestLandmark;
-          prefilled.add('currentLandmark');
-        }
-        if (currentAddr.city) {
-          newFormData.currentCity = currentAddr.city;
-          prefilled.add('currentCity');
-        }
-        if (currentAddr.country) {
-          newFormData.currentCountry = currentAddr.country;
-          prefilled.add('currentCountry');
-        }
-        if (currentAddr.postalCode) {
-          newFormData.currentPostalCode = currentAddr.postalCode;
-          prefilled.add('currentPostalCode');
-        }
-        if (currentAddr.residentialStatus) {
-          newFormData.residentialStatus = currentAddr.residentialStatus;
-          prefilled.add('residentialStatus');
-        }
-        if (currentAddr.monthlyRent && currentAddr.monthlyRent > 0) {
-          newFormData.monthlyRent = currentAddr.monthlyRent.toString();
-          prefilled.add('monthlyRent');
-        }
-        if (currentAddr.yearsAtAddress && currentAddr.yearsAtAddress > 0) {
-          newFormData.yearsAtAddress = currentAddr.yearsAtAddress.toString();
-          prefilled.add('yearsAtAddress');
-        }
-        if (currentAddr.yearsInCity && currentAddr.yearsInCity > 0) {
-          newFormData.yearsInCity = currentAddr.yearsInCity.toString();
-          prefilled.add('yearsInCity');
-        }
-      }
-      
-      if (customerData.addressDetails?.permanentAddress) {
-        const permAddr = customerData.addressDetails.permanentAddress;
-        if (permAddr.houseNo) {
-          newFormData.permanentHouseNo = permAddr.houseNo;
-          prefilled.add('permanentHouseNo');
-        }
-        if (permAddr.street) {
-          newFormData.permanentStreet = permAddr.street;
-          prefilled.add('permanentStreet');
-        }
-        if (permAddr.area) {
-          newFormData.permanentArea = permAddr.area;
-          prefilled.add('permanentArea');
-        }
-        if (permAddr.city) {
-          newFormData.permanentCity = permAddr.city;
-          prefilled.add('permanentCity');
-        }
-        if (permAddr.country) {
-          newFormData.permanentCountry = permAddr.country;
-          prefilled.add('permanentCountry');
-        }
-        if (permAddr.postalCode) {
-          newFormData.permanentPostalCode = permAddr.postalCode;
-          prefilled.add('permanentPostalCode');
-        }
-      }
-      
-      setFormData(newFormData);
-      setPrefilledFields(prefilled);
     }
+
+    // Current Address
+    if (customerData.addressDetails?.currentAddress) {
+      const currentAddr = customerData.addressDetails.currentAddress;
+      if (currentAddr.houseNo) {
+        newFormData.currentHouseNo = currentAddr.houseNo;
+        prefilled.add('currentHouseNo');
+      }
+      if (currentAddr.street) {
+        newFormData.currentStreet = currentAddr.street;
+        prefilled.add('currentStreet');
+      }
+      if (currentAddr.area) {
+        newFormData.currentArea = currentAddr.area;
+        prefilled.add('currentArea');
+      }
+      if (currentAddr.landmark) {
+        newFormData.currentLandmark = currentAddr.landmark;
+        prefilled.add('currentLandmark');
+      }
+      if (currentAddr.city) {
+        newFormData.currentCity = currentAddr.city;
+        prefilled.add('currentCity');
+      }
+      if (currentAddr.country) {
+        newFormData.currentCountry = currentAddr.country;
+        prefilled.add('currentCountry');
+      }
+      if (currentAddr.postalCode) {
+        newFormData.currentPostalCode = currentAddr.postalCode;
+        prefilled.add('currentPostalCode');
+      }
+      if (currentAddr.telephone) {
+        newFormData.currentTelephone = currentAddr.telephone;
+        prefilled.add('currentTelephone');
+      }
+      if (currentAddr.mobile) {
+        newFormData.currentMobile = currentAddr.mobile;
+        prefilled.add('currentMobile');
+      }
+      if (currentAddr.email) {
+        newFormData.currentEmail = currentAddr.email;
+        prefilled.add('currentEmail');
+      }
+      if (currentAddr.yearsAtAddress) {
+        newFormData.yearsAtAddress = currentAddr.yearsAtAddress.toString();
+        prefilled.add('yearsAtAddress');
+      }
+      if (currentAddr.yearsInCity) {
+        newFormData.yearsInCity = currentAddr.yearsInCity.toString();
+        prefilled.add('yearsInCity');
+      }
+      if (currentAddr.residentialStatus) {
+        newFormData.residentialStatus = currentAddr.residentialStatus;
+        prefilled.add('residentialStatus');
+      }
+      if (currentAddr.monthlyRent) {
+        newFormData.monthlyRent = currentAddr.monthlyRent.toString();
+        prefilled.add('monthlyRent');
+      }
+    }
+
+    // Permanent Address
+    if (customerData.addressDetails?.permanentAddress) {
+      const permAddr = customerData.addressDetails.permanentAddress;
+      if (permAddr.houseNo) {
+        newFormData.permanentHouseNo = permAddr.houseNo;
+        prefilled.add('permanentHouseNo');
+      }
+      if (permAddr.street) {
+        newFormData.permanentStreet = permAddr.street;
+        prefilled.add('permanentStreet');
+      }
+      if (permAddr.area) {
+        newFormData.permanentArea = permAddr.area;
+        prefilled.add('permanentArea');
+      }
+      if (permAddr.city) {
+        newFormData.permanentCity = permAddr.city;
+        prefilled.add('permanentCity');
+      }
+      if (permAddr.country) {
+        newFormData.permanentCountry = permAddr.country;
+        prefilled.add('permanentCountry');
+      }
+      if (permAddr.postalCode) {
+        newFormData.permanentPostalCode = permAddr.postalCode;
+        prefilled.add('permanentPostalCode');
+      }
+    }
+
+    setFormData(newFormData);
+    setPrefilledFields(prefilled);
   }, [customerData]);
 
   const handleInputChange = (field: string, value: string) => {
@@ -297,16 +261,17 @@ export const PersonalDetailsForm = () => {
   };
 
   const getFieldClasses = (fieldName: string) => {
-    const baseClasses = "w-full rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 px-4 py-2 text-base shadow-sm transition placeholder:text-gray-400";
+    const baseClasses = "w-full rounded-xl border border-gray-300 px-4 py-2 text-base shadow-sm";
     const prefilledClasses = "bg-yellow-50 border-yellow-300";
-    const normalClasses = "bg-gray-50";
+    const normalClasses = "bg-white";
     
     return `${baseClasses} ${prefilledFields.has(fieldName) ? prefilledClasses : normalClasses}`;
   };
 
   return (
     <section className="bg-white rounded-2xl shadow p-8 mb-10">
-      <h2 className="text-2xl font-bold text-primary mb-6">5. Personal Details</h2>
+      <h2 className="text-2xl font-bold text-primary mb-6">Personal Details</h2>
+      
       {customerData?.isETB && prefilledFields.size > 0 && (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <div className="text-sm text-yellow-800">
@@ -314,496 +279,503 @@ export const PersonalDetailsForm = () => {
           </div>
         </div>
       )}
-      <form className="space-y-10">
-        {/* Title, Gender, Names, CNIC, etc */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium mb-1">Title</label>
-            <select 
-              className={getFieldClasses('title')}
-              value={formData.title}
-              onChange={(e) => handleInputChange('title', e.target.value)}
-            >
-              <option value="">Select Title</option>
-              <option value="Mr">Mr</option>
-              <option value="Mrs">Mrs</option>
-              <option value="Ms">Ms</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Gender</label>
-            <select 
-              className={getFieldClasses('gender')}
-              value={formData.gender}
-              onChange={(e) => handleInputChange('gender', e.target.value)}
-            >
-              <option value="">Select Gender</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">First Name</label>
-            <input 
-              type="text" 
-              placeholder="First Name" 
-              className={getFieldClasses('firstName')}
-              value={formData.firstName}
-              onChange={(e) => handleInputChange('firstName', e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Middle Name</label>
-            <input 
-              type="text" 
-              placeholder="Middle Name" 
-              className={getFieldClasses('middleName')}
-              value={formData.middleName}
-              onChange={(e) => handleInputChange('middleName', e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Last Name</label>
-            <input 
-              type="text" 
-              placeholder="Last Name" 
-              className={getFieldClasses('lastName')}
-              value={formData.lastName}
-              onChange={(e) => handleInputChange('lastName', e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">CNIC No.</label>
-            <input 
-              type="text" 
-              placeholder="CNIC No." 
-              className={getFieldClasses('cnic')}
-              value={formData.cnic}
-              onChange={(e) => handleInputChange('cnic', e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">NTN</label>
-            <input 
-              type="text" 
-              placeholder="NTN" 
-              className={getFieldClasses('ntn')}
-              value={formData.ntn}
-              onChange={(e) => handleInputChange('ntn', e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Date of Birth</label>
-            <input 
-              type="date" 
-              className={getFieldClasses('dateOfBirth')}
-              value={formData.dateOfBirth}
-              onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Passport No. (if applicable)</label>
-            <input 
-              type="text" 
-              placeholder="Passport No. (if applicable)" 
-              className={getFieldClasses('passportNumber')}
-              value={formData.passportNumber}
-              onChange={(e) => handleInputChange('passportNumber', e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Educational Qualification</label>
-            <input 
-              type="text" 
-              placeholder="Educational Qualification" 
-              className={getFieldClasses('education')}
-              value={formData.education}
-              onChange={(e) => handleInputChange('education', e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Mother's Maiden Name</label>
-            <input 
-              type="text" 
-              placeholder="Mother's Maiden Name" 
-              className={getFieldClasses('motherName')}
-              value={formData.motherName}
-              onChange={(e) => handleInputChange('motherName', e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Father's / Husband's Name</label>
-            <input 
-              type="text" 
-              placeholder="Father's / Husband's Name" 
-              className={getFieldClasses('fatherName')}
-              value={formData.fatherName}
-              onChange={(e) => handleInputChange('fatherName', e.target.value)}
-            />
-          </div>
-        </div>
-        
-        {/* Marital Status */}
+
+      <form className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Title */}
         <div>
-          <label className="font-semibold text-sm mb-2 block">Marital Status</label>
-          <div className="flex gap-6">
-            <label className="flex items-center gap-2">
-              <input 
-                type="radio" 
-                name="maritalStatus" 
-                value="Married"
-                checked={formData.maritalStatus === 'Married'}
-                onChange={(e) => handleInputChange('maritalStatus', e.target.value)}
-              /> 
-              Married
-            </label>
-            <label className="flex items-center gap-2">
-              <input 
-                type="radio" 
-                name="maritalStatus" 
-                value="Single"
-                checked={formData.maritalStatus === 'Single'}
-                onChange={(e) => handleInputChange('maritalStatus', e.target.value)}
-              /> 
-              Single
-            </label>
+          <label className="block text-sm font-medium mb-1">Title</label>
+          <div className="flex gap-4">
+            {['Mr', 'Mrs', 'Ms'].map((t) => (
+              <label key={t} className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="title"
+                  value={t}
+                  checked={formData.title === t}
+                  onChange={(e) => handleInputChange('title', e.target.value)}
+                  className={prefilledFields.has('title') ? 'accent-yellow-600' : ''}
+                />
+                {t}
+              </label>
+            ))}
           </div>
         </div>
-        
-        {/* Dependents */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <label className="block text-sm font-medium mb-1">No. of Children</label>
-            <input 
-              type="number" 
-              placeholder="No. of Children" 
-              className={getFieldClasses('numberOfChildren')}
-              value={formData.numberOfChildren}
-              onChange={(e) => handleInputChange('numberOfChildren', e.target.value)}
-            />
+
+        {/* Name Fields */}
+        <div>
+          <label className="block text-sm font-medium mb-1">First Name</label>
+          <input
+            type="text"
+            className={getFieldClasses('firstName')}
+            placeholder="First Name"
+            value={formData.firstName}
+            onChange={(e) => handleInputChange('firstName', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Middle Name</label>
+          <input
+            type="text"
+            className={getFieldClasses('middleName')}
+            placeholder="Middle Name"
+            value={formData.middleName}
+            onChange={(e) => handleInputChange('middleName', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Last Name</label>
+          <input
+            type="text"
+            className={getFieldClasses('lastName')}
+            placeholder="Last Name"
+            value={formData.lastName}
+            onChange={(e) => handleInputChange('lastName', e.target.value)}
+          />
+        </div>
+
+        {/* CNIC and NTN */}
+        <div>
+          <label className="block text-sm font-medium mb-1">CNIC</label>
+          <input
+            type="text"
+            className={getFieldClasses('cnic')}
+            placeholder="CNIC"
+            value={formData.cnic}
+            onChange={(e) => handleInputChange('cnic', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">NTN (if available)</label>
+          <input
+            type="text"
+            className={getFieldClasses('ntn')}
+            placeholder="NTN"
+            value={formData.ntn}
+            onChange={(e) => handleInputChange('ntn', e.target.value)}
+          />
+        </div>
+
+        {/* Date of Birth and Passport */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Date of Birth</label>
+          <input
+            type="date"
+            className={getFieldClasses('dateOfBirth')}
+            value={formData.dateOfBirth}
+            onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Passport Number (if available)</label>
+          <input
+            type="text"
+            className={getFieldClasses('passportNumber')}
+            placeholder="Passport Number"
+            value={formData.passportNumber}
+            onChange={(e) => handleInputChange('passportNumber', e.target.value)}
+          />
+        </div>
+
+        {/* Gender */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Gender</label>
+          <div className="flex gap-4">
+            {['Male', 'Female'].map((g) => (
+              <label key={g} className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="gender"
+                  value={g}
+                  checked={formData.gender === g}
+                  onChange={(e) => handleInputChange('gender', e.target.value)}
+                  className={prefilledFields.has('gender') ? 'accent-yellow-600' : ''}
+                />
+                {g}
+              </label>
+            ))}
           </div>
+        </div>
+
+        {/* Education */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Education</label>
+          <select
+            className={getFieldClasses('education')}
+            value={formData.education}
+            onChange={(e) => handleInputChange('education', e.target.value)}
+          >
+            <option value="">Select Education</option>
+            <option value="Below Matric">Below Matric</option>
+            <option value="Matric">Matric</option>
+            <option value="Intermediate">Intermediate</option>
+            <option value="Graduate">Graduate</option>
+            <option value="Post Graduate">Post Graduate</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        {/* Parents Names */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Father's Name</label>
+          <input
+            type="text"
+            className={getFieldClasses('fatherName')}
+            placeholder="Father's Name"
+            value={formData.fatherName}
+            onChange={(e) => handleInputChange('fatherName', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Mother's Name</label>
+          <input
+            type="text"
+            className={getFieldClasses('motherName')}
+            placeholder="Mother's Name"
+            value={formData.motherName}
+            onChange={(e) => handleInputChange('motherName', e.target.value)}
+          />
+        </div>
+
+        {/* Marital Status and Dependents */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Marital Status</label>
+          <select
+            className={getFieldClasses('maritalStatus')}
+            value={formData.maritalStatus}
+            onChange={(e) => handleInputChange('maritalStatus', e.target.value)}
+          >
+            <option value="">Select Status</option>
+            <option value="Single">Single</option>
+            <option value="Married">Married</option>
+            <option value="Divorced">Divorced</option>
+            <option value="Widowed">Widowed</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Number of Children</label>
+          <input
+            type="number"
+            className={getFieldClasses('numberOfChildren')}
+            placeholder="Number of Children"
+            value={formData.numberOfChildren}
+            onChange={(e) => handleInputChange('numberOfChildren', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Number of Dependents</label>
+          <input
+            type="number"
+            className={getFieldClasses('numberOfDependents')}
+            placeholder="Number of Dependents"
+            value={formData.numberOfDependents}
+            onChange={(e) => handleInputChange('numberOfDependents', e.target.value)}
+          />
+        </div>
+
+        {formData.numberOfDependents && Number(formData.numberOfDependents) > 0 && (
           <div>
-            <label className="block text-sm font-medium mb-1">No. of Other Dependents</label>
-            <input 
-              type="number" 
-              placeholder="No. of Other Dependents" 
-              className={getFieldClasses('numberOfDependents')}
-              value={formData.numberOfDependents}
-              onChange={(e) => handleInputChange('numberOfDependents', e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Specify (Dependents)</label>
-            <input 
-              type="text" 
-              placeholder="Specify (Dependents)" 
+            <label className="block text-sm font-medium mb-1">Specify Dependents</label>
+            <input
+              type="text"
               className={getFieldClasses('dependentsSpecify')}
+              placeholder="e.g., Parents, Siblings"
               value={formData.dependentsSpecify}
               onChange={(e) => handleInputChange('dependentsSpecify', e.target.value)}
             />
           </div>
+        )}
+
+        {/* Next of Kin Details */}
+        <div className="col-span-full">
+          <h3 className="text-lg font-semibold mb-4">Next of Kin Details</h3>
         </div>
-        
-        {/* Next of Kin */}
+
         <div>
-          <h3 className="text-lg font-semibold pt-6 pb-2">Next of Kin</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium mb-1">Next of Kin</label>
-              <input 
-                type="text" 
-                placeholder="Next of Kin" 
-                className={getFieldClasses('nextOfKin')}
-                value={formData.nextOfKin}
-                onChange={(e) => handleInputChange('nextOfKin', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Relation</label>
-              <input 
-                type="text" 
-                placeholder="Relation" 
-                className={getFieldClasses('nextOfKinRelation')}
-                value={formData.nextOfKinRelation}
-                onChange={(e) => handleInputChange('nextOfKinRelation', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">CNIC No.</label>
-              <input 
-                type="text" 
-                placeholder="CNIC No." 
-                className={getFieldClasses('nextOfKinCnic')}
-                value={formData.nextOfKinCnic}
-                onChange={(e) => handleInputChange('nextOfKinCnic', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Contact No.</label>
-              <input 
-                type="text" 
-                placeholder="Contact No." 
-                className={getFieldClasses('nextOfKinContact')}
-                value={formData.nextOfKinContact}
-                onChange={(e) => handleInputChange('nextOfKinContact', e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-        
-        {/* Current Residential Address */}
-        <div>
-          <h3 className="text-lg font-semibold pt-6 pb-2">Current Residential Address</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium mb-1">House / Flat No.</label>
-              <input 
-                type="text" 
-                placeholder="House / Flat No." 
-                className={getFieldClasses('currentHouseNo')}
-                value={formData.currentHouseNo}
-                onChange={(e) => handleInputChange('currentHouseNo', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Street</label>
-              <input 
-                type="text" 
-                placeholder="Street" 
-                className={getFieldClasses('currentStreet')}
-                value={formData.currentStreet}
-                onChange={(e) => handleInputChange('currentStreet', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Tehsil / District / Area</label>
-              <input 
-                type="text" 
-                placeholder="Tehsil / District / Area" 
-                className={getFieldClasses('currentArea')}
-                value={formData.currentArea}
-                onChange={(e) => handleInputChange('currentArea', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Nearest Landmark</label>
-              <input 
-                type="text" 
-                placeholder="Nearest Landmark" 
-                className={getFieldClasses('currentLandmark')}
-                value={formData.currentLandmark}
-                onChange={(e) => handleInputChange('currentLandmark', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">City</label>
-              <input 
-                type="text" 
-                placeholder="City" 
-                className={getFieldClasses('currentCity')}
-                value={formData.currentCity}
-                onChange={(e) => handleInputChange('currentCity', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Country</label>
-              <input 
-                type="text" 
-                placeholder="Country" 
-                className={getFieldClasses('currentCountry')}
-                value={formData.currentCountry}
-                onChange={(e) => handleInputChange('currentCountry', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Postal Code</label>
-              <input 
-                type="text" 
-                placeholder="Postal Code" 
-                className={getFieldClasses('currentPostalCode')}
-                value={formData.currentPostalCode}
-                onChange={(e) => handleInputChange('currentPostalCode', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Telephone Res.</label>
-              <input 
-                type="text" 
-                placeholder="Telephone Res." 
-                className={getFieldClasses('currentTelephone')}
-                value={formData.currentTelephone}
-                onChange={(e) => handleInputChange('currentTelephone', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Mobile No.</label>
-              <input 
-                type="text" 
-                placeholder="Mobile No." 
-                className={getFieldClasses('currentMobile')}
-                value={formData.currentMobile}
-                onChange={(e) => handleInputChange('currentMobile', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Email</label>
-              <input 
-                type="email" 
-                placeholder="Email" 
-                className={getFieldClasses('currentEmail')}
-                value={formData.currentEmail}
-                onChange={(e) => handleInputChange('currentEmail', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Years at current address</label>
-              <input 
-                type="number" 
-                placeholder="Years at current address" 
-                className={getFieldClasses('yearsAtAddress')}
-                value={formData.yearsAtAddress}
-                onChange={(e) => handleInputChange('yearsAtAddress', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Years in current city</label>
-              <input 
-                type="number" 
-                placeholder="Years in current city" 
-                className={getFieldClasses('yearsInCity')}
-                value={formData.yearsInCity}
-                onChange={(e) => handleInputChange('yearsInCity', e.target.value)}
-              />
-            </div>
-          </div>
-          <label className="font-semibold text-sm mb-2 block mt-4">Residential Status</label>
-          <div className="flex flex-wrap gap-4">
-            <label className="flex items-center gap-2">
-              <input 
-                type="radio" 
-                name="residentialStatus" 
-                value="Property Owner"
-                checked={formData.residentialStatus === 'Property Owner'}
-                onChange={(e) => handleInputChange('residentialStatus', e.target.value)}
-              /> 
-              Property Owner
-            </label>
-            <label className="flex items-center gap-2">
-              <input 
-                type="radio" 
-                name="residentialStatus" 
-                value="Wife or Husband House"
-                checked={formData.residentialStatus === 'Wife or Husband House'}
-                onChange={(e) => handleInputChange('residentialStatus', e.target.value)}
-              /> 
-              Wife or Husband House
-            </label>
-            <label className="flex items-center gap-2">
-              <input 
-                type="radio" 
-                name="residentialStatus" 
-                value="Parents"
-                checked={formData.residentialStatus === 'Parents'}
-                onChange={(e) => handleInputChange('residentialStatus', e.target.value)}
-              /> 
-              Parents
-            </label>
-            <label className="flex items-center gap-2">
-              <input 
-                type="radio" 
-                name="residentialStatus" 
-                value="Privately Rented"
-                checked={formData.residentialStatus === 'Privately Rented'}
-                onChange={(e) => handleInputChange('residentialStatus', e.target.value)}
-              /> 
-              Privately Rented
-            </label>
-            <label className="flex items-center gap-2">
-              <input 
-                type="radio" 
-                name="residentialStatus" 
-                value="Company Rented"
-                checked={formData.residentialStatus === 'Company Rented'}
-                onChange={(e) => handleInputChange('residentialStatus', e.target.value)}
-              /> 
-              Company Rented
-            </label>
-          </div>
-          <label className="block text-sm font-medium mb-1 mt-4">Monthly Rent (Rs.)</label>
-          <input 
-            type="number" 
-            placeholder="Monthly Rent (Rs.)" 
-            className={getFieldClasses('monthlyRent')}
-            value={formData.monthlyRent}
-            onChange={(e) => handleInputChange('monthlyRent', e.target.value)}
+          <label className="block text-sm font-medium mb-1">Next of Kin Name</label>
+          <input
+            type="text"
+            className={getFieldClasses('nextOfKin')}
+            placeholder="Next of Kin Name"
+            value={formData.nextOfKin}
+            onChange={(e) => handleInputChange('nextOfKin', e.target.value)}
           />
         </div>
-        
-        {/* Permanent Residential Address */}
+
         <div>
-          <h3 className="text-lg font-semibold pt-6 pb-2">Permanent Residential Address (Pakistan)</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium mb-1">House / Flat No.</label>
-              <input 
-                type="text" 
-                placeholder="House / Flat No." 
-                className={getFieldClasses('permanentHouseNo')}
-                value={formData.permanentHouseNo}
-                onChange={(e) => handleInputChange('permanentHouseNo', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Street</label>
-              <input 
-                type="text" 
-                placeholder="Street" 
-                className={getFieldClasses('permanentStreet')}
-                value={formData.permanentStreet}
-                onChange={(e) => handleInputChange('permanentStreet', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Tehsil / District / Area</label>
-              <input 
-                type="text" 
-                placeholder="Tehsil / District / Area" 
-                className={getFieldClasses('permanentArea')}
-                value={formData.permanentArea}
-                onChange={(e) => handleInputChange('permanentArea', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">City</label>
-              <input 
-                type="text" 
-                placeholder="City" 
-                className={getFieldClasses('permanentCity')}
-                value={formData.permanentCity}
-                onChange={(e) => handleInputChange('permanentCity', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Country</label>
-              <input 
-                type="text" 
-                placeholder="Country" 
-                className={getFieldClasses('permanentCountry')}
-                value={formData.permanentCountry}
-                onChange={(e) => handleInputChange('permanentCountry', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Postal Code</label>
-              <input 
-                type="text" 
-                placeholder="Postal Code" 
-                className={getFieldClasses('permanentPostalCode')}
-                value={formData.permanentPostalCode}
-                onChange={(e) => handleInputChange('permanentPostalCode', e.target.value)}
-              />
-            </div>
+          <label className="block text-sm font-medium mb-1">Relationship</label>
+          <input
+            type="text"
+            className={getFieldClasses('nextOfKinRelation')}
+            placeholder="e.g., Spouse, Sibling"
+            value={formData.nextOfKinRelation}
+            onChange={(e) => handleInputChange('nextOfKinRelation', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Next of Kin CNIC</label>
+          <input
+            type="text"
+            className={getFieldClasses('nextOfKinCnic')}
+            placeholder="Next of Kin CNIC"
+            value={formData.nextOfKinCnic}
+            onChange={(e) => handleInputChange('nextOfKinCnic', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Next of Kin Contact</label>
+          <input
+            type="text"
+            className={getFieldClasses('nextOfKinContact')}
+            placeholder="Next of Kin Contact"
+            value={formData.nextOfKinContact}
+            onChange={(e) => handleInputChange('nextOfKinContact', e.target.value)}
+          />
+        </div>
+
+        {/* Current Address Section */}
+        <div className="col-span-full">
+          <h3 className="text-lg font-semibold mb-4">Current Address</h3>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">House No.</label>
+          <input
+            type="text"
+            className={getFieldClasses('currentHouseNo')}
+            placeholder="House No."
+            value={formData.currentHouseNo}
+            onChange={(e) => handleInputChange('currentHouseNo', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Street</label>
+          <input
+            type="text"
+            className={getFieldClasses('currentStreet')}
+            placeholder="Street"
+            value={formData.currentStreet}
+            onChange={(e) => handleInputChange('currentStreet', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Area</label>
+          <input
+            type="text"
+            className={getFieldClasses('currentArea')}
+            placeholder="Area"
+            value={formData.currentArea}
+            onChange={(e) => handleInputChange('currentArea', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Landmark</label>
+          <input
+            type="text"
+            className={getFieldClasses('currentLandmark')}
+            placeholder="Nearest Landmark"
+            value={formData.currentLandmark}
+            onChange={(e) => handleInputChange('currentLandmark', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">City</label>
+          <input
+            type="text"
+            className={getFieldClasses('currentCity')}
+            placeholder="City"
+            value={formData.currentCity}
+            onChange={(e) => handleInputChange('currentCity', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Country</label>
+          <input
+            type="text"
+            className={getFieldClasses('currentCountry')}
+            placeholder="Country"
+            value={formData.currentCountry}
+            onChange={(e) => handleInputChange('currentCountry', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Postal Code</label>
+          <input
+            type="text"
+            className={getFieldClasses('currentPostalCode')}
+            placeholder="Postal Code"
+            value={formData.currentPostalCode}
+            onChange={(e) => handleInputChange('currentPostalCode', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Telephone</label>
+          <input
+            type="text"
+            className={getFieldClasses('currentTelephone')}
+            placeholder="Telephone"
+            value={formData.currentTelephone}
+            onChange={(e) => handleInputChange('currentTelephone', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Mobile</label>
+          <input
+            type="text"
+            className={getFieldClasses('currentMobile')}
+            placeholder="Mobile"
+            value={formData.currentMobile}
+            onChange={(e) => handleInputChange('currentMobile', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Email</label>
+          <input
+            type="email"
+            className={getFieldClasses('currentEmail')}
+            placeholder="Email"
+            value={formData.currentEmail}
+            onChange={(e) => handleInputChange('currentEmail', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Years at Address</label>
+          <input
+            type="number"
+            className={getFieldClasses('yearsAtAddress')}
+            placeholder="Years at Address"
+            value={formData.yearsAtAddress}
+            onChange={(e) => handleInputChange('yearsAtAddress', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Years in City</label>
+          <input
+            type="number"
+            className={getFieldClasses('yearsInCity')}
+            placeholder="Years in City"
+            value={formData.yearsInCity}
+            onChange={(e) => handleInputChange('yearsInCity', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Residential Status</label>
+          <select
+            className={getFieldClasses('residentialStatus')}
+            value={formData.residentialStatus}
+            onChange={(e) => handleInputChange('residentialStatus', e.target.value)}
+          >
+            <option value="">Select Status</option>
+            <option value="Owned">Owned</option>
+            <option value="Rented">Rented</option>
+            <option value="Parents">Living with Parents</option>
+            <option value="Company">Company Provided</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        {formData.residentialStatus === 'Rented' && (
+          <div>
+            <label className="block text-sm font-medium mb-1">Monthly Rent</label>
+            <input
+              type="number"
+              className={getFieldClasses('monthlyRent')}
+              placeholder="Monthly Rent"
+              value={formData.monthlyRent}
+              onChange={(e) => handleInputChange('monthlyRent', e.target.value)}
+            />
           </div>
+        )}
+
+        {/* Permanent Address Section */}
+        <div className="col-span-full">
+          <h3 className="text-lg font-semibold mb-4">Permanent Address (If different from current address)</h3>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">House No.</label>
+          <input
+            type="text"
+            className={getFieldClasses('permanentHouseNo')}
+            placeholder="House No."
+            value={formData.permanentHouseNo}
+            onChange={(e) => handleInputChange('permanentHouseNo', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Street</label>
+          <input
+            type="text"
+            className={getFieldClasses('permanentStreet')}
+            placeholder="Street"
+            value={formData.permanentStreet}
+            onChange={(e) => handleInputChange('permanentStreet', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Area</label>
+          <input
+            type="text"
+            className={getFieldClasses('permanentArea')}
+            placeholder="Area"
+            value={formData.permanentArea}
+            onChange={(e) => handleInputChange('permanentArea', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">City</label>
+          <input
+            type="text"
+            className={getFieldClasses('permanentCity')}
+            placeholder="City"
+            value={formData.permanentCity}
+            onChange={(e) => handleInputChange('permanentCity', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Country</label>
+          <input
+            type="text"
+            className={getFieldClasses('permanentCountry')}
+            placeholder="Country"
+            value={formData.permanentCountry}
+            onChange={(e) => handleInputChange('permanentCountry', e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Postal Code</label>
+          <input
+            type="text"
+            className={getFieldClasses('permanentPostalCode')}
+            placeholder="Postal Code"
+            value={formData.permanentPostalCode}
+            onChange={(e) => handleInputChange('permanentPostalCode', e.target.value)}
+          />
         </div>
       </form>
     </section>

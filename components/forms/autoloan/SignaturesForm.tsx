@@ -1,6 +1,6 @@
 export const SignaturesForm = () => (
   <section className="bg-white rounded-2xl shadow p-8 mb-10">
-    <h2 className="text-2xl font-bold text-primary mb-6">19. Signatures</h2>
+    <h2 className="text-2xl text-white font-semibold mb-4 rounded-lg p-4 bg-blue-500">12. Signatures</h2>
     <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
         <label className="block font-semibold mb-1">Applicant's Signature (Current)</label>

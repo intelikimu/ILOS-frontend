@@ -1,7 +1,7 @@
 export const AmeenDriveVehicleFacilityDetailsForm = () => (
   <section className="mb-10">
-    <h3 className="text-2xl text-primary font-semibold mb-4">4. Vehicle Facility Details</h3>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <h3 className="text-2xl rounded-lg text-white font-semibold mb-4 p-4 bg-blue-500">4. Vehicle Facility Details</h3>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
       <div className="md:col-span-3">
         <label className="block mb-2 font-medium">Facility Type</label>
         <div className="flex gap-4">

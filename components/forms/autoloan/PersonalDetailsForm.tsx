@@ -270,7 +270,7 @@ export const PersonalDetailsForm = () => {
 
   return (
     <section className="bg-white rounded-2xl shadow p-8 mb-10">
-      <h2 className="text-2xl font-bold text-primary mb-6">Personal Details</h2>
+      <h2 className="text-2xl rounded-lg text-white font-semibold mb-4 rounded-lg p-4 bg-blue-500">5. Personal Details</h2>
       
       {customerData?.isETB && prefilledFields.size > 0 && (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">

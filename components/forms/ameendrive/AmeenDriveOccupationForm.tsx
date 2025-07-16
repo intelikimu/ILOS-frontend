@@ -69,7 +69,7 @@ export const AmeenDriveOccupationForm = () => {
 
   return (
     <section className="mb-10">
-      <h3 className="text-2xl text-primary font-semibold mb-4">6. Occupation</h3>
+      <h3 className="text-2xl rounded-lg text-white font-semibold mb-4 p-4 bg-blue-500">6. Occupation</h3>
       {customerData?.isETB && prefilledFields.size > 0 && (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <div className="text-sm text-yellow-800">
@@ -77,7 +77,7 @@ export const AmeenDriveOccupationForm = () => {
           </div>
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
         <div className="md:col-span-3">
           <label className="block mb-2 font-medium">Employment Type</label>
           <input type="text" className={getFieldClasses('employmentType')} placeholder="Employment Type" value={formData.employmentType} onChange={e => handleInputChange('employmentType', e.target.value)} />
@@ -121,7 +121,7 @@ export const AmeenDriveOccupationForm = () => {
       </div>
       <div className="mt-8">
         <h4 className="text-lg font-semibold mb-4">Business / Employer's Address</h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
           <div>
             <label className="block mb-2 font-medium">Business Address</label>
             <input type="text" className={getFieldClasses('businessAddress')} placeholder="Business Address" value={formData.businessAddress} onChange={e => handleInputChange('businessAddress', e.target.value)} />

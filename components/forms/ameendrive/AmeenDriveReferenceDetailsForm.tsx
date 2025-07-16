@@ -1,8 +1,8 @@
 export const AmeenDriveReferenceDetailsForm = () => (
   <section className="mb-10">
-    <h3 className="text-2xl text-primary font-semibold mb-4">9. Reference Details</h3>
+    <h3 className="text-2xl rounded-lg text-white font-semibold mb-4 p-4 bg-blue-500">9. Reference Details</h3>
     {[1, 2].map((ref) => (
-      <div key={ref} className="border rounded-xl p-4 mb-8">
+      <div key={ref} className="border rounded-xl p-4 mb-8 border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
         <h4 className="text-lg font-semibold mb-4">Reference {ref}</h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>

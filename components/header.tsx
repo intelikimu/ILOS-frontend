@@ -46,7 +46,7 @@ export function Header({ userRole = 'pb' }: HeaderProps) {
   return (
   <>
   
-    <nav className="bg-[#03bafc] shadow-lg">
+    <nav className="bg-blue-500 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center h-16">
           <div className="flex items-center space-x-2">
@@ -75,7 +75,7 @@ export function Header({ userRole = 'pb' }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <form className="hidden md:block">
+          {/* <form className="hidden md:block">
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -84,7 +84,7 @@ export function Header({ userRole = 'pb' }: HeaderProps) {
                 className="w-64 pl-8"
               />
             </div>
-          </form>
+          </form> */}
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-4 w-4" />
             <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">

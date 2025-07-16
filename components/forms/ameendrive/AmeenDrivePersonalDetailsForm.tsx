@@ -146,7 +146,7 @@ export const AmeenDrivePersonalDetailsForm = () => {
 
   return (
     <section className="mb-10">
-      <h3 className="text-2xl text-primary font-semibold mb-4">5. Personal Details (CBS)</h3>
+      <h3 className="text-2xl rounded-lg text-white font-semibold mb-4 p-4 bg-blue-500">5. Personal Details (CBS)</h3>
       {customerData?.isETB && prefilledFields.size > 0 && (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <div className="text-sm text-yellow-800">
@@ -154,7 +154,7 @@ export const AmeenDrivePersonalDetailsForm = () => {
           </div>
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
         <div>
           <label className="block mb-2 font-medium">Full Name (Mr/Mrs./Ms.)</label>
           <input type="text" className={getFieldClasses('fullName')} placeholder="Full Name" value={formData.fullName} onChange={e => handleInputChange('fullName', e.target.value)} />
@@ -217,7 +217,7 @@ export const AmeenDrivePersonalDetailsForm = () => {
       </div>
       <div className="mt-8">
         <h4 className="text-lg font-semibold mb-4">Current Residential Address (CBS)</h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50" >
           <div>
             <label className="block mb-2 font-medium">House No. / Flat No.</label>
             <input type="text" className={getFieldClasses('houseNo')} placeholder="House No. / Flat No." value={formData.houseNo} onChange={e => handleInputChange('houseNo', e.target.value)} />
@@ -292,7 +292,7 @@ export const AmeenDrivePersonalDetailsForm = () => {
           </div>
         </div>
         <h4 className="text-lg font-semibold mt-8 mb-4">Permanent Residential Address (Verysis)</h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50" >
           <div>
             <label className="block mb-2 font-medium">House No. / Flat No.</label>
             <input type="text" className={getFieldClasses('permHouseNo')} placeholder="House No. / Flat No." value={formData.permHouseNo} onChange={e => handleInputChange('permHouseNo', e.target.value)} />

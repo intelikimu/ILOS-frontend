@@ -1,6 +1,6 @@
 export const ExposureUndertakingForm = () => (
   <section className="bg-white rounded-2xl shadow p-8 mb-10">
-    <h2 className="text-2xl font-bold text-primary mb-6">
+    <h2 className="text-2xl text-white font-semibold mb-4 rounded-lg p-4 bg-blue-500">
       9. Undertaking – Existing Exposure from Entire Banking Sector
     </h2>
     <form className="space-y-10">

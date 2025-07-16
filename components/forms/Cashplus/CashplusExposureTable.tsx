@@ -12,7 +12,7 @@ export const CashplusExposureTable = ({
   rows = 2,
 }: CashplusExposureTableProps) => (
   <section className="mb-10">
-    <h4 className="text-lg font-semibold mb-4">{title}</h4>
+    <h4 className="text-2xl rounded-lg text-white font-semibold mb-4 p-4 bg-blue-500">{title}</h4>
     <table className="min-w-full border mb-4">
       <thead className="bg-gray-100">
         <tr>

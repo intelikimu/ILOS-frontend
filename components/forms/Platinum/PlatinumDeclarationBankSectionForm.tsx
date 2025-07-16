@@ -1,7 +1,8 @@
 // components/forms/PlatinumDeclarationBankSectionForm.tsx
 export const PlatinumDeclarationBankSectionForm = () => (
   <section className="mb-10">
-    <h3 className="text-lg font-semibold mb-4">8. Declarations & Bank Section</h3>
+    <h3 className="text-2xl rounded-lg text-white font-semibold mb-4 p-4 bg-blue-500">8. Declarations & Bank Section</h3>
+    <div className=" border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
     {/* Credit Guardian Opt-in */}
     <div>
       <label className="block text-sm font-medium mb-1">Credit Guardian Opt-in</label>
@@ -34,6 +35,7 @@ export const PlatinumDeclarationBankSectionForm = () => (
         <input type="text" className="rounded-xl border border-gray-300 px-4 py-2" placeholder="Status" />
         <input type="text" className="rounded-xl border border-gray-300 px-4 py-2" placeholder="Approval Block" />
       </div>
+    </div>
     </div>
   </section>
 );

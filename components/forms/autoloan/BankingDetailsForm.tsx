@@ -51,8 +51,8 @@ export const BankingDetailsForm = () => {
 
   return (
     <section className="bg-white rounded-2xl shadow p-8 mb-10">
-      <h2 className="text-2xl font-bold text-primary mb-6">
-        8. Banking Details – Direct Debit / Repayment Account
+      <h2 className="text-2xl text-white font-semibold mb-4 rounded-lg p-4 bg-blue-500">
+        8. Banking Details - Direct Debit / Repayment Account
       </h2>
       <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>

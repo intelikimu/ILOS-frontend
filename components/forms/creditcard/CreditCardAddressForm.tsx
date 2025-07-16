@@ -103,11 +103,11 @@ export const CreditCardAddressForm = () => {
 
   return (
     <section className="mb-10">
-      <h3 className="text-2xl font-bold text-primary mb-6">4. Address Details (CBS)</h3>
+      <h3 className="text-2xl text-white font-semibold mb-4 p-4 bg-blue-500">4. Address Details (CBS)</h3>
       {/* A. Current Residential Address */}
       <div>
-        <h4 className="text-2xl font-bold text-primary mb-6">A. Current Residential Address</h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <h4 className="text-2xl rounded-lg font-bold text-primary mb-6">A. Current Residential Address</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
           <div>
             <label className="block text-sm font-medium mb-1">House/Apt</label>
             <input
@@ -249,7 +249,7 @@ export const CreditCardAddressForm = () => {
       {/* B. Permanent Address */}
       <div className="mt-10">
         <h4 className="text-2xl font-bold text-primary mb-6">B. Permanent Address</h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
           <div>
             <label className="block text-sm font-medium mb-1">Street</label>
               <input
@@ -327,7 +327,7 @@ export const CreditCardAddressForm = () => {
       {/* Car Details (left blank - can be attached if you get backend car info) */}
       <div className="mt-10">
         <h4 className="text-base font-semibold mb-2">Car Details (If Applicable)</h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
           <div>
             <label className="block text-sm font-medium mb-1">Car Year</label>
             <input type="number" className={getFieldClasses("carYear", prefilled)} value={formData.carYear} onChange={e => handleChange("carYear", e.target.value)} placeholder="Year" />

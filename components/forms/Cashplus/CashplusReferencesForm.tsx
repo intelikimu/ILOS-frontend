@@ -1,7 +1,7 @@
 // components/forms/CashplusReferencesForm.tsx
 export const CashplusReferencesForm = () => (
   <section className="mb-10">
-    <h3 className="text-xl font-semibold mb-4">7. References</h3>
+    <h3 className="text-2xl rounded-lg text-white font-semibold mb-4 p-4 bg-blue-500">7. References</h3>
     {[1, 2].map(refNum => (
       <div key={refNum} className="border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
         <h4 className="text-lg font-semibold mb-4">

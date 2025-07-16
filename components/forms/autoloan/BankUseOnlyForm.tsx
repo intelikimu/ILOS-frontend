@@ -1,6 +1,6 @@
 export const BankUseOnlyForm = () => (
   <section className="bg-white rounded-2xl shadow p-8 mb-10">
-    <h2 className="text-2xl font-bold text-primary mb-6">For Banks Use Only</h2>
+    <h2 className="text-2xl text-white font-semibold mb-4 rounded-lg p-4 bg-blue-500">13. For Banks Use Only</h2>
     <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="flex flex-col col-span-2">
         <label className="font-semibold mb-2">Application Source</label>

@@ -1,6 +1,6 @@
 export const ProductProgramForm = () => (
   <section className="bg-white rounded-2xl shadow p-8 mb-10">
-    <h2 className="text-2xl font-bold text-primary mb-6">1. Product Program</h2>
+    <h2 className="text-2xl rounded-lg text-white font-semibold mb-4 p-4 bg-blue-500">1. Product Program</h2>
     <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
         <label className="block text-sm font-medium mb-1">City</label>

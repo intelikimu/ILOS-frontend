@@ -155,8 +155,8 @@ export const PlatinumPersonalInfoForm = () => {
 
   return (
     <section className="mb-10">
-      <h3 className="text-lg font-semibold mb-4">1. Personal Information</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <h3 className="text-2xl rounded-lg text-white font-semibold mb-4 p-4 bg-blue-500">1. Personal Information</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border p-4 rounded-lg bg-gray-50">
         {/* Title */}
         <div>
           <label className="block text-sm font-medium mb-1">Title</label>

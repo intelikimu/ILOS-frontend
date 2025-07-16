@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation"
 import { useCustomer } from "@/contexts/CustomerContext"
 
 export default function ApplicantPage() {
-  const [cnic, setCnic] = useState("")
+  const [cnic, setCnic] = useState("35201-1111222-1")
   const [product, setProduct] = useState("")
   const [subOption, setSubOption] = useState("")
   const [cnicEntered, setCnicEntered] = useState(false)
@@ -93,6 +93,7 @@ export default function ApplicantPage() {
               placeholder="e.g. 12345-1234567-1"
               className="w-full rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-gray-50 px-4 py-2 text-base shadow transition placeholder:text-gray-400"
               value={cnic}
+              // value={"15402-8687203-9"}
               onChange={handleCnicChange}
               maxLength={15}
             />
@@ -172,7 +173,7 @@ export default function ApplicantPage() {
                 <Button
                   type="button"
                   variant={accountType === "conventional" ? "default" : "outline"}
-                  className={`w-1/4 px-6 py-2 rounded-full text-base shadow ${accountType === "conventional" ? " text-white" : ""}`}
+                  className={`w-1/4 px-6 py-2 rounded-lg text-base shadow ${accountType === "conventional" ? " text-white" : ""}`}
                   onClick={() => {
                     setAccountType("conventional")
                     setSelectedAccount("")
@@ -183,7 +184,7 @@ export default function ApplicantPage() {
                 <Button
                   type="button"
                   variant={accountType === "islamic" ? "default" : "outline"}
-                  className={`w-1/4 px-6 py-2 rounded-full text-base shadow ${accountType === "islamic" ? " text-white" : ""}`}
+                  className={`w-1/4 px-6 py-2 rounded-lg text-base shadow ${accountType === "islamic" ? " text-white" : ""}`}
                   onClick={() => {
                     setAccountType("islamic")
                     setSelectedAccount("")

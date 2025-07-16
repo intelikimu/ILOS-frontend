@@ -70,13 +70,13 @@ useEffect(() => {
 
   return (
     <section className="mb-10">
-      <h3 className="text-xl font-semibold mb-4">2. Application Type</h3>
+      <h3 className="text-2xl rounded-lg text-white font-semibold mb-4 p-4 bg-blue-500">2. Application Type</h3>
       {prefilledFields.size > 0 && (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
           <b>Note:</b> Fields highlighted in yellow are pre-filled from your existing data. You can edit them if needed.
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
         {/* UBL Existing Customer */}
         <div>
           <label className="block mb-2">UBL Existing Customer</label>

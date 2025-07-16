@@ -1,8 +1,8 @@
 // components/forms/SMEDeclarationForm.tsx
 export const SMEDeclarationForm = () => (
   <section className="mb-10">
-    <h3  className="text-2xl font-bold text-primary mb-6">Declaration</h3>
-    <div>
+    <h3  className="text-2xl rounded-lg text-white font-semibold mb-4 p-4 bg-blue-500">Declaration</h3>
+    <div  className="grid grid-cols-1 md:grid-cols-2 gap-6 border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
       <label className="block text-sm font-medium mb-2">
         I hereby declare that the information provided is true and complete to the best of my knowledge.
       </label>

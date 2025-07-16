@@ -1,7 +1,7 @@
 export const AmeenDriveIncomeBankDetailsForm = () => (
   <section className="mb-10">
-    <h3 className="text-2xl text-primary font-semibold mb-4">8. Income Details</h3>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <h3 className="text-2xl rounded-lg text-white font-semibold mb-4 p-4 bg-blue-500">8. Income Details</h3>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
       <div>
         <label className="block mb-2 font-medium">Regular Monthly</label>
         <input type="number" className="w-full border border-gray-300 rounded-xl px-4 py-2" placeholder="Regular Monthly" />
@@ -51,7 +51,7 @@ export const AmeenDriveIncomeBankDetailsForm = () => (
     </div>
     <div className="mt-8">
       <h4 className="text-lg font-semibold mb-4">Bank Details (Bank 1 & 2)</h4>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
         {[1, 2].map((i) => (
           <div key={i} className="border p-4 rounded-xl">
             <label className="block mb-2 font-medium">Bank {i} Name</label>
@@ -75,7 +75,7 @@ export const AmeenDriveIncomeBankDetailsForm = () => (
         ))}
       </div>
       <h4 className="text-lg font-semibold mt-8 mb-4">Additional Bank Details (Multiple)</h4>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
         {[1, 2].map((i) => (
           <div key={i} className="border p-4 rounded-xl">
             <label className="block mb-2 font-medium">Financing Payable to</label>

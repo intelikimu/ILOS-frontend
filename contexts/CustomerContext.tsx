@@ -23,32 +23,186 @@ interface CustomerData {
     gender?: string;
     maritalStatus?: string;
     education?: string;
+    educationOther?: string;
     mobileNumber?: string;
     email?: string;
     ntn?: string;
     passportNumber?: string;
     numberOfChildren?: number;
-    numberOfDependents?: number;
+    numberOfDependents?: number | string;
     nationality?: string;
     placeOfBirth?: string;
     occupationCode?: string;
   };
   addressDetails?: {
-    currentAddress?: any;
-    permanentAddress?: any;
+    currentAddress?: {
+      fullAddress?: string;
+      houseNo?: string;
+      street?: string;
+      city?: string;
+      area?: string;
+      tehsil?: string;
+      postalCode?: string;
+      nearestLandmark?: string;
+      yearsAtAddress?: string | number;
+      yearsInCity?: string | number;
+      residentialStatus?: string;
+      residentialStatusOther?: string;
+      monthlyRent?: string | number;
+      telephone?: string;
+      email?: string;
+    };
+    permanentAddress?: {
+      fullAddress?: string;
+      houseNo?: string;
+      street?: string;
+      city?: string;
+      area?: string;
+      tehsil?: string;
+      postalCode?: string;
+      nearestLandmark?: string;
+      telephone?: string;
+      email?: string;
+    };
+  };
+  contactDetails?: {
+    mobileType?: string;
+    preferredMailingAddress?: string;
+    otherContact?: string;
+    emailAddress?: string;
   };
   clientBanks?: {
-  customer_id?: string;
-  position?: string;
-  actt_no?: string;
-  bank_name?: string;
-  branch?: string;
-  version?: string;
-  created_at?: string;
-};
-
-  employmentDetails?: any;
-  bankingDetails?: any;
+    customer_id?: string;
+    position?: string;
+    actt_no?: string;
+    bank_name?: string;
+    branch?: string;
+    version?: string;
+    created_at?: string;
+  };
+  employmentDetails?: {
+    employmentStatus?: string;
+    companyName?: string;
+    companyType?: string;
+    companyTypeOther?: string;
+    department?: string;
+    designation?: string;
+    grade?: string;
+    currentExperience?: string | number;
+    previousEmployer?: string;
+    previousExperience?: string | number;
+    officeAddress?: {
+      houseNo?: string;
+      street?: string;
+      city?: string;
+      tehsil?: string;
+      postalCode?: string;
+      nearestLandmark?: string;
+      fax?: string;
+      telephone1?: string;
+      telephone2?: string;
+      extension?: string;
+    };
+    industry?: string;
+    business?: string;
+  };
+  bankingDetails?: {
+    isUblCustomer?: string;
+    ublAccountNumber?: string;
+    bankName?: string;
+    branchName?: string;
+    accountNumber?: string;
+    accountType?: string;
+  };
+  incomeDetails?: {
+    grossMonthlySalary?: string | number;
+    otherMonthlyIncome?: string | number;
+    netMonthlyIncome?: string | number;
+    otherIncomeSource?: string;
+    otherIncomeSourceSpecify?: string;
+    monthlyIncome?: string | number;
+    estimatedNetWorth?: string | number;
+    declaredNetWorth?: string | number;
+    assessedNetWorth?: string | number;
+    annualSales?: string | number;
+  };
+  loanPreference?: {
+    loanType?: string;
+    amountRequested?: string | number;
+    minAmountAcceptable?: string | number;
+    maxAffordableInstallment?: string | number;
+    tenure?: string | number;
+  };
+  applicationDetails?: {
+    ublExistingCustomer?: string;
+    branch?: string;
+    account?: string;
+    loanPurpose?: string;
+    loanPurposeOther?: string;
+  };
+  exposures?: {
+    creditCardsClean?: Array<{
+      sr_no?: string;
+      bank_name?: string;
+      approved_limit?: string | number;
+    }>;
+    creditCardsSecured?: Array<{
+      sr_no?: string;
+      bank_name?: string;
+      approved_limit?: string | number;
+    }>;
+    personalLoansExisting?: Array<{
+      sr_no?: string;
+      bank_name?: string;
+      approved_limit?: string | number;
+      outstanding_amount?: string | number;
+      as_of?: string;
+    }>;
+    otherFacilities?: Array<{
+      sr_no?: string;
+      bank_name?: string;
+      approved_limit?: string | number;
+      nature?: string;
+      current_outstanding?: string | number;
+    }>;
+    personalLoansUnderProcess?: Array<{
+      sr_no?: string;
+      bank_name?: string;
+      facility_under_process?: string;
+      nature_of_facility?: string;
+    }>;
+  };
+  references?: Array<{
+    id?: string | number;
+    name?: string;
+    cnic?: string;
+    relationship?: string;
+    houseNo?: string;
+    street?: string;
+    area?: string;
+    city?: string;
+    postalCode?: string;
+    telephoneResidence?: string;
+    telephoneOffice?: string;
+    mobile?: string;
+    fax?: string;
+    email?: string;
+  }>;
+  declaration?: {
+    signature?: string;
+    date?: string;
+    termsAgreed?: boolean;
+  };
+  bankUseOnly?: {
+    applicationSource?: string;
+    channelCode?: string;
+    soEmployeeNo?: string;
+    programCode?: string;
+    pbEmployeeNo?: string;
+    branchCode?: string;
+    smEmployeeNo?: string;
+    bmSignature?: string;
+  };
   referenceContacts?: Array<any>;
   nextOfKin?: any;
 }

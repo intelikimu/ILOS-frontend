@@ -1,65 +1,36 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useCustomer } from "@/contexts/CustomerContext";
 
 export const CashplusApplicationTypeForm = () => {
-  const { customerData } = useCustomer();
+  const { customerData, updateCustomerData } = useCustomer();
 
-  const [formData, setFormData] = useState({
-    ublExistingCustomer: "",
-    branch: "",
-    account: "",
-    loanPurpose: "",
-    loanPurposeOther: "",
-  });
+  // Defensive defaults (ensure applicationDetails is always an object)
+  const applicationDetails = customerData?.applicationDetails || {};
+  const clientBanks = customerData?.cifData?.clientBanks || {};
 
-  const [prefilledFields, setPrefilledFields] = useState<Set<string>>(new Set());
-
-useEffect(() => {
-  if (!customerData) return;
-
-  const prefilled = new Set<string>();
-  const newFormData = { ...formData };
-
-  // UBL Existing Customer: Yes if clientBanks.bank_name === "UBL"
-  if (customerData?.cifData?.clientBanks.bank_name === "UBL") {
-    newFormData.ublExistingCustomer = "Yes";
-    prefilled.add("ublExistingCustomer");
-  } else if (customerData?.cifData?.clientBanks.bank_name) {
-    newFormData.ublExistingCustomer = "No";
-    prefilled.add("ublExistingCustomer");
-  } else {
-    newFormData.ublExistingCustomer = "";
-  }
-
-  // Branch: Prefer clientBanks.branch, fallback to controlBranch
-  if (customerData.clientBanks?.branch) {
-    newFormData.branch = customerData?.cifData?.clientBanks.branch;
-    prefilled.add("branch");
-  } else if (customerData?.cifData?.clientBanks.branch) {
-    newFormData.branch = customerData?.cifData?.clientBanks.branch;
-    prefilled.add("branch");
-  }
-
-  // Account: clientBanks.actt_no
-  if (customerData?.cifData?.clientBanks?.actt_no) {
-    newFormData.account = customerData.cifData?.clientBanks?.actt_no ?? "";
-    prefilled.add("account");
-  }
-
-  setFormData(newFormData);
-  setPrefilledFields(prefilled);
-  // eslint-disable-next-line
-}, [customerData]);
-
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-      ...(field === "loanPurpose" && value !== "Other" ? { loanPurposeOther: "" } : {}),
-    }));
+  // Helper to update application details in global context
+  const handleChange = (field: string, value: any) => {
+    updateCustomerData({
+      applicationDetails: {
+        ...applicationDetails,
+        [field]: value,
+        ...(field === "loanPurpose" && value !== "Other" ? { loanPurposeOther: "" } : {}),
+      },
+    });
   };
+
+  // Helper for prefilled highlighting
+  const prefilledFields = new Set(
+    Object.entries(applicationDetails)
+      .filter(([k, v]) => !!v)
+      .map(([k]) => k)
+      .concat(
+        clientBanks.bank_name === "UBL" ? ["ublExistingCustomer"] : [],
+        clientBanks.branch ? ["branch"] : [],
+        clientBanks.actt_no ? ["account"] : []
+      )
+  );
 
   const getFieldClasses = (fieldName: string) => {
     const base = "w-full border rounded-xl px-4 py-2";
@@ -85,8 +56,8 @@ useEffect(() => {
               type="radio"
               name="ublExistingCustomer"
               value="Yes"
-              checked={formData.ublExistingCustomer === "Yes"}
-              onChange={() => handleInputChange("ublExistingCustomer", "Yes")}
+              checked={applicationDetails.ublExistingCustomer === "Yes" || clientBanks.bank_name === "UBL"}
+              onChange={() => handleChange("ublExistingCustomer", "Yes")}
             />
             Yes
           </label>
@@ -95,8 +66,8 @@ useEffect(() => {
               type="radio"
               name="ublExistingCustomer"
               value="No"
-              checked={formData.ublExistingCustomer === "No"}
-              onChange={() => handleInputChange("ublExistingCustomer", "No")}
+              checked={applicationDetails.ublExistingCustomer === "No" || (clientBanks.bank_name && clientBanks.bank_name !== "UBL")}
+              onChange={() => handleChange("ublExistingCustomer", "No")}
             />
             No
           </label>
@@ -108,8 +79,8 @@ useEffect(() => {
             type="text"
             className={getFieldClasses("branch")}
             placeholder="Branch"
-            value={formData.branch || ""}
-            onChange={(e) => handleInputChange("branch", e.target.value)}
+            value={applicationDetails.branch || clientBanks.branch || ""}
+            onChange={(e) => handleChange("branch", e.target.value)}
           />
         </div>
         {/* Account */}
@@ -119,8 +90,8 @@ useEffect(() => {
             type="text"
             className={getFieldClasses("account")}
             placeholder="Account"
-            value={formData.account}
-            onChange={(e) => handleInputChange("account", e.target.value)}
+            value={applicationDetails.account || clientBanks.actt_no || ""}
+            onChange={(e) => handleChange("account", e.target.value)}
           />
         </div>
         {/* Purpose of Loan */}
@@ -133,19 +104,19 @@ useEffect(() => {
                   type="radio"
                   name="loanPurpose"
                   value={purpose}
-                  checked={formData.loanPurpose === purpose}
-                  onChange={(e) => handleInputChange("loanPurpose", e.target.value)}
+                  checked={applicationDetails.loanPurpose === purpose}
+                  onChange={(e) => handleChange("loanPurpose", e.target.value)}
                 />
                 {purpose}
               </label>
             ))}
-            {formData.loanPurpose === "Other" && (
+            {applicationDetails.loanPurpose === "Other" && (
               <input
                 type="text"
                 className="rounded-xl border bg-white px-4 py-2"
                 placeholder="If Other, please specify"
-                value={formData.loanPurposeOther}
-                onChange={(e) => handleInputChange("loanPurposeOther", e.target.value)}
+                value={applicationDetails.loanPurposeOther || ""}
+                onChange={(e) => handleChange("loanPurposeOther", e.target.value)}
               />
             )}
           </div>

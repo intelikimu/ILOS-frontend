@@ -290,8 +290,8 @@ export default function ApplicantPage() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </>
             )}
-          </Button>
-
+              </Button>
+              
           {/* Help text for Next button */}
           {!customerData && cnic.length === 15 && !loading && (
             <div className="text-sm text-gray-600 mt-2 text-center">

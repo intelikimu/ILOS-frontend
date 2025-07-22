@@ -1,237 +1,72 @@
 "use client"
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useCustomer } from '@/contexts/CustomerContext';
 
 export const CashplusPersonalInfoForm = () => {
-  const { customerData } = useCustomer();
-  const [formData, setFormData] = useState({
-    title: '',
-    firstName: '',
-    middleName: '',
-    lastName: '',
-    cnic: '',
-    ntn: '',
-    dateOfBirth: '',
-    gender: '',
-    maritalStatus: '',
-    dependants: '',
-    education: '',
-    educationOther: '',
-    fatherName: '',
-    motherName: '',
-    employmentStatus: '',
-    address: '',
-    nearestLandmark: '',
-    city: '',
-    postalCode: '',
-    residingSince: '',
-    accommodationType: '',
-    accommodationOther: '',
-    monthlyRent: '',
-    mailingAddress: '',
-    // Permanent Address
-    permanentHouseNo: '',
-    permanentStreet: '',
-    permanentCity: '',
-    permanentPostalCode: '',
-    // Contact Details
-    telephoneCurrent: '',
-    telephonePermanent: '',
-    mobile: '',
-    mobileType: '',
-    other: '',
-    // Additional fields from CIF
-    occupationCode: '',
-    nationality: '',
-    placeOfBirth: '',
-    industry: '',
-    business: '',
-    ublCustomer: '',
-    ublAccountNumber: '',
-    branchName: '',
-    country: ''
-  });
+  const { customerData, updateCustomerData } = useCustomer();
 
-  const [prefilledFields, setPrefilledFields] = useState<Set<string>>(new Set());
+  // Defensive defaults (ensure personalDetails is always an object)
+  const personalDetails = customerData?.personalDetails || {};
+  const addressDetails = customerData?.addressDetails || {};
+  const currentAddress = addressDetails.currentAddress || {};
+  const permanentAddress = addressDetails.permanentAddress || {};
+  const contactDetails = customerData?.contactDetails || {};
 
-  useEffect(() => {
-    if (customerData?.personalDetails) {
-      const prefilled = new Set<string>();
-      const newFormData = { ...formData };
-      
-      // Map customer data to form fields
-      if (customerData.personalDetails.title) {
-        newFormData.title = customerData.personalDetails.title;
-        prefilled.add('title');
-      }
-      if (customerData.personalDetails.firstName) {
-        newFormData.firstName = customerData.personalDetails.firstName;
-        prefilled.add('firstName');
-      }
-      if (customerData.personalDetails.middleName) {
-        newFormData.middleName = customerData.personalDetails.middleName;
-        prefilled.add('middleName');
-      }
-      if (customerData.personalDetails.lastName) {
-        newFormData.lastName = customerData.personalDetails.lastName;
-        prefilled.add('lastName');
-      }
-      if (customerData.personalDetails.cnic) {
-        newFormData.cnic = customerData.personalDetails.cnic;
-        prefilled.add('cnic');
-      }
-      if (customerData.personalDetails.ntn) {
-        newFormData.ntn = customerData.personalDetails.ntn;
-        prefilled.add('ntn');
-      }
-      if (customerData.personalDetails.dateOfBirth) {
-        // Format date for input field (YYYY-MM-DD)
-        const formattedDate = new Date(customerData.personalDetails.dateOfBirth).toISOString().split('T')[0];
-        newFormData.dateOfBirth = formattedDate;
-        prefilled.add('dateOfBirth');
-      }
-      if (customerData.personalDetails.gender) {
-        newFormData.gender = customerData.personalDetails.gender;
-        prefilled.add('gender');
-      }
-      if (customerData.personalDetails.maritalStatus) {
-        newFormData.maritalStatus = customerData.personalDetails.maritalStatus;
-        prefilled.add('maritalStatus');
-      }
-      if (customerData.personalDetails.numberOfDependents) {
-        newFormData.dependants = customerData.personalDetails.numberOfDependents.toString();
-        prefilled.add('dependants');
-      }
-      if (customerData.personalDetails.education) {
-        newFormData.education = customerData.personalDetails.education;
-        prefilled.add('education');
-      }
-      if (customerData.personalDetails.fatherName) {
-        newFormData.fatherName = customerData.personalDetails.fatherName;
-        prefilled.add('fatherName');
-      }
-      if (customerData.personalDetails.motherName) {
-        newFormData.motherName = customerData.personalDetails.motherName;
-        prefilled.add('motherName');
-      }
-      if (customerData.personalDetails.mobileNumber) {
-        newFormData.mobile = customerData.personalDetails.mobileNumber;
-        prefilled.add('mobile');
-      }
-      if (customerData.personalDetails.occupationCode) {
-        newFormData.occupationCode = customerData.personalDetails.occupationCode;
-        prefilled.add('occupationCode');
-      }
-      if (customerData.personalDetails.nationality) {
-        newFormData.nationality = customerData.personalDetails.nationality;
-        prefilled.add('nationality');
-      }
-      if (customerData.personalDetails.placeOfBirth) {
-        newFormData.placeOfBirth = customerData.personalDetails.placeOfBirth;
-        prefilled.add('placeOfBirth');
-      }
-      
-      // Employment Details
-      if (customerData.employmentDetails?.employmentStatus) {
-        newFormData.employmentStatus = customerData.employmentDetails.employmentStatus;
-        prefilled.add('employmentStatus');
-      }
-      if (customerData.employmentDetails?.occupationCode) {
-        newFormData.occupationCode = customerData.employmentDetails.occupationCode;
-        prefilled.add('occupationCode');
-      }
-      if (customerData.employmentDetails?.industry) {
-        newFormData.industry = customerData.employmentDetails.industry;
-        prefilled.add('industry');
-      }
-      if (customerData.employmentDetails?.business) {
-        newFormData.business = customerData.employmentDetails.business;
-        prefilled.add('business');
-      }
-      
-      // Banking Details
-      if (customerData.bankingDetails?.isUBLCustomer) {
-        newFormData.ublCustomer = customerData.bankingDetails.isUBLCustomer;
-        prefilled.add('ublCustomer');
-      }
-      if (customerData.bankingDetails?.ublAccountNumber) {
-        newFormData.ublAccountNumber = customerData.bankingDetails.ublAccountNumber;
-        prefilled.add('ublAccountNumber');
-      }
-      if (customerData.bankingDetails?.branchName) {
-        newFormData.branchName = customerData.bankingDetails.branchName;
-        prefilled.add('branchName');
-      }
-      
-      // Address Details
-      if (customerData.addressDetails?.currentAddress) {
-        const currentAddr = customerData.addressDetails.currentAddress;
-        if (currentAddr.fullAddress) {
-          newFormData.address = currentAddr.fullAddress;
-          prefilled.add('address');
-        }
-        if (currentAddr.nearestLandmark) {
-          newFormData.nearestLandmark = currentAddr.nearestLandmark;
-          prefilled.add('nearestLandmark');
-        }
-        if (currentAddr.city) {
-          newFormData.city = currentAddr.city;
-          prefilled.add('city');
-        }
-        if (currentAddr.postalCode) {
-          newFormData.postalCode = currentAddr.postalCode;
-          prefilled.add('postalCode');
-        }
-        if (currentAddr.country) {
-          newFormData.country = currentAddr.country;
-          prefilled.add('country');
-        }
-        if (currentAddr.telephone) {
-          newFormData.telephoneCurrent = currentAddr.telephone;
-          prefilled.add('telephoneCurrent');
-        }
-        if (currentAddr.yearsAtAddress && currentAddr.yearsAtAddress > 0) {
-          newFormData.residingSince = `${currentAddr.yearsAtAddress} years`;
-          prefilled.add('residingSince');
-        }
-        if (currentAddr.residentialStatus) {
-          newFormData.accommodationType = currentAddr.residentialStatus;
-          prefilled.add('accommodationType');
-        }
-        if (currentAddr.monthlyRent && currentAddr.monthlyRent > 0) {
-          newFormData.monthlyRent = currentAddr.monthlyRent.toString();
-          prefilled.add('monthlyRent');
-        }
-      }
-      
-      if (customerData.addressDetails?.permanentAddress) {
-        const permAddr = customerData.addressDetails.permanentAddress;
-        if (permAddr.houseNo) {
-          newFormData.permanentHouseNo = permAddr.houseNo;
-          prefilled.add('permanentHouseNo');
-        }
-        if (permAddr.street) {
-          newFormData.permanentStreet = permAddr.street;
-          prefilled.add('permanentStreet');
-        }
-        if (permAddr.city) {
-          newFormData.permanentCity = permAddr.city;
-          prefilled.add('permanentCity');
-        }
-        if (permAddr.postalCode) {
-          newFormData.permanentPostalCode = permAddr.postalCode;
-          prefilled.add('permanentPostalCode');
-        }
-      }
-      
-      setFormData(newFormData);
-      setPrefilledFields(prefilled);
-    }
-  }, [customerData]);
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  // Helper to update personal details in global context
+  const handlePersonalChange = (field: string, value: any) => {
+    updateCustomerData({
+      personalDetails: {
+        ...personalDetails,
+        [field]: value,
+      },
+    });
   };
+
+  // Helper to update current address fields
+  const handleCurrentAddressChange = (field: string, value: any) => {
+    updateCustomerData({
+      addressDetails: {
+        ...addressDetails,
+        currentAddress: {
+          ...currentAddress,
+          [field]: value,
+        },
+      },
+    });
+  };
+
+  // Helper to update permanent address fields
+  const handlePermanentAddressChange = (field: string, value: any) => {
+    updateCustomerData({
+      addressDetails: {
+        ...addressDetails,
+        permanentAddress: {
+          ...permanentAddress,
+          [field]: value,
+        },
+      },
+    });
+  };
+
+  // Helper to update contact details
+  const handleContactChange = (field: string, value: any) => {
+    updateCustomerData({
+      contactDetails: {
+        ...contactDetails,
+        [field]: value,
+      },
+    });
+  };
+
+  // Helper for prefilled highlighting
+  const prefilledFields = new Set(
+    [
+      ...Object.entries(personalDetails).filter(([k, v]) => !!v).map(([k]) => k),
+      ...Object.entries(currentAddress).filter(([k, v]) => !!v).map(([k]) => k),
+      ...Object.entries(permanentAddress).filter(([k, v]) => !!v).map(([k]) => k),
+      ...Object.entries(contactDetails).filter(([k, v]) => !!v).map(([k]) => k)
+    ]
+  );
 
   const getFieldClasses = (fieldName: string) => {
     const baseClasses = "w-full border border-gray-300 rounded-xl px-4 py-2";
@@ -262,8 +97,8 @@ export const CashplusPersonalInfoForm = () => {
                 type="radio" 
                 name="title" 
                 value="Mr" 
-                checked={formData.title === 'Mr'}
-                onChange={(e) => handleInputChange('title', e.target.value)}
+                checked={personalDetails.title === 'Mr'}
+                onChange={(e) => handlePersonalChange('title', e.target.value)}
               /> 
               Mr.
             </label>
@@ -272,8 +107,8 @@ export const CashplusPersonalInfoForm = () => {
                 type="radio" 
                 name="title" 
                 value="Mrs" 
-                checked={formData.title === 'Mrs'}
-                onChange={(e) => handleInputChange('title', e.target.value)}
+                checked={personalDetails.title === 'Mrs'}
+                onChange={(e) => handlePersonalChange('title', e.target.value)}
               /> 
               Mrs.
             </label>
@@ -282,8 +117,8 @@ export const CashplusPersonalInfoForm = () => {
                 type="radio" 
                 name="title" 
                 value="Ms" 
-                checked={formData.title === 'Ms'}
-                onChange={(e) => handleInputChange('title', e.target.value)}
+                checked={personalDetails.title === 'Ms'}
+                onChange={(e) => handlePersonalChange('title', e.target.value)}
               /> 
               Ms.
             </label>
@@ -297,8 +132,8 @@ export const CashplusPersonalInfoForm = () => {
             type="text" 
             className={getFieldClasses('firstName')}
             placeholder="First Name" 
-            value={formData.firstName}
-            onChange={(e) => handleInputChange('firstName', e.target.value)}
+            value={personalDetails.firstName || ""}
+            onChange={(e) => handlePersonalChange('firstName', e.target.value)}
           />
         </div>
         <div>
@@ -307,8 +142,8 @@ export const CashplusPersonalInfoForm = () => {
             type="text" 
             className={getFieldClasses('middleName')}
             placeholder="Middle Name" 
-            value={formData.middleName}
-            onChange={(e) => handleInputChange('middleName', e.target.value)}
+            value={personalDetails.middleName || ""}
+            onChange={(e) => handlePersonalChange('middleName', e.target.value)}
           />
         </div>
         <div>
@@ -317,8 +152,8 @@ export const CashplusPersonalInfoForm = () => {
             type="text" 
             className={getFieldClasses('lastName')}
             placeholder="Last Name" 
-            value={formData.lastName}
-            onChange={(e) => handleInputChange('lastName', e.target.value)}
+            value={personalDetails.lastName || ""}
+            onChange={(e) => handlePersonalChange('lastName', e.target.value)}
           />
         </div>
         
@@ -330,8 +165,8 @@ export const CashplusPersonalInfoForm = () => {
             maxLength={15} 
             className={getFieldClasses('cnic')}
             placeholder="CNIC (13 digits)" 
-            value={formData.cnic}
-            onChange={(e) => handleInputChange('cnic', e.target.value)}
+            value={personalDetails.cnic || ""}
+            onChange={(e) => handlePersonalChange('cnic', e.target.value)}
           />
         </div>
         
@@ -342,8 +177,8 @@ export const CashplusPersonalInfoForm = () => {
             type="text" 
             className={getFieldClasses('ntn')}
             placeholder="NTN" 
-            value={formData.ntn}
-            onChange={(e) => handleInputChange('ntn', e.target.value)}
+            value={personalDetails.ntn || ""}
+            onChange={(e) => handlePersonalChange('ntn', e.target.value)}
           />
         </div>
         
@@ -353,8 +188,8 @@ export const CashplusPersonalInfoForm = () => {
           <input 
             type="date" 
             className={getFieldClasses('dateOfBirth')}
-            value={formData.dateOfBirth}
-            onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+            value={personalDetails.dateOfBirth || ""}
+            onChange={(e) => handlePersonalChange('dateOfBirth', e.target.value)}
           />
         </div>
         
@@ -367,8 +202,8 @@ export const CashplusPersonalInfoForm = () => {
                 type="radio" 
                 name="gender" 
                 value="Male"
-                checked={formData.gender === 'Male'}
-                onChange={(e) => handleInputChange('gender', e.target.value)}
+                checked={personalDetails.gender === 'Male'}
+                onChange={(e) => handlePersonalChange('gender', e.target.value)}
               /> 
               Male
             </label>
@@ -377,8 +212,8 @@ export const CashplusPersonalInfoForm = () => {
                 type="radio" 
                 name="gender" 
                 value="Female"
-                checked={formData.gender === 'Female'}
-                onChange={(e) => handleInputChange('gender', e.target.value)}
+                checked={personalDetails.gender === 'Female'}
+                onChange={(e) => handlePersonalChange('gender', e.target.value)}
               /> 
               Female
             </label>
@@ -394,8 +229,8 @@ export const CashplusPersonalInfoForm = () => {
                 type="radio" 
                 name="maritalStatus" 
                 value="Single"
-                checked={formData.maritalStatus === 'Single'}
-                onChange={(e) => handleInputChange('maritalStatus', e.target.value)}
+                checked={personalDetails.maritalStatus === 'Single'}
+                onChange={(e) => handlePersonalChange('maritalStatus', e.target.value)}
               /> 
               Single
             </label>
@@ -404,8 +239,8 @@ export const CashplusPersonalInfoForm = () => {
                 type="radio" 
                 name="maritalStatus" 
                 value="Married"
-                checked={formData.maritalStatus === 'Married'}
-                onChange={(e) => handleInputChange('maritalStatus', e.target.value)}
+                checked={personalDetails.maritalStatus === 'Married'}
+                onChange={(e) => handlePersonalChange('maritalStatus', e.target.value)}
               /> 
               Married
             </label>
@@ -414,8 +249,8 @@ export const CashplusPersonalInfoForm = () => {
                 type="radio" 
                 name="maritalStatus" 
                 value="Widowed"
-                checked={formData.maritalStatus === 'Widowed'}
-                onChange={(e) => handleInputChange('maritalStatus', e.target.value)}
+                checked={personalDetails.maritalStatus === 'Widowed'}
+                onChange={(e) => handlePersonalChange('maritalStatus', e.target.value)}
               /> 
               Widowed
             </label>
@@ -424,8 +259,8 @@ export const CashplusPersonalInfoForm = () => {
                 type="radio" 
                 name="maritalStatus" 
                 value="Divorced"
-                checked={formData.maritalStatus === 'Divorced'}
-                onChange={(e) => handleInputChange('maritalStatus', e.target.value)}
+                checked={personalDetails.maritalStatus === 'Divorced'}
+                onChange={(e) => handlePersonalChange('maritalStatus', e.target.value)}
               /> 
               Divorced
             </label>
@@ -437,10 +272,10 @@ export const CashplusPersonalInfoForm = () => {
           <label className="block mb-2 font-medium">Dependants</label>
           <input 
             type="number" 
-            className={getFieldClasses('dependants')}
+            className={getFieldClasses('numberOfDependents')}
             placeholder="Number of Dependants" 
-            value={formData.dependants}
-            onChange={(e) => handleInputChange('dependants', e.target.value)}
+            value={personalDetails.numberOfDependents || ""}
+            onChange={(e) => handlePersonalChange('numberOfDependents', e.target.value)}
           />
         </div>
         
@@ -454,20 +289,20 @@ export const CashplusPersonalInfoForm = () => {
                   type="radio" 
                   name="education" 
                   value={edu}
-                  checked={formData.education === edu}
-                  onChange={(e) => handleInputChange('education', e.target.value)}
+                  checked={personalDetails.education === edu}
+                  onChange={(e) => handlePersonalChange('education', e.target.value)}
                 /> 
                 {edu}
               </label>
             ))}
           </div>
-          {formData.education === 'Other' && (
+          {personalDetails.education === 'Other' && (
             <input 
               type="text" 
               className="rounded-xl border border-gray-300 bg-white px-4 py-2" 
               placeholder="If Other, specify" 
-              value={formData.educationOther}
-              onChange={(e) => handleInputChange('educationOther', e.target.value)}
+              value={personalDetails.educationOther || ""}
+              onChange={(e) => handlePersonalChange('educationOther', e.target.value)}
             />
           )}
         </div>
@@ -479,8 +314,8 @@ export const CashplusPersonalInfoForm = () => {
             type="text" 
             className={getFieldClasses('fatherName')}
             placeholder="Father/Husband Name" 
-            value={formData.fatherName}
-            onChange={(e) => handleInputChange('fatherName', e.target.value)}
+            value={personalDetails.fatherName || ""}
+            onChange={(e) => handlePersonalChange('fatherName', e.target.value)}
           />
         </div>
         
@@ -491,8 +326,8 @@ export const CashplusPersonalInfoForm = () => {
             type="text" 
             className={getFieldClasses('motherName')}
             placeholder="Mother's Maiden Name" 
-            value={formData.motherName}
-            onChange={(e) => handleInputChange('motherName', e.target.value)}
+            value={personalDetails.motherName || ""}
+            onChange={(e) => handlePersonalChange('motherName', e.target.value)}
           />
         </div>
         
@@ -506,8 +341,13 @@ export const CashplusPersonalInfoForm = () => {
                   type="radio" 
                   name="employmentStatus" 
                   value={status}
-                  checked={formData.employmentStatus === status}
-                  onChange={(e) => handleInputChange('employmentStatus', e.target.value)}
+                  checked={customerData?.employmentDetails?.employmentStatus === status}
+                  onChange={(e) => updateCustomerData({
+                    employmentDetails: {
+                      ...(customerData?.employmentDetails || {}),
+                      employmentStatus: e.target.value
+                    }
+                  })}
                 /> 
                 {status}
               </label>
@@ -520,10 +360,10 @@ export const CashplusPersonalInfoForm = () => {
           <label className="block mb-2 font-medium">Address</label>
           <textarea 
             rows={2} 
-            className={getFieldClasses('address')}
+            className={getFieldClasses('fullAddress')}
             placeholder="House/Apt, Street, etc." 
-            value={formData.address}
-            onChange={(e) => handleInputChange('address', e.target.value)}
+            value={currentAddress.fullAddress || ""}
+            onChange={(e) => handleCurrentAddressChange('fullAddress', e.target.value)}
           />
         </div>
         
@@ -533,8 +373,8 @@ export const CashplusPersonalInfoForm = () => {
             type="text" 
             className={getFieldClasses('nearestLandmark')}
             placeholder="Nearest Landmark" 
-            value={formData.nearestLandmark}
-            onChange={(e) => handleInputChange('nearestLandmark', e.target.value)}
+            value={currentAddress.nearestLandmark || ""}
+            onChange={(e) => handleCurrentAddressChange('nearestLandmark', e.target.value)}
           />
         </div>
         
@@ -544,8 +384,8 @@ export const CashplusPersonalInfoForm = () => {
             type="text" 
             className={getFieldClasses('city')}
             placeholder="City" 
-            value={formData.city}
-            onChange={(e) => handleInputChange('city', e.target.value)}
+            value={currentAddress.city || ""}
+            onChange={(e) => handleCurrentAddressChange('city', e.target.value)}
           />
         </div>
         
@@ -555,8 +395,8 @@ export const CashplusPersonalInfoForm = () => {
             type="text" 
             className={getFieldClasses('postalCode')}
             placeholder="Postal Code" 
-            value={formData.postalCode}
-            onChange={(e) => handleInputChange('postalCode', e.target.value)}
+            value={currentAddress.postalCode || ""}
+            onChange={(e) => handleCurrentAddressChange('postalCode', e.target.value)}
           />
         </div>
         
@@ -564,10 +404,10 @@ export const CashplusPersonalInfoForm = () => {
           <label className="block mb-2 font-medium">Residing Since</label>
           <input 
             type="text" 
-            className={getFieldClasses('residingSince')}
+            className={getFieldClasses('yearsAtAddress')}
             placeholder="Duration at Address" 
-            value={formData.residingSince}
-            onChange={(e) => handleInputChange('residingSince', e.target.value)}
+            value={currentAddress.yearsAtAddress || ""}
+            onChange={(e) => handleCurrentAddressChange('yearsAtAddress', e.target.value)}
           />
         </div>
         
@@ -589,20 +429,20 @@ export const CashplusPersonalInfoForm = () => {
                   type="radio" 
                   name="accommodationType" 
                   value={type}
-                  checked={formData.accommodationType === type}
-                  onChange={(e) => handleInputChange('accommodationType', e.target.value)}
+                  checked={currentAddress.residentialStatus === type}
+                  onChange={(e) => handleCurrentAddressChange('residentialStatus', e.target.value)}
                 /> 
                 {type}
               </label>
             ))}
           </div>
-          {formData.accommodationType === 'Other' && (
+          {currentAddress.residentialStatus === 'Other' && (
             <input 
               type="text" 
               className="rounded-xl border border-gray-300 bg-white px-4 py-2" 
               placeholder="If Other, specify" 
-              value={formData.accommodationOther}
-              onChange={(e) => handleInputChange('accommodationOther', e.target.value)}
+              value={currentAddress.residentialStatusOther || ""}
+              onChange={(e) => handleCurrentAddressChange('residentialStatusOther', e.target.value)}
             />
           )}
         </div>
@@ -613,8 +453,8 @@ export const CashplusPersonalInfoForm = () => {
             type="number" 
             className={getFieldClasses('monthlyRent')}
             placeholder="Monthly Rent (if rented)" 
-            value={formData.monthlyRent}
-            onChange={(e) => handleInputChange('monthlyRent', e.target.value)}
+            value={currentAddress.monthlyRent || ""}
+            onChange={(e) => handleCurrentAddressChange('monthlyRent', e.target.value)}
           />
         </div>
         
@@ -627,8 +467,8 @@ export const CashplusPersonalInfoForm = () => {
                 type="radio" 
                 name="mailingAddress" 
                 value="Residence"
-                checked={formData.mailingAddress === 'Residence'}
-                onChange={(e) => handleInputChange('mailingAddress', e.target.value)}
+                checked={contactDetails.preferredMailingAddress === 'Residence'}
+                onChange={(e) => handleContactChange('preferredMailingAddress', e.target.value)}
               /> 
               Residence
             </label>
@@ -637,8 +477,8 @@ export const CashplusPersonalInfoForm = () => {
                 type="radio" 
                 name="mailingAddress" 
                 value="Office"
-                checked={formData.mailingAddress === 'Office'}
-                onChange={(e) => handleInputChange('mailingAddress', e.target.value)}
+                checked={contactDetails.preferredMailingAddress === 'Office'}
+                onChange={(e) => handleContactChange('preferredMailingAddress', e.target.value)}
               /> 
               Office
             </label>
@@ -651,31 +491,31 @@ export const CashplusPersonalInfoForm = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
             <input 
               type="text" 
-              className={getFieldClasses('permanentHouseNo')}
+              className={getFieldClasses('houseNo')}
               placeholder="House / Apt. No." 
-              value={formData.permanentHouseNo}
-              onChange={(e) => handleInputChange('permanentHouseNo', e.target.value)}
+              value={permanentAddress.houseNo || ""}
+              onChange={(e) => handlePermanentAddressChange('houseNo', e.target.value)}
             />
             <input 
               type="text" 
-              className={getFieldClasses('permanentStreet')}
+              className={getFieldClasses('street')}
               placeholder="Street" 
-              value={formData.permanentStreet}
-              onChange={(e) => handleInputChange('permanentStreet', e.target.value)}
+              value={permanentAddress.street || ""}
+              onChange={(e) => handlePermanentAddressChange('street', e.target.value)}
             />
             <input 
               type="text" 
-              className={getFieldClasses('permanentCity')}
+              className={getFieldClasses('city')}
               placeholder="City" 
-              value={formData.permanentCity}
-              onChange={(e) => handleInputChange('permanentCity', e.target.value)}
+              value={permanentAddress.city || ""}
+              onChange={(e) => handlePermanentAddressChange('city', e.target.value)}
             />
             <input 
               type="text" 
-              className={getFieldClasses('permanentPostalCode')}
+              className={getFieldClasses('postalCode')}
               placeholder="Postal Code" 
-              value={formData.permanentPostalCode}
-              onChange={(e) => handleInputChange('permanentPostalCode', e.target.value)}
+              value={permanentAddress.postalCode || ""}
+              onChange={(e) => handlePermanentAddressChange('postalCode', e.target.value)}
             />
           </div>
         </div>
@@ -685,10 +525,10 @@ export const CashplusPersonalInfoForm = () => {
           <label className="block mb-2 font-medium">Telephone (Current)</label>
           <input 
             type="text" 
-            className={getFieldClasses('telephoneCurrent')}
+            className={getFieldClasses('telephone')}
             placeholder="Telephone (Current)" 
-            value={formData.telephoneCurrent}
-            onChange={(e) => handleInputChange('telephoneCurrent', e.target.value)}
+            value={currentAddress.telephone || ""}
+            onChange={(e) => handleCurrentAddressChange('telephone', e.target.value)}
           />
         </div>
         
@@ -696,10 +536,10 @@ export const CashplusPersonalInfoForm = () => {
           <label className="block mb-2 font-medium">Telephone (Permanent)</label>
           <input 
             type="text" 
-            className={getFieldClasses('telephonePermanent')}
+            className={getFieldClasses('permanentTelephone')}
             placeholder="Telephone (Permanent)" 
-            value={formData.telephonePermanent}
-            onChange={(e) => handleInputChange('telephonePermanent', e.target.value)}
+            value={permanentAddress.telephone || ""}
+            onChange={(e) => handlePermanentAddressChange('telephone', e.target.value)}
           />
         </div>
         
@@ -707,10 +547,10 @@ export const CashplusPersonalInfoForm = () => {
           <label className="block mb-2 font-medium">Mobile</label>
           <input 
             type="text" 
-            className={getFieldClasses('mobile')}
+            className={getFieldClasses('mobileNumber')}
             placeholder="Mobile" 
-            value={formData.mobile}
-            onChange={(e) => handleInputChange('mobile', e.target.value)}
+            value={personalDetails.mobileNumber || ""}
+            onChange={(e) => handlePersonalChange('mobileNumber', e.target.value)}
           />
         </div>
         
@@ -723,8 +563,8 @@ export const CashplusPersonalInfoForm = () => {
                 type="radio" 
                 name="mobileType" 
                 value="Prepaid"
-                checked={formData.mobileType === 'Prepaid'}
-                onChange={(e) => handleInputChange('mobileType', e.target.value)}
+                checked={contactDetails.mobileType === 'Prepaid'}
+                onChange={(e) => handleContactChange('mobileType', e.target.value)}
               /> 
               Prepaid
             </label>
@@ -733,8 +573,8 @@ export const CashplusPersonalInfoForm = () => {
                 type="radio" 
                 name="mobileType" 
                 value="Postpaid"
-                checked={formData.mobileType === 'Postpaid'}
-                onChange={(e) => handleInputChange('mobileType', e.target.value)}
+                checked={contactDetails.mobileType === 'Postpaid'}
+                onChange={(e) => handleContactChange('mobileType', e.target.value)}
               /> 
               Postpaid
             </label>
@@ -742,13 +582,13 @@ export const CashplusPersonalInfoForm = () => {
         </div>
         
         <div>
-          <label className="block mb-2 font-medium">Other (Please Specify)</label>
+          <label className="block mb-2 font-medium">Other Contact</label>
           <input 
             type="text" 
-            className={getFieldClasses('other')}
-            placeholder="Other (Please Specify)" 
-            value={formData.other}
-            onChange={(e) => handleInputChange('other', e.target.value)}
+            className={getFieldClasses('otherContact')}
+            placeholder="Other Contact" 
+            value={contactDetails.otherContact || ""}
+            onChange={(e) => handleContactChange('otherContact', e.target.value)}
           />
         </div>
       </div>

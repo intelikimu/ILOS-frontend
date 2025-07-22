@@ -1,52 +1,36 @@
+"use client";
+import React from "react";
 import { useCustomer } from "@/contexts/CustomerContext";
-import { useState, useEffect } from "react";
 
-// components/forms/CashplusBankingDetailsForm.tsx
 export const CashplusBankingDetailsForm = () => {
-  const { customerData } = useCustomer();
+  const { customerData, updateCustomerData } = useCustomer();
 
-  // Support both places for bank data
+  // Defensive defaults (ensure bankingDetails is always an object)
+  const bankingDetails = customerData?.bankingDetails || {};
+  
+  // Support both places for bank data for initial values
   const clientBanks = customerData?.clientBanks || customerData?.cifData?.clientBanks || {};
 
-  // Controlled state for the fields
-  const [formData, setFormData] = useState({
-    isUblCustomer: "",
-    ublAccountNumber: "",
-  });
-
-  // Only update formData if incoming backend values are different from what is in state
-  useEffect(() => {
-    if (!clientBanks) return;
-    const isUbl = clientBanks.bank_name === "UBL" ? "Yes" : "No";
-    const accNo = clientBanks.actt_no || "";
-
-    if (
-      formData.isUblCustomer !== isUbl ||
-      formData.ublAccountNumber !== accNo
-    ) {
-      setFormData({
-        isUblCustomer: isUbl,
-        ublAccountNumber: accNo,
-      });
-    }
-    // eslint-disable-next-line
-  }, [clientBanks?.bank_name, clientBanks?.actt_no]);
+  // Helper to update banking details in global context
+  const handleChange = (field: string, value: any) => {
+    updateCustomerData({
+      bankingDetails: {
+        ...bankingDetails,
+        [field]: value,
+      },
+    });
+  };
 
   // Prefilled field highlighting
-  const [prefilledFields, setPrefilledFields] = useState<Set<string>>(new Set());
-  useEffect(() => {
-    const prefilled = new Set<string>();
-    if (formData.isUblCustomer) prefilled.add("isUblCustomer");
-    if (formData.ublAccountNumber) prefilled.add("ublAccountNumber");
-    setPrefilledFields(prefilled);
-  }, [formData.isUblCustomer, formData.ublAccountNumber]);
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+  const prefilledFields = new Set(
+    Object.entries(bankingDetails)
+      .filter(([k, v]) => !!v)
+      .map(([k]) => k)
+      .concat(
+        clientBanks.bank_name === "UBL" ? ["isUblCustomer"] : [],
+        clientBanks.actt_no ? ["ublAccountNumber"] : []
+      )
+  );
 
   const getFieldClasses = (fieldName: string) => {
     const base = "w-full border rounded-xl px-4 py-2";
@@ -67,8 +51,8 @@ export const CashplusBankingDetailsForm = () => {
                 type="radio"
                 name="isUblCustomer"
                 value="Yes"
-                checked={formData.isUblCustomer === "Yes"}
-                onChange={() => handleInputChange("isUblCustomer", "Yes")}
+                checked={bankingDetails.isUblCustomer === "Yes" || clientBanks.bank_name === "UBL"}
+                onChange={() => handleChange("isUblCustomer", "Yes")}
               />
               Yes
             </label>
@@ -77,8 +61,8 @@ export const CashplusBankingDetailsForm = () => {
                 type="radio"
                 name="isUblCustomer"
                 value="No"
-                checked={formData.isUblCustomer === "No"}
-                onChange={() => handleInputChange("isUblCustomer", "No")}
+                checked={bankingDetails.isUblCustomer === "No" || (clientBanks.bank_name && clientBanks.bank_name !== "UBL")}
+                onChange={() => handleChange("isUblCustomer", "No")}
               />
               No
             </label>
@@ -90,8 +74,8 @@ export const CashplusBankingDetailsForm = () => {
             type="text"
             className={getFieldClasses("ublAccountNumber")}
             placeholder="UBL Account Number"
-            value={formData.ublAccountNumber || ""}
-            onChange={(e) => handleInputChange("ublAccountNumber", e.target.value)}
+            value={bankingDetails.ublAccountNumber || clientBanks.actt_no || ""}
+            onChange={(e) => handleChange("ublAccountNumber", e.target.value)}
           />
           <span className="block text-xs text-gray-500 mt-1">
             Non-disclosure of this information may result in rejection of application.

@@ -203,6 +203,109 @@ interface AmeenDriveData {
   bankUseOnly?: AmeenDriveBankUseOnly;
 }
 
+// CreditCard interface definitions
+interface CreditCardInterface {
+  title?: string;
+  cardType?: string;
+  cardCategory?: string;
+  specialCardOption?: string;
+  photoSubmissionMethod?: string;
+  rewardProgram?: string;
+  nameOnCard?: string;
+  cnicIssuanceDate?: string;
+  cnicExpiryDate?: string;
+  oldNic?: string;
+  typeOfResidence?: string;
+  carYear?: string | number;
+  carModel?: string;
+  carRegistrationNo?: string;
+  carOwnership?: string;
+  cardDestination?: string;
+  statementDelivery?: string;
+  emailForStatement?: string;
+  paymentOption?: string;
+  applicationIdForm?: string;
+  applicationReferenceNumber?: string;
+  channelCode?: string;
+  programCode?: string;
+  branchCode?: string;
+  salesOfficerName?: string;
+  branchName?: string;
+  regionName?: string;
+  branchManagerRemarks?: string;
+  applicationStatus?: string;
+  reasonCode?: string;
+  analystName?: string;
+  availSmsAlert?: boolean | string;
+  availCreditGuardian?: boolean | string;
+  supplementaryCardholderTitle?: string;
+  supplementaryCardholderFirstName?: string;
+  supplementaryCardholderMiddleName?: string;
+  supplementaryCardholderLastName?: string;
+  supplementaryCardholderNameOnCard?: string;
+  supplementaryCardholderFatherHusbandName?: string;
+  supplementaryCardType?: string;
+  supplementaryCardLimitType?: string;
+  supplementaryUsageFrequency?: string;
+  supplementaryRelationshipToPrincipal?: string;
+  supplementaryDob?: string;
+  supplementaryGender?: string;
+  supplementaryNicOrPassport?: string;
+  supplementaryMotherMaidenName?: string;
+  supplementaryDate?: string;
+  collateralType?: string;
+  collateralBank?: string;
+  collateralBranch?: string;
+  collateralAccountNo?: string;
+  collateralAccountType?: string;
+  collateralLienAmount?: number | string;
+  collateralCurrency?: string;
+  collateralTitle?: string;
+  collateralMaturityDate?: string;
+}
+
+interface OtherBankInterface {
+  bank_name?: string;
+  branch?: string;
+  account_no?: string;
+}
+
+interface OtherCreditCardInterface {
+  bank_name?: string;
+  card_number?: string;
+  credit_limit?: string | number;
+}
+
+interface CreditCardLoanInterface {
+  issuing_bank?: string;
+  loan_type?: string;
+  loan_amount?: string | number;
+  monthly_installment?: string | number;
+}
+
+interface SupplementaryCardInterface {
+  basic_card_member_name?: string;
+  basic_card_cnic_passport?: string;
+  basic_card_old_nic?: string;
+  supplementary_card_member_name?: string;
+  supplementary_cnic_passport?: string;
+  supplementary_old_nic?: string;
+}
+
+interface PreviousEmploymentInterface {
+  companyName?: string;
+  designation?: string;
+  experienceYears?: string | number;
+  telephone?: string;
+  employerName?: string;
+}
+
+interface EmploymentIncomeInterface {
+  monthlySalary?: string | number;
+  otherIncome?: string | number;
+  totalIncome?: string | number;
+}
+
 interface CustomerData {
   customerId: string | null;
   isETB: boolean;
@@ -213,6 +316,14 @@ interface CustomerData {
   cifData?: any;
   // Add AmeenDrive property
   ameenDrive?: AmeenDriveData;
+  // Add CreditCard properties
+  creditCard?: CreditCardInterface;
+  otherBanks?: OtherBankInterface[];
+  otherCreditCards?: OtherCreditCardInterface[];
+  creditCardLoans?: CreditCardLoanInterface[];
+  supplementaryCards?: SupplementaryCardInterface[];
+  previousEmployment?: PreviousEmploymentInterface;
+  employmentIncome?: EmploymentIncomeInterface;
   personalDetails?: {
     title?: string;
     firstName?: string;
@@ -301,7 +412,6 @@ interface CustomerData {
     designation?: string;
     grade?: string;
     currentExperience?: string | number;
-    previousEmployer?: string;
     previousExperience?: string | number;
     officeAddress?: {
       houseNo?: string;
@@ -317,6 +427,13 @@ interface CustomerData {
     };
     industry?: string;
     business?: string;
+    // Additional fields needed for CreditCard
+    occupation?: string;
+    sector?: string;
+    employerName?: string;
+    employeeNumber?: string;
+    businessType?: string;
+    companyPhone?: string;
   };
   bankingDetails?: {
     isUblCustomer?: string;
@@ -325,6 +442,9 @@ interface CustomerData {
     branchName?: string;
     accountNumber?: string;
     accountType?: string;
+    accountOpeningDate?: string;
+    iban?: string;
+    paymentOption?: string;
   };
   incomeDetails?: {
     grossMonthlySalary?: string | number;
@@ -337,6 +457,11 @@ interface CustomerData {
     declaredNetWorth?: string | number;
     assessedNetWorth?: string | number;
     annualSales?: string | number;
+    // Additional fields needed for CreditCard
+    totalIncome?: string | number;
+    spouseEmployed?: boolean | string;
+    spouseIncome?: string | number;
+    spouseIncomeSource?: string;
   };
   loanPreference?: {
     loanType?: string;
@@ -399,11 +524,14 @@ interface CustomerData {
     mobile?: string;
     fax?: string;
     email?: string;
+    nearestLandmark?: string;
+    ntn?: string;
   }>;
   declaration?: {
     signature?: string;
     date?: string;
     termsAgreed?: boolean;
+    contactConfirmation?: boolean | string;
   };
   bankUseOnly?: {
     applicationSource?: string;
@@ -416,7 +544,17 @@ interface CustomerData {
     bmSignature?: string;
   };
   referenceContacts?: Array<any>;
-  nextOfKin?: any;
+  nextOfKin?: {
+    name?: string;
+    fullName?: string;
+    relationship?: string;
+    contactNumber?: string;
+    telephone?: string;
+    mobile?: string;
+    alternateNumber?: string;
+    alternateTelephone?: string;
+    cnic?: string;
+  };
 }
 
 interface CustomerContextType {

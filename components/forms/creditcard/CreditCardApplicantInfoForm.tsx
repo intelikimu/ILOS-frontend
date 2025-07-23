@@ -6,26 +6,28 @@ const toInputDate = (date?: string) =>
   date ? new Date(date).toISOString().slice(0, 10) : "";
 
 export const CreditCardApplicantInfoForm = () => {
-  const { customerData } = useCustomer();
+  const { customerData, updateCustomerData } = useCustomer();
   const ind = customerData?.cifData?.individualInfo || {};
   const cnicData = customerData?.cifData?.customerIdType || {};
   const dir = customerData?.cifData?.dirDetails || {};
+  const personalDetails = customerData?.personalDetails || {};
+  const creditCard = customerData?.creditCard || {};
 
   const [formData, setFormData] = useState({
-    title: "",
-    fullName: "",
-    nameOnCard: "",
-    cnic: "",
-    cnicIssue: "",
-    cnicExpiry: "",
-    oldNic: "",
-    fatherHusband: "",
-    dob: "",
-    gender: "",
-    motherMaiden: "",
-    marital: "",
-    dependents: "",
-    education: "",
+    title: creditCard?.title || "",
+    fullName: personalDetails.fullName || "",
+    nameOnCard: creditCard?.nameOnCard || "",
+    cnic: personalDetails.cnic || customerData?.cnic || "",
+    cnicIssue: creditCard?.cnicIssuanceDate || "",
+    cnicExpiry: creditCard?.cnicExpiryDate || "",
+    oldNic: creditCard?.oldNic || "",
+    fatherHusband: personalDetails.fatherName || "",
+    dob: personalDetails.dateOfBirth || "",
+    gender: personalDetails.gender || "",
+    motherMaiden: personalDetails.motherName || "",
+    marital: personalDetails.maritalStatus || "",
+    dependents: personalDetails.numberOfDependents || "",
+    education: personalDetails.education || "",
   });
 
   const [prefilledFields, setPrefilledFields] = useState<Set<string>>(new Set());
@@ -61,6 +63,84 @@ export const CreditCardApplicantInfoForm = () => {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    
+    // Update CustomerContext based on field
+    switch (field) {
+      case 'title':
+        updateCustomerData({
+          creditCard: { 
+            ...creditCard,
+            title: value 
+          },
+          personalDetails: { ...personalDetails, title: value }
+        });
+        break;
+      case 'fullName':
+        updateCustomerData({
+          personalDetails: { ...personalDetails, fullName: value }
+        });
+        break;
+      case 'nameOnCard':
+        updateCustomerData({
+          creditCard: { ...creditCard, nameOnCard: value }
+        });
+        break;
+      case 'cnic':
+        updateCustomerData({
+          personalDetails: { ...personalDetails, cnic: value }
+        });
+        break;
+      case 'cnicIssue':
+        updateCustomerData({
+          creditCard: { ...creditCard, cnicIssuanceDate: value }
+        });
+        break;
+      case 'cnicExpiry':
+        updateCustomerData({
+          creditCard: { ...creditCard, cnicExpiryDate: value }
+        });
+        break;
+      case 'oldNic':
+        updateCustomerData({
+          creditCard: { ...creditCard, oldNic: value }
+        });
+        break;
+      case 'fatherHusband':
+        updateCustomerData({
+          personalDetails: { ...personalDetails, fatherName: value }
+        });
+        break;
+      case 'dob':
+        updateCustomerData({
+          personalDetails: { ...personalDetails, dateOfBirth: value }
+        });
+        break;
+      case 'gender':
+        updateCustomerData({
+          personalDetails: { ...personalDetails, gender: value }
+        });
+        break;
+      case 'motherMaiden':
+        updateCustomerData({
+          personalDetails: { ...personalDetails, motherName: value }
+        });
+        break;
+      case 'marital':
+        updateCustomerData({
+          personalDetails: { ...personalDetails, maritalStatus: value }
+        });
+        break;
+      case 'dependents':
+        updateCustomerData({
+          personalDetails: { ...personalDetails, numberOfDependents: value }
+        });
+        break;
+      case 'education':
+        updateCustomerData({
+          personalDetails: { ...personalDetails, education: value }
+        });
+        break;
+    }
   };
 
   const getFieldClasses = (field: string) => {
@@ -142,14 +222,14 @@ export const CreditCardApplicantInfoForm = () => {
           <label className="block text-sm font-medium mb-1">Old NIC Number</label>
           <input
             type="text"
-            className={getFieldClasses("cnic")}
+            className={getFieldClasses("oldNic")}
             placeholder="Old NIC Number"
-            value={formData.cnic}
-            onChange={e => handleInputChange("cnic", e.target.value)}
+            value={formData.oldNic}
+            onChange={e => handleInputChange("oldNic", e.target.value)}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Father's / Husband’s Name</label>
+          <label className="block text-sm font-medium mb-1">Father's / Husband's Name</label>
           <input
             type="text"
             className={getFieldClasses("fatherHusband")}
@@ -184,7 +264,7 @@ export const CreditCardApplicantInfoForm = () => {
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Mother’s Maiden Name</label>
+          <label className="block text-sm font-medium mb-1">Mother's Maiden Name</label>
           <input
             type="text"
             className={getFieldClasses("motherMaiden")}

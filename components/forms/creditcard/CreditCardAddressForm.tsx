@@ -9,40 +9,47 @@ const getFieldClasses = (field: string, prefilled: Set<string>) =>
   }`;
 
 export const CreditCardAddressForm = () => {
-  const { customerData } = useCustomer();
+  const { customerData, updateCustomerData } = useCustomer();
 
   // Extract address data from backend
   const postal = customerData?.cifData?.postal || {};
   const email = customerData?.cifData?.email || {};
   const phone = customerData?.cifData?.phone || {};
   const individualInfo = customerData?.cifData?.individualInfo || {};
+  
+  // Get existing data from context
+  const addressDetails = customerData?.addressDetails || {};
+  const currentAddress = addressDetails.currentAddress || {};
+  const permanentAddress = addressDetails.permanentAddress || {};
+  const personalDetails = customerData?.personalDetails || {};
+  const creditCard = customerData?.creditCard || {};
 
   // Default state
   const [formData, setFormData] = useState({
-    houseApt: "",
-    street: "",
-    tehsil: "",
-    landmark: "",
-    city: "",
-    postalCode: "",
-    telephoneRes: "",
-    mobile: "",
-    ntn: "",
-    residenceType: "",     // House/Apartment
-    natureOfResidence: "", // Owned/Rented etc
-    residingSince: "",
-    email: "",
+    houseApt: currentAddress.houseNo || "",
+    street: currentAddress.street || "",
+    tehsil: currentAddress.tehsil || "",
+    landmark: currentAddress.nearestLandmark || "",
+    city: currentAddress.city || "",
+    postalCode: currentAddress.postalCode || "",
+    telephoneRes: currentAddress.telephone || "",
+    mobile: currentAddress.mobile || personalDetails.mobileNumber || "",
+    ntn: personalDetails.ntn || "",
+    residenceType: creditCard.typeOfResidence || "",
+    natureOfResidence: currentAddress.residentialStatus || "",
+    residingSince: currentAddress.yearsAtAddress || "",
+    email: currentAddress.email || personalDetails.email || "",
     // Permanent
-    pStreet: "",
-    pTehsil: "",
-    pLandmark: "",
-    pCity: "",
-    pPostalCode: "",
+    pStreet: permanentAddress.street || "",
+    pTehsil: permanentAddress.tehsil || "",
+    pLandmark: permanentAddress.nearestLandmark || "",
+    pCity: permanentAddress.city || "",
+    pPostalCode: permanentAddress.postalCode || "",
     // Car
-    carYear: "",
-    carModel: "",
-    carReg: "",
-    carOwnership: "",
+    carYear: creditCard.carYear || "",
+    carModel: creditCard.carModel || "",
+    carReg: creditCard.carRegistrationNo || "",
+    carOwnership: creditCard.carOwnership || "",
   });
   console.log("Initial Form Data==>:", customerData?.cifData?.dirDetails.ntn);
 
@@ -99,6 +106,246 @@ export const CreditCardAddressForm = () => {
   // Handler for controlled fields
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Update context based on field
+    switch (field) {
+      case 'houseApt':
+        updateCustomerData({
+          addressDetails: {
+            ...addressDetails,
+            currentAddress: {
+              ...currentAddress,
+              houseNo: value
+            }
+          }
+        });
+        break;
+      case 'street':
+        updateCustomerData({
+          addressDetails: {
+            ...addressDetails,
+            currentAddress: {
+              ...currentAddress,
+              street: value
+            }
+          }
+        });
+        break;
+      case 'tehsil':
+        updateCustomerData({
+          addressDetails: {
+            ...addressDetails,
+            currentAddress: {
+              ...currentAddress,
+              tehsil: value,
+              area: value
+            }
+          }
+        });
+        break;
+      case 'landmark':
+        updateCustomerData({
+          addressDetails: {
+            ...addressDetails,
+            currentAddress: {
+              ...currentAddress,
+              nearestLandmark: value
+            }
+          }
+        });
+        break;
+      case 'city':
+        updateCustomerData({
+          addressDetails: {
+            ...addressDetails,
+            currentAddress: {
+              ...currentAddress,
+              city: value
+            }
+          }
+        });
+        break;
+      case 'postalCode':
+        updateCustomerData({
+          addressDetails: {
+            ...addressDetails,
+            currentAddress: {
+              ...currentAddress,
+              postalCode: value
+            }
+          }
+        });
+        break;
+      case 'telephoneRes':
+        updateCustomerData({
+          addressDetails: {
+            ...addressDetails,
+            currentAddress: {
+              ...currentAddress,
+              telephone: value
+            }
+          }
+        });
+        break;
+      case 'mobile':
+        updateCustomerData({
+          addressDetails: {
+            ...addressDetails,
+            currentAddress: {
+              ...currentAddress,
+              mobile: value
+            }
+          },
+          personalDetails: {
+            ...personalDetails,
+            mobileNumber: value
+          }
+        });
+        break;
+      case 'ntn':
+        updateCustomerData({
+          personalDetails: {
+            ...personalDetails,
+            ntn: value
+          }
+        });
+        break;
+      case 'residenceType':
+        updateCustomerData({
+          creditCard: {
+            ...creditCard,
+            typeOfResidence: value
+          }
+        });
+        break;
+      case 'natureOfResidence':
+        updateCustomerData({
+          addressDetails: {
+            ...addressDetails,
+            currentAddress: {
+              ...currentAddress,
+              residentialStatus: value
+            }
+          }
+        });
+        break;
+      case 'residingSince':
+        updateCustomerData({
+          addressDetails: {
+            ...addressDetails,
+            currentAddress: {
+              ...currentAddress,
+              yearsAtAddress: value
+            }
+          }
+        });
+        break;
+      case 'email':
+        updateCustomerData({
+          addressDetails: {
+            ...addressDetails,
+            currentAddress: {
+              ...currentAddress,
+              email: value
+            }
+          },
+          personalDetails: {
+            ...personalDetails,
+            email: value
+          }
+        });
+        break;
+      // Permanent address
+      case 'pStreet':
+        updateCustomerData({
+          addressDetails: {
+            ...addressDetails,
+            permanentAddress: {
+              ...permanentAddress,
+              street: value
+            }
+          }
+        });
+        break;
+      case 'pTehsil':
+        updateCustomerData({
+          addressDetails: {
+            ...addressDetails,
+            permanentAddress: {
+              ...permanentAddress,
+              tehsil: value,
+              area: value
+            }
+          }
+        });
+        break;
+      case 'pLandmark':
+        updateCustomerData({
+          addressDetails: {
+            ...addressDetails,
+            permanentAddress: {
+              ...permanentAddress,
+              nearestLandmark: value
+            }
+          }
+        });
+        break;
+      case 'pCity':
+        updateCustomerData({
+          addressDetails: {
+            ...addressDetails,
+            permanentAddress: {
+              ...permanentAddress,
+              city: value
+            }
+          }
+        });
+        break;
+      case 'pPostalCode':
+        updateCustomerData({
+          addressDetails: {
+            ...addressDetails,
+            permanentAddress: {
+              ...permanentAddress,
+              postalCode: value
+            }
+          }
+        });
+        break;
+      // Car details
+      case 'carYear':
+        updateCustomerData({
+          creditCard: {
+            ...creditCard,
+            carYear: value
+          }
+        });
+        break;
+      case 'carModel':
+        updateCustomerData({
+          creditCard: {
+            ...creditCard,
+            carModel: value
+          }
+        });
+        break;
+      case 'carReg':
+        updateCustomerData({
+          creditCard: {
+            ...creditCard,
+            carRegistrationNo: value
+          }
+        });
+        break;
+      case 'carOwnership':
+        updateCustomerData({
+          creditCard: {
+            ...creditCard,
+            carOwnership: value
+          }
+        });
+        break;
+    }
   };
 
   return (
@@ -252,20 +499,13 @@ export const CreditCardAddressForm = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
           <div>
             <label className="block text-sm font-medium mb-1">Street</label>
-              <input
-              type="text"
-              className={getFieldClasses("street", prefilled)}
-              value={formData.street}
-              placeholder="Street"
-              onChange={e => handleChange("street", e.target.value)}
-            />
-            {/* <input
+            <input
               type="text"
               className={getFieldClasses("pStreet", prefilled)}
               value={formData.pStreet}
               placeholder="Street"
               onChange={e => handleChange("pStreet", e.target.value)}
-            /> */}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Tehsil / District</label>
@@ -289,37 +529,23 @@ export const CreditCardAddressForm = () => {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">City</label>
-               <input
-              type="text"
-              className={getFieldClasses("city", prefilled)}
-              value={formData.city}
-              placeholder="City"
-              onChange={e => handleChange("city", e.target.value)}
-            />
-            {/* <input
+            <input
               type="text"
               className={getFieldClasses("pCity", prefilled)}
               value={formData.pCity}
               placeholder="City"
               onChange={e => handleChange("pCity", e.target.value)}
-            /> */}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Postal Code</label>
-              <input
-              type="text"
-              className={getFieldClasses("postalCode", prefilled)}
-              value={formData.postalCode}
-              placeholder="Postal Code"
-              onChange={e => handleChange("postalCode", e.target.value)}
-            />
-            {/* <input
+            <input
               type="text"
               className={getFieldClasses("pPostalCode", prefilled)}
               value={formData.pPostalCode}
               placeholder="Postal Code"
               onChange={e => handleChange("pPostalCode", e.target.value)}
-            /> */}
+            />
           </div>
         </div>
       </div>

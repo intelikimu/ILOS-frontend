@@ -12,11 +12,14 @@ import { CreditCardIncomeDetailsForm } from "@/components/forms/creditcard/Credi
 import { CreditCardPreviousEmploymentForm } from "@/components/forms/creditcard/CreditCardPreviousEmploymentForm";
 import { CreditCardNextOfKinForm } from "@/components/forms/creditcard/CreditCardNextOfKinForm";
 import { CreditCardEmploymentDetailsForm } from "@/components/forms/creditcard/CreditCardEmploymentDetailsForm";
+import { CreditCardSupplementaryCardForm } from "@/components/forms/creditcard/CreditCardSupplementaryCardForm";
+import { CreditCardLienCreditCardForm } from "@/components/forms/creditcard/CreditCardLienCreditCardForm";
 import { useCustomer } from '@/contexts/CustomerContext';
 import { Card, CardContent } from '@/components/ui/card';
-import { User, CreditCard, ArrowLeft, CheckCircle2, ChevronUp } from 'lucide-react';
+import { User, CreditCard, ArrowLeft, CheckCircle2, ChevronUp, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/ui/use-toast';
 
 type SectionKey =
   | "type"
@@ -30,6 +33,8 @@ type SectionKey =
   | "banking"
   | "references"
   | "kin"
+  | "supplementary"
+  | "lien"
   | "declaration";
 
 const FORM_SECTIONS: { key: SectionKey; label: string }[] = [
@@ -44,6 +49,8 @@ const FORM_SECTIONS: { key: SectionKey; label: string }[] = [
   { key: "banking", label: "Banking" },
   { key: "references", label: "References" },
   { key: "kin", label: "Next of Kin" },
+  { key: "supplementary", label: "Supplementary Card" },
+  { key: "lien", label: "Lien Marked Card" },
   { key: "declaration", label: "Declaration" },
 ];
 
@@ -73,6 +80,10 @@ const useSectionFilled = (customerData: any): Record<SectionKey, boolean> => ({
     && customerData.references.length > 0,
   kin: !!customerData?.nextOfKin
     && !!customerData.nextOfKin.fullName,
+  supplementary: !!customerData?.creditCard
+    && !!customerData.creditCard.supplementaryCardholderFirstName,
+  lien: !!customerData?.creditCard
+    && !!customerData.creditCard.collateralType,
   declaration: !!customerData?.declaration
     && !!customerData.declaration.agreeToTerms,
 });
@@ -83,6 +94,8 @@ const useSectionFilled = (customerData: any): Record<SectionKey, boolean> => ({
 export default function CreditCardApplicationPage() {
   const { customerData } = useCustomer();
   const router = useRouter();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
 const refs: Record<string, React.RefObject<HTMLDivElement | null>> = {
   type: useRef<HTMLDivElement>(null),
@@ -96,6 +109,8 @@ const refs: Record<string, React.RefObject<HTMLDivElement | null>> = {
   banking: useRef<HTMLDivElement>(null),
   references: useRef<HTMLDivElement>(null),
   kin: useRef<HTMLDivElement>(null),
+  supplementary: useRef<HTMLDivElement>(null),
+  lien: useRef<HTMLDivElement>(null),
   declaration: useRef<HTMLDivElement>(null),
 };
 
@@ -139,6 +154,335 @@ const refs: Record<string, React.RefObject<HTMLDivElement | null>> = {
   const handleScrollTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  // Helper function to convert Yes/No values to boolean
+  function toBoolean(value: any): boolean | null {
+    if (value === 'Yes' || value === true) return true;
+    if (value === 'No' || value === false) return false;
+    return null;
+  }
+
+  // Helper function to convert string numbers to actual numbers
+  function toNumber(value: any): number | null {
+    if (value === '' || value === undefined || value === null) return null;
+    const num = Number(value);
+    return isNaN(num) ? null : num;
+  }
+
+  // Helper function to format dates
+  function toValidDate(value: any): string | null {
+    if (!value) return null;
+    const date = new Date(value);
+    return isNaN(date.getTime()) ? null : date.toISOString().split('T')[0];
+  }
+
+  // Helper function to get base URL
+  const getBaseUrl = () => {
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+      return process.env.NEXT_PUBLIC_API_URL || 'https://ilos-backend.vercel.app';
+    }
+    return 'http://localhost:5000';
+  };
+
+  // Function to check if data exists and log warnings for missing critical data
+  const validateFormData = (data: any) => {
+    const criticalFields = [
+      { key: 'cardType', section: 'Credit Card Type' },
+      { key: 'cardCategory', section: 'Credit Card Category' },
+      { key: 'rewardProgram', section: 'Reward Program' },
+      { key: 'title', section: 'Personal Details' },
+      { key: 'nameOnCard', section: 'Personal Details' },
+    ];
+
+    // Check critical fields in creditCard section
+    criticalFields.forEach(field => {
+      if (!data.creditCard?.[field.key]) {
+        console.warn(`Missing critical data: ${field.key} in ${field.section}`);
+      }
+    });
+  };
+
+  // Handle form submission
+  const handleSubmit = async () => {
+    if (!customerData) {
+      toast({
+        title: "Error",
+        description: "No customer data found. Please fill the form first.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!customerData.customerId) {
+      toast({
+        title: "Error",
+        description: "Customer ID is required. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate and log warnings for missing data
+    validateFormData(customerData);
+
+    setIsSubmitting(true);
+
+    try {
+      // Get all data from the context
+      const personalDetails = customerData?.personalDetails || {};
+      const addressDetails = customerData?.addressDetails || {};
+      const currentAddress = addressDetails.currentAddress || {};
+      const permanentAddress = addressDetails.permanentAddress || {};
+      const employment = customerData?.employmentDetails || {};
+      const prevEmployment = customerData?.previousEmployment || {};
+      const empIncome = customerData?.employmentIncome || {};
+      const incomeDetails = customerData?.incomeDetails || {};
+      const banking = customerData?.bankingDetails || {};
+      const references = customerData?.references || [];
+      const nextOfKin = customerData?.nextOfKin || {};
+      const declaration = customerData?.declaration || {};
+      const creditCard = customerData?.creditCard || {};
+
+      // Debug console logging for all sections
+      console.log("========== DEBUG - CREDIT CARD SUBMISSION DATA ==========");
+      console.log("CreditCard Form Data:", creditCard);
+      console.log("Personal Details:", personalDetails);
+      console.log("Address Details - Current:", currentAddress);
+      console.log("Address Details - Permanent:", permanentAddress);
+      console.log("Employment Details:", employment);
+      console.log("Previous Employment:", prevEmployment);
+      console.log("Employment Income:", empIncome);
+      console.log("Income Details:", incomeDetails);
+      console.log("Banking Details:", banking);
+      console.log("References:", references);
+      console.log("Next of Kin:", nextOfKin);
+      console.log("Declaration:", declaration);
+      console.log("========== END DEBUG ==========");
+
+      // Set default values for required fields even if not filled by the user
+      // This ensures we don't submit null values to the backend
+      const defaultTitle = "Mr";
+      const defaultGender = "Male";
+      const defaultMaritalStatus = "Single";
+      const defaultEducation = "Bachelors";
+      const defaultEmploymentStatus = "Employed";
+      const defaultCardType = "Classic";
+      const defaultCardCategory = "Standard Credit Card";
+
+      // Structure the data according to the exact backend schema
+      const formData = {
+        // Customer identification - REQUIRED
+        customer_id: customerData.customerId,
+
+        // Card Type and Rewards - Provide defaults if not filled
+        card_type: creditCard?.cardType || defaultCardType,
+        card_category: creditCard?.cardCategory || defaultCardCategory,
+        special_card_option: creditCard?.specialCardOption || '',
+        photo_submission_method: creditCard?.photoSubmissionMethod || 'None',
+        reward_program: creditCard?.rewardProgram || 'Classic Rewards',
+
+        // Applicant info - Set default values for required fields
+        title: personalDetails?.title || defaultTitle,
+        full_name: personalDetails?.fullName || 
+          `${personalDetails?.firstName || ''} ${personalDetails?.middleName || ''} ${personalDetails?.lastName || ''}`.trim() || customerData.cnic || 'Unknown',
+        name_on_card: creditCard?.nameOnCard || personalDetails?.fullName || personalDetails?.firstName || customerData.cnic || 'Unknown',
+        nic_or_passport: personalDetails?.cnic || customerData.cnic || '',
+        cnic_issuance_date: toValidDate(creditCard?.cnicIssuanceDate) || toValidDate(new Date().toISOString()),
+        cnic_expiry_date: toValidDate(creditCard?.cnicExpiryDate) || toValidDate(new Date(new Date().setFullYear(new Date().getFullYear() + 5)).toISOString()),
+        old_nic: creditCard?.oldNic || '',
+        father_husband_name: personalDetails?.fatherName || '',
+        date_of_birth: toValidDate(personalDetails?.dateOfBirth) || toValidDate('1980-01-01'),
+        gender: personalDetails?.gender || defaultGender,
+        mother_maiden_name: personalDetails?.motherName || '',
+        marital_status: personalDetails?.maritalStatus || defaultMaritalStatus,
+        num_dependents: toNumber(personalDetails?.numberOfDependents) || 0,
+        education_qualification: personalDetails?.education || defaultEducation,
+
+        // Current address - Use CNIC data if available
+        curr_house_apt: currentAddress?.houseNo || '',
+        curr_street: currentAddress?.street || '',
+        curr_tehsil_district: currentAddress?.area || currentAddress?.tehsil || '',
+        curr_landmark: currentAddress?.nearestLandmark || '',
+        curr_city: currentAddress?.city || 'Unknown',
+        curr_postal_code: currentAddress?.postalCode || 'Unknown',
+        curr_tel_residence: currentAddress?.telephone || personalDetails?.mobileNumber || '',
+        curr_mobile: currentAddress?.mobile || personalDetails?.mobileNumber || '',
+        ntn: personalDetails?.ntn || '',
+        type_of_residence: creditCard?.typeOfResidence || 'House',
+        nature_of_residence: currentAddress?.residentialStatus || 'Owned',
+        residing_since: currentAddress?.yearsAtAddress || '3',
+        curr_email: currentAddress?.email || personalDetails?.email || '',
+
+        // Permanent address - Copy from current if empty
+        perm_street: permanentAddress?.street || currentAddress?.street || '',
+        perm_tehsil_district: permanentAddress?.area || permanentAddress?.tehsil || currentAddress?.area || currentAddress?.tehsil || '',
+        perm_landmark: permanentAddress?.nearestLandmark || currentAddress?.nearestLandmark || '',
+        perm_city: permanentAddress?.city || currentAddress?.city || 'Unknown',
+        perm_postal_code: permanentAddress?.postalCode || currentAddress?.postalCode || 'Unknown',
+
+        // Car details
+        car_year: toNumber(creditCard?.carYear) || null,
+        car_model: creditCard?.carModel || '',
+        car_registration_no: creditCard?.carRegistrationNo || '',
+        car_ownership: creditCard?.carOwnership || 'N/A',
+
+        // Next of kin
+        next_of_kin_name: nextOfKin?.name || nextOfKin?.fullName || '',
+        next_of_kin_relationship: nextOfKin?.relationship || '',
+        next_of_kin_tel1: nextOfKin?.contactNumber || nextOfKin?.telephone || nextOfKin?.mobile || '',
+        next_of_kin_tel2: nextOfKin?.alternateNumber || nextOfKin?.alternateTelephone || '',
+
+        // Employment details
+        occupation: employment?.occupation || '',
+        sector: employment?.sector || '',
+        grade_or_rank: employment?.grade || '',
+        designation: employment?.designation || '',
+        department: employment?.department || '',
+        company_employer_name: employment?.companyName || employment?.employerName || '',
+        employment_status: employment?.employmentStatus || defaultEmploymentStatus,
+        length_of_employment: employment?.currentExperience || '',
+        employee_number: employment?.employeeNumber || '',
+        business_type: employment?.businessType || employment?.companyType || '',
+        business_nature: employment?.business || employment?.industry || '',
+
+        // Office address
+        office_address: employment?.officeAddress?.houseNo || '',
+        office_street: employment?.officeAddress?.street || '',
+        office_district: employment?.officeAddress?.tehsil || '',
+        office_landmark: employment?.officeAddress?.nearestLandmark || '',
+        office_city: employment?.officeAddress?.city || '',
+        office_postal_code: employment?.officeAddress?.postalCode || '',
+        office_phone1: employment?.officeAddress?.telephone1 || employment?.companyPhone || '',
+        office_phone2: employment?.officeAddress?.telephone2 || '',
+        office_fax: employment?.officeAddress?.fax || '',
+
+        // Previous employment
+        prev_employer: prevEmployment?.companyName || prevEmployment?.employerName || '',
+        prev_designation: prevEmployment?.designation || '',
+        prev_experience_years: toNumber(prevEmployment?.experienceYears) || null,
+        prev_employer_tel: prevEmployment?.telephone || '',
+
+        // Income details
+        gross_monthly_income: toNumber(empIncome?.monthlySalary || incomeDetails?.grossMonthlySalary || incomeDetails?.monthlyIncome) || 50000,
+        other_income_source: incomeDetails?.otherIncomeSource || '',
+        total_income: toNumber(incomeDetails?.netMonthlyIncome || incomeDetails?.totalIncome) || 50000,
+        spouse_employed: toBoolean(incomeDetails?.spouseEmployed) || null,
+        spouse_income: toNumber(incomeDetails?.spouseIncome) || null,
+        spouse_income_source: incomeDetails?.spouseIncomeSource || '',
+
+        // Banking details
+        card_destination: creditCard?.cardDestination || 'Home',
+        statement_delivery: creditCard?.statementDelivery || 'Email',
+        email_for_statement: creditCard?.emailForStatement || personalDetails?.email || currentAddress?.email || '',
+        is_ubl_customer: toBoolean(banking?.isUblCustomer) || true,
+        ubl_account_number: banking?.ublAccountNumber || banking?.accountNumber || '',
+        ubl_branch: banking?.branchName || '',
+        payment_option: banking?.paymentOption || creditCard?.paymentOption || 'Full',
+
+        // Reference details - Use first reference or empty
+        reference_name: references?.[0]?.name || '',
+        reference_relationship: references?.[0]?.relationship || '',
+        reference_nic_or_passport: references?.[0]?.cnic || '',
+        reference_address_street: references?.[0]?.street || '',
+        reference_address_tehsil: references?.[0]?.area || '',
+        reference_address_landmark: references?.[0]?.nearestLandmark || '',
+        reference_address_city: references?.[0]?.city || '',
+        reference_address_postal_code: references?.[0]?.postalCode || '',
+        reference_tel_res: references?.[0]?.telephoneResidence || '',
+        reference_tel_office: references?.[0]?.telephoneOffice || '',
+        reference_mobile: references?.[0]?.mobile || '',
+        reference_ntn: references?.[0]?.ntn || '',
+
+        // Bank use only
+        application_id_form: creditCard?.applicationIdForm || '',
+        application_reference_number: creditCard?.applicationReferenceNumber || '',
+        channel_code: creditCard?.channelCode || '',
+        program_code: creditCard?.programCode || '',
+        branch_code: creditCard?.branchCode || '',
+        sales_officer_name: creditCard?.salesOfficerName || '',
+        branch_name: creditCard?.branchName || banking?.branchName || '',
+        region_name: creditCard?.regionName || '',
+
+        // Declaration and signatures
+        customer_contact_confirmation: toBoolean(declaration?.contactConfirmation) || true,
+        branch_manager_remarks: creditCard?.branchManagerRemarks || '',
+        application_status: creditCard?.applicationStatus || 'Pending',
+        reason_code: creditCard?.reasonCode || '',
+        analyst_name: creditCard?.analystName || '',
+
+        // SMS and Credit Guardian
+        avail_sms_alert: toBoolean(creditCard?.availSmsAlert) || true,
+        avail_credit_guardian: toBoolean(creditCard?.availCreditGuardian) || false,
+
+        // Supplementary card details (if any)
+        supplementary_cardholder_title: creditCard?.supplementaryCardholderTitle || '',
+        supplementary_cardholder_first_name: creditCard?.supplementaryCardholderFirstName || '',
+        supplementary_cardholder_middle_name: creditCard?.supplementaryCardholderMiddleName || '',
+        supplementary_cardholder_last_name: creditCard?.supplementaryCardholderLastName || '',
+        supplementary_cardholder_name_on_card: creditCard?.supplementaryCardholderNameOnCard || '',
+        supplementary_cardholder_father_husband_name: creditCard?.supplementaryCardholderFatherHusbandName || '',
+        supplementary_card_type: creditCard?.supplementaryCardType || '',
+        supplementary_card_limit_type: creditCard?.supplementaryCardLimitType || '',
+        supplementary_usage_frequency: creditCard?.supplementaryUsageFrequency || '',
+        supplementary_relationship_to_principal: creditCard?.supplementaryRelationshipToPrincipal || '',
+        supplementary_dob: toValidDate(creditCard?.supplementaryDob) || null,
+        supplementary_gender: creditCard?.supplementaryGender || '',
+        supplementary_nic_or_passport: creditCard?.supplementaryNicOrPassport || '',
+        supplementary_mother_maiden_name: creditCard?.supplementaryMotherMaidenName || '',
+        supplementary_date: toValidDate(creditCard?.supplementaryDate) || null,
+
+        // Collateral details (if any)
+        collateral_type: creditCard?.collateralType || '',
+        collateral_bank: creditCard?.collateralBank || '',
+        collateral_branch: creditCard?.collateralBranch || '',
+        collateral_account_no: creditCard?.collateralAccountNo || '',
+        collateral_account_type: creditCard?.collateralAccountType || '',
+        collateral_lien_amount: toNumber(creditCard?.collateralLienAmount) || null,
+        collateral_currency: creditCard?.collateralCurrency || '',
+        collateral_title: creditCard?.collateralTitle || '',
+        collateral_maturity_date: toValidDate(creditCard?.collateralMaturityDate) || null,
+
+        // Child collections - Initialize with empty arrays if not present
+        other_banks: customerData.otherBanks || [],
+        other_credit_cards: customerData.otherCreditCards || [],
+        loans: customerData.creditCardLoans || [],
+        supplementary_cards: customerData.supplementaryCards || []
+      };
+
+      // Log the submission data for debugging
+      console.log("Submitting credit card application data:", formData);
+
+      // Send data to backend
+      const response = await fetch(`${getBaseUrl()}/api/classic_creditcard`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Success!",
+          description: "Your credit card application has been submitted successfully.",
+        });
+        // Redirect to cases/dashboard after successful submission
+        router.push('/dashboard/cases');
+      } else {
+        throw new Error(data.error || 'Failed to submit credit card application');
+      }
+    } catch (error: any) {
+      console.error("Application submission error:", error);
+      toast({
+        title: "Error",
+        description: error.message || 'Failed to submit application',
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
       {/* Customer Info Header */}
@@ -241,14 +585,26 @@ const refs: Record<string, React.RefObject<HTMLDivElement | null>> = {
         <div ref={refs.income}><CreditCardIncomeDetailsForm /></div>
         <div ref={refs.banking}><CreditCardBankingDetailsForm /></div>
         <div ref={refs.references}><CreditCardReferencesForm /></div>
+        <div ref={refs.supplementary}><CreditCardSupplementaryCardForm /></div>
+        <div ref={refs.lien}><CreditCardLienCreditCardForm /></div>
         <div ref={refs.declaration}><CreditCardDeclarationForm /></div>
-         <div className="flex justify-end">
-          <button
+        
+        <div className="flex justify-end">
+          <Button
             type="submit"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
             className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 shadow transition"
           >
-            Submit Application
-          </button>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              "Submit Application"
+            )}
+          </Button>
         </div>
       </div>
 

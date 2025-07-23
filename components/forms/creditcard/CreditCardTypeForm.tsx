@@ -1,12 +1,23 @@
 // components/forms/CreditCardTypeForm.tsx
-import { useState } from "react";
+import { useCustomer } from "@/contexts/CustomerContext";
 
 export const CreditCardTypeForm = () => {
-  // Optional: State to control selection (not required for pure UI)
-  // const [cardType, setCardType] = useState("");
-  // const [cardCategory, setCardCategory] = useState("");
-  // const [specialOption, setSpecialOption] = useState("");
-  // const [photoMethod, setPhotoMethod] = useState("");
+  const { customerData, updateCustomerData } = useCustomer();
+  const creditCard = customerData?.creditCard || {};
+
+  const handleChange = (field: string, value: string) => {
+    updateCustomerData({
+      creditCard: {
+        ...creditCard,
+        [field]: value
+      }
+    });
+  };
+
+  // Determine if field is pre-filled for highlighting
+  const isPreFilled = (field: string, value?: string) => {
+    return !!creditCard[field as keyof typeof creditCard] && creditCard[field as keyof typeof creditCard] === value;
+  };
 
   return (
     <section className="mb-10">
@@ -15,50 +26,110 @@ export const CreditCardTypeForm = () => {
         <div>
           <label className="block text-sm font-medium mb-1">Card Type</label>
           <div className="flex flex-col gap-2">
-            <label className="flex items-center gap-2">
-              <input type="radio" name="cardType" /> Gold
+            <label className={`flex items-center gap-2 ${isPreFilled('cardType', 'Gold') ? 'bg-green-50 p-1 rounded' : ''}`}>
+              <input 
+                type="radio" 
+                name="cardType" 
+                value="Gold"
+                checked={creditCard.cardType === 'Gold'}
+                onChange={(e) => handleChange('cardType', e.target.value)}
+              /> Gold
             </label>
-            <label className="flex items-center gap-2">
-              <input type="radio" name="cardType" /> Classic
+            <label className={`flex items-center gap-2 ${isPreFilled('cardType', 'Classic') ? 'bg-green-50 p-1 rounded' : ''}`}>
+              <input 
+                type="radio" 
+                name="cardType" 
+                value="Classic"
+                checked={creditCard.cardType === 'Classic'}
+                onChange={(e) => handleChange('cardType', e.target.value)}
+              /> Classic
             </label>
           </div>
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Card Category</label>
           <div className="flex flex-col gap-2">
-            <label className="flex items-center gap-2">
-              <input type="radio" name="cardCategory" /> Standard Credit Card
+            <label className={`flex items-center gap-2 ${isPreFilled('cardCategory', 'Standard Credit Card') ? 'bg-green-50 p-1 rounded' : ''}`}>
+              <input 
+                type="radio" 
+                name="cardCategory" 
+                value="Standard Credit Card"
+                checked={creditCard.cardCategory === 'Standard Credit Card'}
+                onChange={(e) => handleChange('cardCategory', e.target.value)}
+              /> Standard Credit Card
             </label>
-            <label className="flex items-center gap-2">
-              <input type="radio" name="cardCategory" /> Non-Photo
+            <label className={`flex items-center gap-2 ${isPreFilled('cardCategory', 'Non-Photo') ? 'bg-green-50 p-1 rounded' : ''}`}>
+              <input 
+                type="radio" 
+                name="cardCategory" 
+                value="Non-Photo"
+                checked={creditCard.cardCategory === 'Non-Photo'}
+                onChange={(e) => handleChange('cardCategory', e.target.value)}
+              /> Non-Photo
             </label>
-            <label className="flex items-center gap-2">
-              <input type="radio" name="cardCategory" /> Photo
+            <label className={`flex items-center gap-2 ${isPreFilled('cardCategory', 'Photo') ? 'bg-green-50 p-1 rounded' : ''}`}>
+              <input 
+                type="radio" 
+                name="cardCategory" 
+                value="Photo"
+                checked={creditCard.cardCategory === 'Photo'}
+                onChange={(e) => handleChange('cardCategory', e.target.value)}
+              /> Photo
             </label>
           </div>
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Special Card Option</label>
           <div className="flex flex-col gap-2">
-            <label className="flex items-center gap-2">
-              <input type="radio" name="specialCardOption" /> UBL PSO Auto Credit Card
+            <label className={`flex items-center gap-2 ${isPreFilled('specialCardOption', 'UBL PSO Auto Credit Card') ? 'bg-green-50 p-1 rounded' : ''}`}>
+              <input 
+                type="radio" 
+                name="specialCardOption" 
+                value="UBL PSO Auto Credit Card"
+                checked={creditCard.specialCardOption === 'UBL PSO Auto Credit Card'}
+                onChange={(e) => handleChange('specialCardOption', e.target.value)}
+              /> UBL PSO Auto Credit Card
             </label>
-            <label className="flex items-center gap-2">
-              <input type="radio" name="specialCardOption" /> Galleria Card
+            <label className={`flex items-center gap-2 ${isPreFilled('specialCardOption', 'Galleria Card') ? 'bg-green-50 p-1 rounded' : ''}`}>
+              <input 
+                type="radio" 
+                name="specialCardOption" 
+                value="Galleria Card"
+                checked={creditCard.specialCardOption === 'Galleria Card'}
+                onChange={(e) => handleChange('specialCardOption', e.target.value)}
+              /> Galleria Card
             </label>
           </div>
         </div>
         <div className="md:col-span-2">
           <label className="block text-sm font-medium mb-1">Photo Submission Method (Galleria Only)</label>
           <div className="flex flex-col gap-2">
-            <label className="flex items-center gap-2">
-              <input type="radio" name="photoMethod" /> Website Upload
+            <label className={`flex items-center gap-2 ${isPreFilled('photoSubmissionMethod', 'Website Upload') ? 'bg-green-50 p-1 rounded' : ''}`}>
+              <input 
+                type="radio" 
+                name="photoMethod" 
+                value="Website Upload"
+                checked={creditCard.photoSubmissionMethod === 'Website Upload'}
+                onChange={(e) => handleChange('photoSubmissionMethod', e.target.value)}
+              /> Website Upload
             </label>
-            <label className="flex items-center gap-2">
-              <input type="radio" name="photoMethod" /> Favorite Picture
+            <label className={`flex items-center gap-2 ${isPreFilled('photoSubmissionMethod', 'Favorite Picture') ? 'bg-green-50 p-1 rounded' : ''}`}>
+              <input 
+                type="radio" 
+                name="photoMethod" 
+                value="Favorite Picture"
+                checked={creditCard.photoSubmissionMethod === 'Favorite Picture'}
+                onChange={(e) => handleChange('photoSubmissionMethod', e.target.value)}
+              /> Favorite Picture
             </label>
-            <label className="flex items-center gap-2">
-              <input type="radio" name="photoMethod" /> Physically Attach
+            <label className={`flex items-center gap-2 ${isPreFilled('photoSubmissionMethod', 'Physically Attach') ? 'bg-green-50 p-1 rounded' : ''}`}>
+              <input 
+                type="radio" 
+                name="photoMethod" 
+                value="Physically Attach"
+                checked={creditCard.photoSubmissionMethod === 'Physically Attach'}
+                onChange={(e) => handleChange('photoSubmissionMethod', e.target.value)}
+              /> Physically Attach
             </label>
           </div>
         </div>

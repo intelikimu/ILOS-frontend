@@ -2,6 +2,207 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
+// AmeenDrive specific interfaces
+interface AmeenDriveVehicleDetails {
+  manufacturer?: string;
+  model?: string;
+  year?: number | string;
+  engineSize?: string;
+  price?: number | string;
+  existingCar?: string;
+  carManufacturer?: string;
+  carModel?: string;
+  carYear?: number | string;
+  carStatus?: string;
+  usedSellerName?: string;
+  usedSellerCnic?: string;
+  usedHouseNo?: string;
+  usedStreet?: string;
+  usedArea?: string;
+  usedLandmark?: string;
+  usedCity?: string;
+  usedCountry?: string;
+  usedPostalCode?: string;
+  usedContactNo?: string;
+  usedBank?: string;
+  usedBranch?: string;
+  usedAccountNo?: string;
+}
+
+interface AmeenDriveProductProgram {
+  productType?: string;
+  programType?: string;
+  paymentMode?: string;
+  currentRateKibor?: number | string;
+  currentRateSpread?: number | string;
+  coApplicantCase?: string;
+  coApplicantName?: string;
+  coApplicantRelationship?: string;
+  facilityAmount?: number | string;
+  profitRate?: number | string;
+  tenure?: number | string;
+  downPayment?: number | string;
+  installmentAmount?: number | string;
+}
+
+interface AmeenDriveTakafulDetails {
+  company?: string;
+  type?: string;
+  rate?: number | string;
+  premium?: number | string;
+  period?: number | string;
+  trackerCompanyArranged?: string | boolean;
+}
+
+interface AmeenDriveVehicleFacilityDetails {
+  dealerName?: string;
+  dealerAddress?: string;
+  dealerPhone?: string;
+  vehiclePrice?: number | string;
+  accessoriesPrice?: number | string;
+  registrationCost?: number | string;
+  insuranceCost?: number | string;
+  totalCost?: number | string;
+  facilityType?: string;
+  musharakahSharePercent?: number | string;
+  musharakahShareAmount?: number | string;
+  autoFinancingPercent?: number | string;
+  autoFinancingAmount?: number | string;
+  monthlyRental?: number | string;
+  monthlyRentalInWords?: string;
+  loanPeriod?: number | string;
+  deliveryOption?: string;
+  agreementUnderstanding?: string | boolean;
+}
+
+interface AmeenDriveOccupation {
+  type?: string;
+  status?: string;
+  employerName?: string;
+  designation?: string;
+  department?: string;
+  serviceYears?: number | string;
+  grade?: string;
+  employerAddress?: string;
+  employerPhone?: string;
+  previousEmployer?: string;
+  previousDesignation?: string;
+  previousYears?: number | string;
+  previousEmployerPhone?: string;
+  businessType?: string;
+  businessTypeOther?: string;
+}
+
+interface AmeenDriveProfessionDetails {
+  type?: string;
+  businessName?: string;
+  businessType?: string;
+  businessYears?: number | string;
+  businessAddress?: string;
+  businessStreet?: string;
+  businessArea?: string;
+  businessCity?: string;
+  businessCountry?: string;
+  businessPostalCode?: string;
+  businessPhone?: string;
+  businessFax?: string;
+  businessLandmark?: string;
+  ntnNumber?: string;
+  natureOfBusiness?: string;
+  percentShareholding?: number | string;
+  companyName?: string;
+  address?: string;
+  profession?: string;
+}
+
+interface AmeenDriveIncomeBank {
+  monthlyIncome?: number | string;
+  otherIncome?: number | string;
+  totalIncome?: number | string;
+  bankName?: string;
+  branchName?: string;
+  accountNumber?: string;
+  accountType?: string;
+  accountSince?: number | string;
+  regularMonthly?: number | string;
+  grossIncome?: number | string;
+  netTakeHome?: number | string;
+  otherIncomeSource?: string;
+  monthlyAvgSavings?: number | string;
+  spouseEmployed?: string | boolean;
+  spouseIncomeSource?: string;
+}
+
+interface AmeenDriveNonTaxPayer {
+  isTaxPayer?: string | boolean;
+  wealthSource?: string;
+  wealthJustification?: string;
+  fullName?: string;
+  residentOf?: string;
+  appliedFinancing?: string | boolean;
+  noNTN?: string | boolean;
+  signature?: string;
+}
+
+interface AmeenDriveReferenceDetail {
+  id?: string | number;
+  name?: string;
+  relation?: string;
+  address?: string;
+  phone?: string;
+  cnic?: string;
+}
+
+interface AmeenDriveSignatureSection {
+  signature?: string;
+  coApplicantSignature?: string;
+  signatureCNIC?: string;
+  coApplicantCNIC?: string;
+  date?: string;
+  declarationAgreed?: boolean | string;
+}
+
+interface AmeenDriveStamps {
+  stampDuty?: number | string;
+  professionalTax?: number | string;
+  eStamp?: string;
+  dealerStamp?: string;
+  branchStamp?: string;
+}
+
+interface AmeenDriveBankUseOnly {
+  branchCode?: string;
+  branchAddress?: string;
+  accountOfficer?: string;
+  officerCode?: string;
+  applicationDate?: string;
+  remarks?: string;
+  channelCode?: string;
+  pbEmployeeNo?: string;
+  programCode?: string;
+  referralId?: string;
+  smEmployeeNo?: string;
+  applicationSource?: string;
+  branchNameCode?: string;
+  dealershipName?: string;
+}
+
+interface AmeenDriveData {
+  autoApplicationId?: string;
+  productProgram?: AmeenDriveProductProgram;
+  vehicleDetails?: AmeenDriveVehicleDetails;
+  takafulDetails?: AmeenDriveTakafulDetails;
+  vehicleFacilityDetails?: AmeenDriveVehicleFacilityDetails;
+  occupation?: AmeenDriveOccupation;
+  professionDetails?: AmeenDriveProfessionDetails;
+  incomeBank?: AmeenDriveIncomeBank;
+  nonTaxPayer?: AmeenDriveNonTaxPayer;
+  referenceDetails?: AmeenDriveReferenceDetail[];
+  signatureSection?: AmeenDriveSignatureSection;
+  stamps?: AmeenDriveStamps;
+  bankUseOnly?: AmeenDriveBankUseOnly;
+}
+
 interface CustomerData {
   customerId: string | null;
   isETB: boolean;
@@ -10,6 +211,8 @@ interface CustomerData {
   status?: string;
   losId?: string;
   cifData?: any;
+  // Add AmeenDrive property
+  ameenDrive?: AmeenDriveData;
   personalDetails?: {
     title?: string;
     firstName?: string;
@@ -51,6 +254,13 @@ interface CustomerData {
       monthlyRent?: string | number;
       telephone?: string;
       email?: string;
+      // Add missing fields
+      country?: string;
+      accommodationType?: string;
+      residenceNo?: string;
+      rentedYears?: string | number;
+      mobile?: string;
+      fax?: string;
     };
     permanentAddress?: {
       fullAddress?: string;
@@ -63,6 +273,8 @@ interface CustomerData {
       nearestLandmark?: string;
       telephone?: string;
       email?: string;
+      // Add missing field
+      country?: string;
     };
   };
   contactDetails?: {
@@ -386,22 +598,17 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
                 }
               } : {},
               employmentDetails: detailData ? {
-                occupationCode: detailData.individualInfo?.occupation_code || '',
+                employmentStatus: 'Employed', // Default assumption for existing customers
                 industry: detailData.industry || '',
                 business: detailData.business || '',
-                monthlyIncome: detailData.dirDetails?.estimated_net_worth || '',
-                estimatedNetWorth: detailData.dirDetails?.estimated_net_worth || '',
-                declaredNetWorth: detailData.dirDetails?.declared_net_worth || '',
-                assessedNetWorth: detailData.dirDetails?.assessed_net_worth || '',
-                annualSales: detailData.annualSales || '',
-                employmentStatus: 'Employed', // Default assumption for existing customers
+                // Remove occupationCode from here as it's defined in personalDetails
               } : {},
               bankingDetails: detailData ? {
                 accountNumber: detailData.clientBanks?.actt_no || '',
                 bankName: detailData.clientBanks?.bank_name || '',
                 branchName: detailData.clientBanks?.branch || '',
                 accountType: 'Current', // Default assumption
-                isUBLCustomer: detailData.clientBanks?.bank_name === 'UBL' ? 'Yes' : 'No',
+                isUblCustomer: detailData.clientBanks?.bank_name === 'UBL' ? 'Yes' : 'No', // Fixed property name
                 ublAccountNumber: detailData.clientBanks?.bank_name === 'UBL' ? detailData.clientBanks?.actt_no : '',
               } : {},
               nextOfKin: detailData?.relationship ? {

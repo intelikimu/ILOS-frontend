@@ -18,6 +18,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { User, CreditCard, ArrowLeft, CheckCircle2, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/ui/use-toast';
 
 
 
@@ -75,6 +76,16 @@ const useSectionFilled = (customerData: any): Record<SectionKey, boolean> => ({
 export default function AmeenDrivePage() {
   const { customerData } = useCustomer();
   const router = useRouter();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Function to get base URL for API calls
+  const getBaseUrl = () => {
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+      return process.env.NEXT_PUBLIC_API_URL || 'https://ilos-backend.vercel.app';
+    }
+    return 'http://localhost:5000';
+  };
 
   // 3. Section refs for scroll with correct typing
   const refs: Record<SectionKey, React.RefObject<HTMLDivElement | null>> = {
@@ -134,6 +145,275 @@ export default function AmeenDrivePage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // Helper function to convert Yes/No values to boolean
+  function toBoolean(value: any): boolean | null {
+    if (value === 'Yes' || value === true) return true;
+    if (value === 'No' || value === false) return false;
+    return null;
+  }
+
+  // Helper function to convert string numbers to actual numbers
+  function toNumber(value: any): number | null {
+    if (value === '' || value === undefined || value === null) return null;
+    const num = Number(value);
+    return isNaN(num) ? null : num;
+  }
+
+  // Helper function to format dates
+  function toValidDate(value: any): string | null {
+    if (!value) return null;
+    const date = new Date(value);
+    return isNaN(date.getTime()) ? null : date.toISOString().split('T')[0];
+  }
+
+  // Submit the form data to the backend
+  const handleSubmit = async () => {
+    if (!customerData) {
+      toast({
+        title: "Error",
+        description: "No customer data found. Please fill the form first.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!customerData.customerId) {
+      toast({
+        title: "Error",
+        description: "Customer ID is required. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Extract data from context and format for submission
+      const ameenDrive = customerData.ameenDrive || {};
+      const personalDetails = customerData.personalDetails || {};
+      const addressDetails = customerData.addressDetails || {};
+      const currentAddress = addressDetails.currentAddress || {};
+      const permanentAddress = addressDetails.permanentAddress || {};
+
+      // Ensure city has a value - it's required in the database schema
+      const city = currentAddress.city || permanentAddress.city || 'UNKNOWN';
+
+      // Structure the data according to EXACT database schema
+      const formData = {
+        // Customer identification - MATCHES THE SCHEMA
+        customer_id: customerData.customerId,
+        city: city, // Ensure this always has a value
+
+        // Auto Loan details
+        auto_application_id: ameenDrive.autoApplicationId || '',
+        product_type: ameenDrive.productProgram?.productType || '',
+        pricing_plan: ameenDrive.productProgram?.programType || '',
+        payment_mode: ameenDrive.productProgram?.paymentMode || '',
+        current_rate_kibor: toNumber(ameenDrive.productProgram?.currentRateKibor),
+        current_rate_spread: toNumber(ameenDrive.productProgram?.currentRateSpread),
+        co_applicant_case: toBoolean(ameenDrive.productProgram?.coApplicantCase),
+        co_applicant_name: ameenDrive.productProgram?.coApplicantName || '',
+        co_applicant_relationship: ameenDrive.productProgram?.coApplicantRelationship || '',
+        
+        // Vehicle details - MATCH SCHEMA FIELD NAMES
+        vehicle_manufacturer: ameenDrive.vehicleDetails?.manufacturer || '',
+        vehicle_model: ameenDrive.vehicleDetails?.model || '',
+        year_of_manufacture: toNumber(ameenDrive.vehicleDetails?.year),
+        vehicle_class_engine_size: ameenDrive.vehicleDetails?.engineSize || '',
+        price_value: toNumber(ameenDrive.vehicleDetails?.price),
+        
+        // Used car seller details
+        used_seller_name: ameenDrive.vehicleDetails?.usedSellerName || '',
+        used_seller_cnic: ameenDrive.vehicleDetails?.usedSellerCnic || '',
+        used_house_no: ameenDrive.vehicleDetails?.usedHouseNo || '',
+        used_street: ameenDrive.vehicleDetails?.usedStreet || '',
+        used_area: ameenDrive.vehicleDetails?.usedArea || '',
+        used_landmark: ameenDrive.vehicleDetails?.usedLandmark || '',
+        used_city: ameenDrive.vehicleDetails?.usedCity || '',
+        used_country: ameenDrive.vehicleDetails?.usedCountry || '',
+        used_postal_code: ameenDrive.vehicleDetails?.usedPostalCode || '',
+        used_contact_no: ameenDrive.vehicleDetails?.usedContactNo || '',
+        used_bank: ameenDrive.vehicleDetails?.usedBank || '',
+        used_branch: ameenDrive.vehicleDetails?.usedBranch || '',
+        used_account_no: ameenDrive.vehicleDetails?.usedAccountNo || '',
+        
+        // Takaful and tracking details
+        takaful_company_name: ameenDrive.takafulDetails?.company || '',
+        takaful_rate: toNumber(ameenDrive.takafulDetails?.rate),
+        tracker_company_arranged: toBoolean(ameenDrive.takafulDetails?.trackerCompanyArranged),
+        
+        // Facility details
+        facility_type: ameenDrive.vehicleFacilityDetails?.facilityType || '',
+        musharakah_share_percent: toNumber(ameenDrive.vehicleFacilityDetails?.musharakahSharePercent),
+        musharakah_share_amount: toNumber(ameenDrive.vehicleFacilityDetails?.musharakahShareAmount),
+        auto_financing_percent: toNumber(ameenDrive.vehicleFacilityDetails?.autoFinancingPercent),
+        auto_financing_amount: toNumber(ameenDrive.vehicleFacilityDetails?.autoFinancingAmount),
+        monthly_rental: toNumber(ameenDrive.vehicleFacilityDetails?.monthlyRental),
+        monthly_rental_in_words: ameenDrive.vehicleFacilityDetails?.monthlyRentalInWords || '',
+        loan_period: toNumber(ameenDrive.vehicleFacilityDetails?.loanPeriod || ameenDrive.productProgram?.tenure),
+        delivery_option: ameenDrive.vehicleFacilityDetails?.deliveryOption || '',
+        agreement_understanding: toBoolean(ameenDrive.vehicleFacilityDetails?.agreementUnderstanding),
+        
+        // Personal details - MATCHING SCHEMA FIELDS
+        applicant_full_name: personalDetails.fullName || 
+          `${personalDetails.firstName || ''} ${personalDetails.middleName || ''} ${personalDetails.lastName || ''}`.trim(),
+        father_husband_name: personalDetails.fatherName || '',
+        mother_maiden_name: personalDetails.motherName || '',
+        date_of_birth: toValidDate(personalDetails.dateOfBirth),
+        gender: personalDetails.gender || '',
+        marital_status: personalDetails.maritalStatus || '',
+        applicant_cnic: personalDetails.cnic || customerData.cnic || '',
+        national_tax_no: personalDetails.ntn || '',
+        passport_no: personalDetails.passportNumber || '',
+        dependents_children: toNumber(personalDetails.numberOfChildren),
+        other_dependents: toNumber(personalDetails.numberOfDependents),
+        educational_qualification: personalDetails.education || '',
+        
+        // Current address - MATCHING SCHEMA FIELDS
+        curr_house_no: currentAddress.houseNo || '',
+        curr_street: currentAddress.street || '',
+        curr_area: currentAddress.area || '',
+        curr_landmark: currentAddress.nearestLandmark || '',
+        curr_city: currentAddress.city || '',
+        curr_country: currentAddress.country || '',
+        curr_postal_code: currentAddress.postalCode || '',
+        residence_status: currentAddress.residentialStatus || '',
+        curr_monthly_rent: toNumber(currentAddress.monthlyRent),
+        curr_accommodation_type: currentAddress.accommodationType || '',
+        curr_residence_no: currentAddress.residenceNo || '',
+        curr_rented_years: toNumber(currentAddress.rentedYears),
+        curr_mobile_no: currentAddress.mobile || personalDetails.mobileNumber || '',
+        curr_fax_no: currentAddress.fax || '',
+        curr_email: currentAddress.email || personalDetails.email || '',
+        
+        // Permanent address - MATCHING SCHEMA FIELDS
+        perm_house_no: permanentAddress.houseNo || '',
+        perm_street: permanentAddress.street || '',
+        perm_area: permanentAddress.area || '',
+        perm_landmark: permanentAddress.nearestLandmark || '',
+        perm_city: permanentAddress.city || '',
+        perm_country: permanentAddress.country || '',
+        perm_postal_code: permanentAddress.postalCode || '',
+        
+        // Existing vehicle info - MATCHING SCHEMA FIELDS
+        existing_car_info: ameenDrive.vehicleDetails?.existingCar || '',
+        perm_car_manufacturer: ameenDrive.vehicleDetails?.carManufacturer || '',
+        perm_car_model: ameenDrive.vehicleDetails?.carModel || '',
+        perm_car_year: toNumber(ameenDrive.vehicleDetails?.carYear),
+        perm_car_status: ameenDrive.vehicleDetails?.carStatus || '',
+        
+        // Occupation/Employment details - MATCHING SCHEMA FIELDS
+        employment_type: ameenDrive.occupation?.type || '',
+        company_name: ameenDrive.occupation?.employerName || '',
+        business_type: ameenDrive.occupation?.businessType || '',
+        business_type_other: ameenDrive.occupation?.businessTypeOther || '',
+        profession: ameenDrive.professionDetails?.type || '',
+        nature_of_business: ameenDrive.professionDetails?.natureOfBusiness || '',
+        years_in_business: toNumber(ameenDrive.professionDetails?.businessYears),
+        percent_shareholding: toNumber(ameenDrive.professionDetails?.percentShareholding),
+        employment_status: ameenDrive.occupation?.status || '',
+        designation: ameenDrive.occupation?.designation || '',
+        department: ameenDrive.occupation?.department || '',
+        grade: ameenDrive.occupation?.grade || '',
+        
+        // Business address - MATCHING SCHEMA FIELDS
+        business_address: ameenDrive.professionDetails?.businessAddress || '',
+        business_street: ameenDrive.professionDetails?.businessStreet || '',
+        business_tehsil_district_area: ameenDrive.professionDetails?.businessArea || '',
+        business_city: ameenDrive.professionDetails?.businessCity || '',
+        business_country: ameenDrive.professionDetails?.businessCountry || '',
+        business_postal_code: ameenDrive.professionDetails?.businessPostalCode || '',
+        business_telephone_no: ameenDrive.professionDetails?.businessPhone || '',
+        business_fax_no: ameenDrive.professionDetails?.businessFax || '',
+        business_nearest_landmark: ameenDrive.professionDetails?.businessLandmark || '',
+        
+        // Previous employment - MATCHING SCHEMA FIELDS
+        prev_employer_name: ameenDrive.occupation?.previousEmployer || '',
+        prev_designation: ameenDrive.occupation?.previousDesignation || '',
+        prev_experience_years: toNumber(ameenDrive.occupation?.previousYears),
+        prev_employer_tel: ameenDrive.occupation?.previousEmployerPhone || '',
+        
+        // Professional company details - MATCHING SCHEMA FIELDS
+        prof_company_name: ameenDrive.professionDetails?.companyName || '',
+        prof_address: ameenDrive.professionDetails?.address || '',
+        prof_profession: ameenDrive.professionDetails?.profession || '',
+        
+        // Income details - MATCHING SCHEMA FIELDS
+        regular_monthly: toNumber(ameenDrive.incomeBank?.regularMonthly),
+        gross_income: toNumber(ameenDrive.incomeBank?.grossIncome),
+        net_take_home: toNumber(ameenDrive.incomeBank?.netTakeHome),
+        other_monthly_income: toNumber(ameenDrive.incomeBank?.otherIncome),
+        source_of_other_income: ameenDrive.incomeBank?.otherIncomeSource || '',
+        monthly_income: toNumber(ameenDrive.incomeBank?.monthlyIncome),
+        avg_monthly_savings: toNumber(ameenDrive.incomeBank?.monthlyAvgSavings),
+        spouse_employed: toBoolean(ameenDrive.incomeBank?.spouseEmployed),
+        spouse_income_source: ameenDrive.incomeBank?.spouseIncomeSource || '',
+        
+        // Signatures - MATCHING SCHEMA FIELDS
+        applicant_signature: ameenDrive.signatureSection?.signature || null,
+        co_applicant_signature: ameenDrive.signatureSection?.coApplicantSignature || null,
+        applicant_signature_cnic: ameenDrive.signatureSection?.signatureCNIC || null,
+        co_applicant_signature_cnic: ameenDrive.signatureSection?.coApplicantCNIC || null,
+        
+        // Bank use details - MATCHING SCHEMA FIELDS
+        channel_code: ameenDrive.bankUseOnly?.channelCode || '',
+        pb_so_employee_no: ameenDrive.bankUseOnly?.pbEmployeeNo || '',
+        program_code: ameenDrive.bankUseOnly?.programCode || '',
+        referral_id: ameenDrive.bankUseOnly?.referralId || '',
+        branch_code: ameenDrive.bankUseOnly?.branchCode || '',
+        sm_employee_no: ameenDrive.bankUseOnly?.smEmployeeNo || '',
+        application_source: ameenDrive.bankUseOnly?.applicationSource || '',
+        branch_name_code: ameenDrive.bankUseOnly?.branchNameCode || '',
+        
+        // Dealership
+        dealership_name: ameenDrive.vehicleFacilityDetails?.dealerName || '',
+        
+        // Non-tax payer details
+        nontax_full_name: ameenDrive.nonTaxPayer?.fullName || '',
+        nontax_resident_of: ameenDrive.nonTaxPayer?.residentOf || '',
+        nontax_applied_financing: toBoolean(ameenDrive.nonTaxPayer?.appliedFinancing),
+        nontax_no_ntn: toBoolean(ameenDrive.nonTaxPayer?.noNTN),
+        nontax_applicant_signature: ameenDrive.nonTaxPayer?.signature || null,
+        
+        // Stamps
+        dealer_stamp: ameenDrive.stamps?.dealerStamp || null,
+        branch_stamp: ameenDrive.stamps?.branchStamp || null,
+      };
+
+      // Log the submission data for debugging
+      console.log("Submitting Ameen Drive application data:", formData);
+
+      // Send data to backend
+      const response = await fetch(`${getBaseUrl()}/api/ameendrive`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Success!",
+          description: "Your Ameen Drive application has been submitted successfully.",
+        });
+        // Redirect to cases/dashboard after successful submission
+        router.push('/dashboard/cases');
+      } else {
+        throw new Error(data.error || 'Failed to submit Ameen Drive application');
+      }
+    } catch (error: any) {
+      console.error("Application submission error:", error);
+      toast({
+        title: "Error",
+        description: error.message || 'Failed to submit application',
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
 
   return (
@@ -247,12 +527,13 @@ export default function AmeenDrivePage() {
         <div ref={refs.stamps}><AmeenDriveStampsForm /></div>
         <div ref={refs.bankUse}><AmeenDriveBankUseOnlyForm /></div>
          <div className="flex justify-end">
-          <button
-            type="submit"
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
             className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 shadow transition"
           >
-            Submit Application
-          </button>
+            {isSubmitting ? 'Submitting...' : 'Submit Application'}
+          </Button>
         </div>
       </div>
 

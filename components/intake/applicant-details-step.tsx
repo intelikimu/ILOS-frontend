@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Loader2, CheckCircle, User, Building, CreditCard, HelpCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import type { ApplicantData } from "@/app/dashboard/applicant/auto/autoloans/page"
+import type { ApplicantData } from "@/app/dashboard/applicant/auto/personalautoloans/page"
 
 interface ApplicantDetailsStepProps {
   data: ApplicantData

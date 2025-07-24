@@ -8,7 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
 import { CheckCircle, AlertTriangle, RefreshCw, Shield, Database, FileCheck } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import type { ApplicantData } from "@/app/dashboard/applicant/auto/autoloans/page"
+import type { ApplicantData } from "@/app/dashboard/applicant/auto/personalautoloans/page"
 
 interface VerificationStepProps {
   applicantData: ApplicantData

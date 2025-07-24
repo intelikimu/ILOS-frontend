@@ -242,9 +242,9 @@ export default function ApplicantPage() {
                 onChange={e => setSubOption(e.target.value)}
               >
                 <option value="">Select...</option>
-                <option value="Autoloans">Auto's</option>
-                <option value="Financial Vehicles">SME Commercial Vehicles Loan's</option>
-                <option value="SME Loans">SME Loans</option>
+                <option value="PersonalAutoloans">Personal Auto's</option>
+                <option value="sme Vehicles">SME Commercial Vehicles Loan's</option>
+                <option value="SME asaan">SME Asaan</option>
               </select>
             </div>
           )}

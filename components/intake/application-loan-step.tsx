@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { CreditCard, DollarSign, HelpCircle } from "lucide-react"
-import type { ApplicantData } from "@/app/dashboard/applicant/auto/autoloans/page"
+import type { ApplicantData } from "@/app/dashboard/applicant/auto/personalautoloans/page"
 
 interface ApplicationLoanStepProps {
   data: ApplicantData

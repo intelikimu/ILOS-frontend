@@ -324,6 +324,8 @@ interface CustomerData {
   supplementaryCards?: SupplementaryCardInterface[];
   previousEmployment?: PreviousEmploymentInterface;
   employmentIncome?: EmploymentIncomeInterface;
+  // Add SME Application property
+  smeApplication?: any;
   personalDetails?: {
     title?: string;
     firstName?: string;

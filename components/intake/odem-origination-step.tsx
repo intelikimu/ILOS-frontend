@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { FileText, Building, HelpCircle } from "lucide-react"
-import type { ApplicantData } from "@/app/dashboard/applicant/auto/autoloans/page"
+import type { ApplicantData } from "@/app/dashboard/applicant/auto/personalautoloans/page"
 
 interface OdemOriginationStepProps {
   data: ApplicantData

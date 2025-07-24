@@ -30,7 +30,7 @@ import {
   SkipBackIcon as Skip,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import type { ApplicantData, DocumentData, ChecklistItem } from "@/app/dashboard/applicant/auto/autoloans/page"
+import type { ApplicantData, DocumentData, ChecklistItem } from "@/app/dashboard/applicant/auto/personalautoloans/page"
 
 interface DocumentUploadStepProps {
   applicantData: ApplicantData

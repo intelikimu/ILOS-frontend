@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DollarSign, Users } from "lucide-react"
-import type { ApplicantData } from "@/app/dashboard/applicant/auto/autoloans/page"
+import type { ApplicantData } from "@/app/dashboard/applicant/auto/personalautoloans/page"
 
 interface IncomeReferenceStepProps {
   data: ApplicantData

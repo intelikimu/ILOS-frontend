@@ -33,6 +33,7 @@ export const apiRequest = async (endpoint: string, options: RequestInit = {}) =>
       };
     }
     
+    console.log(`Making API request to ${url}...`);
     const response = await fetch(url, options);
     
     // Try to parse response as JSON
@@ -46,7 +47,14 @@ export const apiRequest = async (endpoint: string, options: RequestInit = {}) =>
     
     // Handle API errors
     if (!response.ok) {
-      throw new Error(data.error || data.message || 'API request failed');
+      console.error(`API error (${response.status}):`, data);
+      
+      // Create an error object with enhanced details
+      const error = new Error(data.error || data.message || 'API request failed');
+      (error as any).status = response.status;
+      (error as any).data = data;
+      (error as any).url = url;
+      throw error;
     }
     
     return data;
@@ -54,4 +62,35 @@ export const apiRequest = async (endpoint: string, options: RequestInit = {}) =>
     console.error('API request failed:', error);
     throw error;
   }
+};
+
+/**
+ * Submit a new SME ASAAN application to the backend
+ * @param applicationData - Complete SME ASAAN application data
+ * @returns Response from the backend with created application details
+ */
+export const submitSmeAsaanApplication = async (applicationData: any) => {
+  return apiRequest('api/smeasaan', {
+    method: 'POST',
+    body: JSON.stringify(applicationData)
+  });
+};
+
+/**
+ * Fetch all SME ASAAN applications for a specific customer
+ * @param customerId - Customer ID to fetch applications for
+ * @returns Array of SME ASAAN applications for the customer
+ */
+export const getSmeAsaanApplicationsByCustomer = async (customerId: string) => {
+  return apiRequest(`api/smeasaan/by-customer/${customerId}`);
+};
+
+/**
+ * Fetch a specific SME ASAAN application by ID
+ * @param applicationId - Application ID to fetch
+ * @returns Details of the specific SME ASAAN application
+ */
+export const getSmeAsaanApplicationById = async (applicationId: string) => {
+  return apiRequest(`api/smeasaan/${applicationId}`);
 }; 
+

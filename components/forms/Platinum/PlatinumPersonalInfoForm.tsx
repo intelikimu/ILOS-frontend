@@ -1,515 +1,360 @@
 "use client";
-import React, { useEffect, useState } from "react";
 import { useCustomer } from "@/contexts/CustomerContext";
-
-// Helper to format ISO date string to yyyy-mm-dd for date inputs
-const toInputDate = (date: string | number | Date | undefined) => date ? new Date(date).toISOString().slice(0, 10) : "";
-
-// Helper to split address string by comma
-const splitAddress = (address = "") => {
-  const parts = address.split(",").map(x => x.trim());
-  return {
-    house: parts[0] || "",
-    street: parts[1] || "",
-    area: parts[2] || "",
-    city: parts[3] || "",
-    postal: ""
-  };
-};
+import { useEffect, useRef, useState } from "react";
+import { PlatinumCustomerData } from "@/types/platinum-types";
 
 export const PlatinumPersonalInfoForm = () => {
-  const { customerData } = useCustomer();
-  const cif = customerData?.cifData || {};
-  const ind = cif?.individualInfo || {};
-  const cnicType = cif?.customerIdType || {};
-  const dir = cif?.dirDetails || {};
-  const email = cif?.email?.address || customerData?.cifData.email?.address || "";
-  const phone = cif?.phone?.phone_no || customerData?.cifData.phone?.phone_no || "";
-  const postal = cif?.postal || {};
-
-  // Name split: We assume fullname in "First Middle Last" form
-  const fullname = cif?.fullname || ind?.given_name1 || "";
-  const nameParts = fullname.split(" ");
-  const firstName = nameParts[0] || "";
-  const middleName = nameParts.length > 2 ? nameParts.slice(1, -1).join(" ") : "";
-  const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
-
-  // Address split
-  const currAddrObj = splitAddress(postal.address || "");
-
+  const { customerData, updateCustomerData } = useCustomer();
+  const typedCustomerData = customerData as unknown as PlatinumCustomerData;
   const [formData, setFormData] = useState({
     title: "",
     firstName: "",
     middleName: "",
     lastName: "",
-    nameOnCard: "",
+    fullName: "",
+    dateOfBirth: "",
+    gender: "Male",
+    maritalStatus: "Single",
     cnic: "",
-    passport: "",
-    cnicIssue: "",
-    cnicExpiry: "",
     oldNic: "",
-    fatherHusband: "",
-    dob: "",
-    gender: "",
-    motherMaiden: "",
-    marital: "",
-    dependents: "",
-    education: "",
-    currHouse: "",
-    currStreet: "",
-    currTehsil: "",
-    currLandmark: "",
-    currCity: "",
-    currPostal: "",
-    resPhone: "",
-    mobile: "",
-    ntn: "",
-    accommodation: "",
-    residenceNature: "",
-    residingSince: "",
+    passportNumber: "",
+    mobileNumber: "",
     email: "",
-    permanentAddr: "",
-    vehicleInfo: ""
+    nationality: "Pakistani",
+    fatherName: "",
+    motherName: "",
+    education: "",
+    numberOfDependents: "",
+    ntn: ""
   });
 
-  const [prefilledFields, setPrefilledFields] = useState(new Set());
+  // Use refs to prevent infinite update loops
+  const isInitialized = useRef(false);
+  const skipNextUpdate = useRef(false);
+  const isFirstRender = useRef(true);
 
+  // Initialize form with data from context (runs once)
   useEffect(() => {
-    const prefilled = new Set();
-    const newFormData = { ...formData };
+    if (isInitialized.current) return;
+    
+    const personalDetails = typedCustomerData?.personalDetails || {};
+    const platinumCard = typedCustomerData?.platinumCard || {};
+    
+    setFormData(prev => ({
+      ...prev,
+      title: personalDetails.title || prev.title,
+      firstName: personalDetails.firstName || prev.firstName,
+      middleName: personalDetails.middleName || prev.middleName,
+      lastName: personalDetails.lastName || prev.lastName,
+      fullName: personalDetails.fullName || `${personalDetails.firstName || ""} ${personalDetails.lastName || ""}`.trim(),
+      dateOfBirth: personalDetails.dateOfBirth || prev.dateOfBirth,
+      gender: personalDetails.gender || prev.gender,
+      maritalStatus: personalDetails.maritalStatus || prev.maritalStatus,
+      cnic: personalDetails.cnic || typedCustomerData?.cnic || prev.cnic,
+      oldNic: platinumCard?.oldNic || prev.oldNic,
+      passportNumber: personalDetails.passportNumber || prev.passportNumber,
+      mobileNumber: personalDetails.mobileNumber || prev.mobileNumber,
+      email: personalDetails.email || prev.email,
+      nationality: personalDetails.nationality || prev.nationality,
+      fatherName: personalDetails.fatherName || prev.fatherName,
+      motherName: personalDetails.motherName || prev.motherName,
+      education: personalDetails.education || prev.education,
+      numberOfDependents: personalDetails.numberOfDependents?.toString() || prev.numberOfDependents,
+      ntn: personalDetails.ntn || prev.ntn
+    }));
+    
+    isInitialized.current = true;
+  }, []);
 
-    // Title
-    if (ind.title) { newFormData.title = ind.title; prefilled.add("title"); }
+  // Save form data to context when user makes changes (not on every render)
+  const saveToContext = () => {
+    if (skipNextUpdate.current || !isInitialized.current) return;
+    
+    skipNextUpdate.current = true;
+    
+    updateCustomerData({
+      customerId: typedCustomerData?.customerId || formData.cnic,
+      personalDetails: {
+        ...(typedCustomerData?.personalDetails || {}),
+        title: formData.title,
+        firstName: formData.firstName,
+        middleName: formData.middleName,
+        lastName: formData.lastName,
+        fullName: formData.fullName || `${formData.firstName} ${formData.lastName}`.trim(),
+        dateOfBirth: formData.dateOfBirth,
+        gender: formData.gender,
+        maritalStatus: formData.maritalStatus,
+        cnic: formData.cnic,
+        passportNumber: formData.passportNumber,
+        mobileNumber: formData.mobileNumber,
+        email: formData.email,
+        nationality: formData.nationality,
+        fatherName: formData.fatherName,
+        motherName: formData.motherName,
+        education: formData.education,
+        numberOfDependents: formData.numberOfDependents,
+        ntn: formData.ntn
+      },
+      platinumCard: {
+        ...(typedCustomerData?.platinumCard || {}),
+        oldNic: formData.oldNic
+      }
+    } as unknown as Partial<any>);
+    
+    // Reset the flag after a short delay to allow for future user changes
+    setTimeout(() => {
+      skipNextUpdate.current = false;
+    }, 50);
+  };
 
-    // Name fields
-    if (firstName) { newFormData.firstName = firstName; prefilled.add("firstName"); }
-    if (middleName) { newFormData.middleName = middleName; prefilled.add("middleName"); }
-    if (lastName) { newFormData.lastName = lastName; prefilled.add("lastName"); }
-
-    // Name on Card
-    if (cif.shortName) { newFormData.nameOnCard = cif.shortName; prefilled.add("nameOnCard"); }
-
-    // CNIC/Passport
-    if (customerData?.cnic) { newFormData.cnic = customerData.cnic; prefilled.add("cnic"); }
-    if (cnicType?.id_no && cnicType?.id_type === "PASSPORT") {
-      newFormData.passport = cnicType.id_no; prefilled.add("passport");
+  // Handle initial render - don't update context on first render
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
     }
-    if (cnicType?.expiry_date) { newFormData.cnicExpiry = toInputDate(cnicType.expiry_date); prefilled.add("cnicExpiry"); }
-    if (cnicType?.created_at) { newFormData.cnicIssue = toInputDate(cnicType.created_at); prefilled.add("cnicIssue"); }
-
-    // Old NIC (not provided in sample, leave blank unless present)
-    // Father/Husband
-    if (dir?.father_name) { newFormData.fatherHusband = dir.father_name; prefilled.add("fatherHusband"); }
-
-    // DOB
-    if (ind?.date_of_birth) { newFormData.dob = toInputDate(ind.date_of_birth); prefilled.add("dob"); }
-
-    // Gender
-    if (ind?.sex) { newFormData.gender = ind.sex === "M" ? "Male" : ind.sex === "F" ? "Female" : ""; prefilled.add("gender"); }
-
-    // Mother’s Maiden Name
-    if (ind?.maiden_name) { newFormData.motherMaiden = ind.maiden_name; prefilled.add("motherMaiden"); }
-
-    // Marital Status
-    if (ind?.maritial_status) {
-      const m = ind.maritial_status;
-      newFormData.marital =
-        m === "M" ? "Married"
-        : m === "S" ? "Single"
-        : m === "D" ? "Divorced"
-        : m === "W" ? "Widowed"
-        : "";
-      prefilled.add("marital");
-    }
-
-    // Dependents/Education (not present in sample data, but could map if available)
-
-    // Address fields
-    if (currAddrObj.house) { newFormData.currHouse = currAddrObj.house; prefilled.add("currHouse"); }
-    if (currAddrObj.street) { newFormData.currStreet = currAddrObj.street; prefilled.add("currStreet"); }
-    if (currAddrObj.area) { newFormData.currTehsil = currAddrObj.area; prefilled.add("currTehsil"); }
-    if (currAddrObj.city) { newFormData.currCity = currAddrObj.city; prefilled.add("currCity"); }
-    if (postal?.postal_code) { newFormData.currPostal = postal.postal_code; prefilled.add("currPostal"); }
-
-    // Phones
-    if (phone) { newFormData.resPhone = phone; prefilled.add("resPhone"); }
-    if (customerData?.cifData.phone?.phone_no) { newFormData.mobile = customerData.cifData.phone.phone_no; prefilled.add("mobile"); }
-  console.log("Mobile agyua hai ==>:", customerData?.cifData.phone?.phone_no);
-    // Email
-    if (email) { newFormData.email = email; prefilled.add("email"); }
-
-    setFormData(newFormData);
-    setPrefilledFields(prefilled);
-    // eslint-disable-next-line
-  }, [customerData]);
+    saveToContext();
+  }, [formData]);
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
-  const getFieldClasses = (field: string) => {
-    const base = "rounded-xl border border-gray-300 bg-white px-4 py-2";
-    const prefilled = "bg-yellow-50 border-yellow-300";
-    const normal = "bg-white";
-    return `${base} ${prefilledFields.has(field) ? prefilled : normal}`;
+
+  const handleFullNameUpdate = () => {
+    const fullName = `${formData.firstName} ${formData.middleName} ${formData.lastName}`.replace(/\s+/g, ' ').trim();
+    setFormData(prev => ({
+      ...prev,
+      fullName
+    }));
   };
 
   return (
     <section className="mb-10">
       <h3 className="text-2xl rounded-lg text-white font-semibold mb-4 p-4 bg-blue-500">1. Personal Information</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border p-4 rounded-lg bg-gray-50">
-        {/* Title */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
         <div>
           <label className="block text-sm font-medium mb-1">Title</label>
-          <div className="flex gap-4">
-            {["Mr", "Mrs", "Ms"].map(opt => (
-              <label key={opt} className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="title"
-                  checked={formData.title === opt}
-                  onChange={() => handleInputChange("title", opt)}
-                  className={prefilledFields.has("title") ? "bg-yellow-50 border-yellow-300" : ""}
-                />{opt}
-              </label>
-            ))}
-          </div>
+          <select
+            className="w-full rounded-xl border border-gray-300 px-4 py-2 bg-white"
+            value={formData.title}
+            onChange={(e) => handleInputChange("title", e.target.value)}
+          >
+            <option value="">Select Title</option>
+            <option value="Mr">Mr</option>
+            <option value="Mrs">Mrs</option>
+            <option value="Ms">Ms</option>
+            <option value="Dr">Dr</option>
+          </select>
         </div>
-        {/* Full Name */}
+        <div>
+          <label className="block text-sm font-medium mb-1">First Name</label>
+          <input
+            type="text"
+            className="w-full rounded-xl border border-gray-300 px-4 py-2 bg-white"
+            placeholder="First Name"
+            value={formData.firstName}
+            onChange={(e) => {
+              handleInputChange("firstName", e.target.value);
+              setTimeout(handleFullNameUpdate, 100);
+            }}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Middle Name</label>
+          <input
+            type="text"
+            className="w-full rounded-xl border border-gray-300 px-4 py-2 bg-white"
+            placeholder="Middle Name"
+            value={formData.middleName}
+            onChange={(e) => {
+              handleInputChange("middleName", e.target.value);
+              setTimeout(handleFullNameUpdate, 100);
+            }}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Last Name</label>
+          <input
+            type="text"
+            className="w-full rounded-xl border border-gray-300 px-4 py-2 bg-white"
+            placeholder="Last Name"
+            value={formData.lastName}
+            onChange={(e) => {
+              handleInputChange("lastName", e.target.value);
+              setTimeout(handleFullNameUpdate, 100);
+            }}
+          />
+        </div>
         <div>
           <label className="block text-sm font-medium mb-1">Full Name</label>
-          <div className="grid grid-cols-3 gap-2">
-            <input
-              type="text"
-              className={getFieldClasses("firstName")}
-              placeholder="First"
-              value={formData.firstName}
-              onChange={e => handleInputChange("firstName", e.target.value)}
-            />
-            <input
-              type="text"
-              className={getFieldClasses("middleName")}
-              placeholder="Middle"
-              value={formData.middleName}
-              onChange={e => handleInputChange("middleName", e.target.value)}
-            />
-            <input
-              type="text"
-              className={getFieldClasses("lastName")}
-              placeholder="Last"
-              value={formData.lastName}
-              onChange={e => handleInputChange("lastName", e.target.value)}
-            />
-          </div>
-        </div>
-        {/* Name on Card */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Name on Card</label>
           <input
             type="text"
-            maxLength={19}
-            className={getFieldClasses("nameOnCard")}
-            placeholder="Max 19 characters"
-            value={formData.nameOnCard}
-            onChange={e => handleInputChange("nameOnCard", e.target.value)}
-          />
-        </div>
-        {/* CNIC/Passport */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Computerized NIC</label>
-          <input
-            type="text"
-            className={getFieldClasses("cnic")}
-            placeholder="CNIC"
-            value={formData.cnic}
-            onChange={e => handleInputChange("cnic", e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Passport Number</label>
-          <input
-            type="text"
-            className={getFieldClasses("passport")}
-            placeholder="Passport (for Foreign Nationals)"
-            value={formData.passport}
-            onChange={e => handleInputChange("passport", e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">CNIC Issuance Date</label>
-          <input
-            type="date"
-            className={getFieldClasses("cnicIssue")}
-            value={formData.cnicIssue}
-            onChange={e => handleInputChange("cnicIssue", e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">CNIC Expiry Date</label>
-          <input
-            type="date"
-            className={getFieldClasses("cnicExpiry")}
-            value={formData.cnicExpiry}
-            onChange={e => handleInputChange("cnicExpiry", e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Old NIC Number</label>
-           <input
-            type="text"
-            className={getFieldClasses("cnic")}
-            placeholder=" OLD CNIC"
-            value={formData.cnic}
-            onChange={e => handleInputChange("cnic", e.target.value)}
-          />
-          {/* <input
-            type="text"
-            className={getFieldClasses("oldNic")}
-            placeholder="Old NIC"
-            value={formData.oldNic}
-            onChange={e => handleInputChange("oldNic", e.target.value)}
-          /> */}
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Father’s / Husband’s Name</label>
-          <input
-            type="text"
-            className={getFieldClasses("fatherHusband")}
-            placeholder="Father/Husband Name"
-            value={formData.fatherHusband}
-            onChange={e => handleInputChange("fatherHusband", e.target.value)}
+            className="w-full rounded-xl border border-gray-300 px-4 py-2 bg-white"
+            placeholder="Full Name"
+            value={formData.fullName}
+            onChange={(e) => handleInputChange("fullName", e.target.value)}
           />
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Date of Birth</label>
           <input
             type="date"
-            className={getFieldClasses("dob")}
-            value={formData.dob}
-            onChange={e => handleInputChange("dob", e.target.value)}
+            className="w-full rounded-xl border border-gray-300 px-4 py-2 bg-white"
+            value={formData.dateOfBirth}
+            onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
           />
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Gender</label>
-          <div className="flex gap-4">
-            {["Male", "Female"].map(opt => (
-              <label key={opt} className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="gender"
-                  checked={formData.gender === opt}
-                  onChange={() => handleInputChange("gender", opt)}
-                  className={prefilledFields.has("gender") ? "bg-yellow-50 border-yellow-300" : ""}
-                />{opt}
-              </label>
-            ))}
+          <div className="flex gap-6">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="gender"
+                checked={formData.gender === "Male"}
+                onChange={() => handleInputChange("gender", "Male")}
+              /> Male
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="gender"
+                checked={formData.gender === "Female"}
+                onChange={() => handleInputChange("gender", "Female")}
+              /> Female
+            </label>
           </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Mother’s Maiden Name</label>
-          <input
-            type="text"
-            minLength={6}
-            className={getFieldClasses("motherMaiden")}
-            placeholder="Min 6 characters"
-            value={formData.motherMaiden}
-            onChange={e => handleInputChange("motherMaiden", e.target.value)}
-          />
-        </div>
-        {/* Marital Status */}
         <div>
           <label className="block text-sm font-medium mb-1">Marital Status</label>
-          <div className="flex flex-wrap gap-2">
-            {["Single", "Married", "Divorced", "Widowed"].map(opt => (
-              <label key={opt} className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="maritalStatus"
-                  checked={formData.marital === opt}
-                  onChange={() => handleInputChange("marital", opt)}
-                  className={prefilledFields.has("marital") ? "bg-yellow-50 border-yellow-300" : ""}
-                />{opt}
-              </label>
-            ))}
-          </div>
+          <select
+            className="w-full rounded-xl border border-gray-300 px-4 py-2 bg-white"
+            value={formData.maritalStatus}
+            onChange={(e) => handleInputChange("maritalStatus", e.target.value)}
+          >
+            <option value="Single">Single</option>
+            <option value="Married">Married</option>
+            <option value="Divorced">Divorced</option>
+            <option value="Widowed">Widowed</option>
+          </select>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Dependents</label>
-          <input
-            type="number"
-            className={getFieldClasses("dependents")}
-            value={formData.dependents}
-            onChange={e => handleInputChange("dependents", e.target.value)}
-          />
-        </div>
-        {/* Education */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Education</label>
-          <div className="flex flex-wrap gap-2">
-            {["Matric/O’Levels", "Inter/A’Levels", "Bachelors", "Masters"].map(opt => (
-              <label key={opt} className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="education"
-                  checked={formData.education === opt}
-                  onChange={() => handleInputChange("education", opt)}
-                  className={prefilledFields.has("education") ? "bg-yellow-50 border-yellow-300" : ""}
-                />{opt}
-              </label>
-            ))}
-          </div>
-        </div>
-        {/* Current Address */}
-        <div className="md:col-span-3">
-          <label className="block text-sm font-medium mb-1">Current Address</label>
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-2">
-            <input
-              type="text"
-              className={getFieldClasses("currHouse")}
-              placeholder="House"
-              value={formData.currHouse}
-              onChange={e => handleInputChange("currHouse", e.target.value)}
-            />
-            <input
-              type="text"
-              className={getFieldClasses("currStreet")}
-              placeholder="Street"
-              value={formData.currStreet}
-              onChange={e => handleInputChange("currStreet", e.target.value)}
-            />
-            <input
-              type="text"
-              className={getFieldClasses("currTehsil")}
-              placeholder="Tehsil"
-              value={formData.currTehsil}
-              onChange={e => handleInputChange("currTehsil", e.target.value)}
-            />
-            <input
-              type="text"
-              className={getFieldClasses("currLandmark")}
-              placeholder="Landmark"
-              value={formData.currLandmark}
-              onChange={e => handleInputChange("currLandmark", e.target.value)}
-            />
-            <input
-              type="text"
-              className={getFieldClasses("currCity")}
-              placeholder="City"
-              value={formData.currCity}
-              onChange={e => handleInputChange("currCity", e.target.value)}
-            />
-            <input
-              type="text"
-              className={getFieldClasses("currPostal")}
-              placeholder="Postal Code"
-              value={formData.currPostal}
-              onChange={e => handleInputChange("currPostal", e.target.value)}
-            />
-          </div>
-        </div>
-        {/* Phones */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Residential Phone</label>
+          <label className="block text-sm font-medium mb-1">CNIC</label>
           <input
             type="text"
-            className={getFieldClasses("resPhone")}
-            placeholder="Residential Phone"
-            value={formData.resPhone}
-            onChange={e => handleInputChange("resPhone", e.target.value)}
+            className="w-full rounded-xl border border-gray-300 px-4 py-2 bg-white"
+            placeholder="XXXXX-XXXXXXX-X"
+            value={formData.cnic}
+            onChange={(e) => handleInputChange("cnic", e.target.value)}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Mobile</label>
+          <label className="block text-sm font-medium mb-1">Old NIC (if applicable)</label>
           <input
             type="text"
-            className={getFieldClasses("mobile")}
-            placeholder="Mobile"
-            value={formData.mobile}
-            onChange={e => handleInputChange("mobile", e.target.value)}
+            className="w-full rounded-xl border border-gray-300 px-4 py-2 bg-white"
+            placeholder="Old NIC"
+            value={formData.oldNic}
+            onChange={(e) => handleInputChange("oldNic", e.target.value)}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">NTN</label>
+          <label className="block text-sm font-medium mb-1">Passport Number (if applicable)</label>
           <input
             type="text"
-            className={getFieldClasses("ntn")}
-            placeholder="NTN"
-            value={formData.ntn}
-            onChange={e => handleInputChange("ntn", e.target.value)}
+            className="w-full rounded-xl border border-gray-300 px-4 py-2 bg-white"
+            placeholder="Passport Number"
+            value={formData.passportNumber}
+            onChange={(e) => handleInputChange("passportNumber", e.target.value)}
           />
         </div>
-        {/* Type of Accommodation */}
         <div>
-          <label className="block text-sm font-medium mb-1">Type of Accommodation</label>
-          <div className="flex gap-4">
-            {["House", "Apartment"].map(opt => (
-              <label key={opt} className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="accommodation"
-                  checked={formData.accommodation === opt}
-                  onChange={() => handleInputChange("accommodation", opt)}
-                  className={prefilledFields.has("accommodation") ? "bg-yellow-50 border-yellow-300" : ""}
-                />{opt}
-              </label>
-            ))}
-          </div>
-        </div>
-        {/* Nature of Residence */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Nature of Residence</label>
-          <div className="flex flex-wrap gap-2">
-            {["Owned", "Rented", "Parents", "Mortgage", "Company Provided"].map(opt => (
-              <label key={opt} className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="residenceNature"
-                  checked={formData.residenceNature === opt}
-                  onChange={() => handleInputChange("residenceNature", opt)}
-                  className={prefilledFields.has("residenceNature") ? "bg-yellow-50 border-yellow-300" : ""}
-                />{opt}
-              </label>
-            ))}
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Residing Since</label>
+          <label className="block text-sm font-medium mb-1">Mobile Number</label>
           <input
             type="text"
-            className={getFieldClasses("residingSince")}
-            placeholder="Residing Since"
-            value={formData.residingSince}
-            onChange={e => handleInputChange("residingSince", e.target.value)}
+            className="w-full rounded-xl border border-gray-300 px-4 py-2 bg-white"
+            placeholder="03XX-XXXXXXX"
+            value={formData.mobileNumber}
+            onChange={(e) => handleInputChange("mobileNumber", e.target.value)}
           />
+          {formData.mobileNumber && <p className="text-xs text-gray-500">Mobile agyua hai ==&gt;: {formData.mobileNumber}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Email</label>
           <input
             type="email"
-            className={getFieldClasses("email")}
-            placeholder="Email"
+            className="w-full rounded-xl border border-gray-300 px-4 py-2 bg-white"
+            placeholder="Email Address"
             value={formData.email}
-            onChange={e => handleInputChange("email", e.target.value)}
+            onChange={(e) => handleInputChange("email", e.target.value)}
           />
         </div>
-        {/* Permanent Address (if different) */}
-        <div className="md:col-span-3">
-          <label className="block text-sm font-medium mb-1">Permanent Address (if different)</label>
+        <div>
+          <label className="block text-sm font-medium mb-1">Nationality</label>
           <input
             type="text"
-            className={getFieldClasses("permanentAddr")}
-            placeholder="Permanent Address"
-            value={formData.permanentAddr}
-            onChange={e => handleInputChange("permanentAddr", e.target.value)}
+            className="w-full rounded-xl border border-gray-300 px-4 py-2 bg-white"
+            placeholder="Nationality"
+            value={formData.nationality}
+            onChange={(e) => handleInputChange("nationality", e.target.value)}
           />
         </div>
-        <div className="md:col-span-3">
-          <label className="block text-sm font-medium mb-1">Vehicle Info</label>
+        <div>
+          <label className="block text-sm font-medium mb-1">Father's Name</label>
           <input
             type="text"
-            className={getFieldClasses("vehicleInfo")}
-            placeholder="Vehicle Info"
-            value={formData.vehicleInfo}
-            onChange={e => handleInputChange("vehicleInfo", e.target.value)}
+            className="w-full rounded-xl border border-gray-300 px-4 py-2 bg-white"
+            placeholder="Father's Name"
+            value={formData.fatherName}
+            onChange={(e) => handleInputChange("fatherName", e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Mother's Name</label>
+          <input
+            type="text"
+            className="w-full rounded-xl border border-gray-300 px-4 py-2 bg-white"
+            placeholder="Mother's Name"
+            value={formData.motherName}
+            onChange={(e) => handleInputChange("motherName", e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Education</label>
+          <select
+            className="w-full rounded-xl border border-gray-300 px-4 py-2 bg-white"
+            value={formData.education}
+            onChange={(e) => handleInputChange("education", e.target.value)}
+          >
+            <option value="">Select Education</option>
+            <option value="High School">High School</option>
+            <option value="Bachelors">Bachelors</option>
+            <option value="Masters">Masters</option>
+            <option value="Doctorate">Doctorate</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Number of Dependents</label>
+          <input
+            type="number"
+            className="w-full rounded-xl border border-gray-300 px-4 py-2 bg-white"
+            placeholder="Number of Dependents"
+            value={formData.numberOfDependents}
+            onChange={(e) => handleInputChange("numberOfDependents", e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">NTN (if applicable)</label>
+          <input
+            type="text"
+            className="w-full rounded-xl border border-gray-300 px-4 py-2 bg-white"
+            placeholder="NTN Number"
+            value={formData.ntn}
+            onChange={(e) => handleInputChange("ntn", e.target.value)}
           />
         </div>
       </div>

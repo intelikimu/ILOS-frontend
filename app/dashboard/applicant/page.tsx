@@ -243,7 +243,7 @@ export default function ApplicantPage() {
               >
                 <option value="">Select...</option>
                 <option value="Autoloans">Auto's</option>
-                <option value="Financial Vehicles">Financial Vehicles</option>
+                <option value="Financial Vehicles">SME Commercial Vehicles Loan's</option>
                 <option value="SME Loans">SME Loans</option>
               </select>
             </div>

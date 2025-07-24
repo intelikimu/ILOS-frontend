@@ -21,6 +21,9 @@ import { useCustomer } from "@/contexts/CustomerContext";
 import { ArrowLeft, ChevronUp, CreditCard, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/use-toast";
+// Add import for the PlatinumCustomerData type
+import { PlatinumCustomerData } from "@/types/platinum-types";
 
 type SectionKey =
   | "personal"
@@ -37,23 +40,233 @@ type SectionKey =
   | "lien"
   | "bankUse";
 
-// Define the CustomerData type
-type CustomerData = {
-  personalDetails?: { fullName?: string; cnic?: string; dateOfBirth?: string };
-  nextOfKin?: { fullName?: string };
-  employmentDetails?: { organization?: string };
-  incomeDetails?: { monthlyIncome?: number };
-  bankingDetails?: { accountNumber?: string };
-  autoDebit?: { accountNumber?: string };
-  reference?: Array<any>;
-  declaration?: { agreed?: boolean };
-  declarationBank?: { verified?: boolean };
-  guardianSms?: { enabled?: boolean };
-  supplementary?: { fullName?: string };
-  lien?: { marked?: boolean };
-  bankUse?: { verified?: boolean };
+// Expand the CustomerData type definition to include all needed fields
+type FullCustomerData = {
+  personalDetails?: { 
+    fullName?: string; 
+    firstName?: string;
+    middleName?: string;
+    lastName?: string;
+    cnic?: string; 
+    dateOfBirth?: string;
+    title?: string;
+    fatherName?: string;
+    motherName?: string;
+    gender?: string;
+    maritalStatus?: string;
+    numberOfDependents?: string | number;
+    education?: string;
+    mobileNumber?: string;
+    ntn?: string;
+    email?: string;
+    passportNumber?: string;
+  };
+  nextOfKin?: { 
+    fullName?: string; 
+    name?: string;
+    relationship?: string;
+    contactNumber?: string;
+    telephone?: string;
+    alternateNumber?: string;
+  };
+  employmentDetails?: { 
+    organization?: string;
+    companyName?: string;
+    employmentStatus?: string;
+    designation?: string;
+    department?: string;
+    grade?: string;
+    currentExperience?: string;
+    employeeNumber?: string;
+    businessType?: string;
+    business?: string;
+    officeAddress?: {
+      houseNo?: string;
+      telephone1?: string;
+      fax?: string;
+    };
+    officePhone?: string;
+    officeFax?: string;
+  };
+  previousEmployment?: {
+    companyName?: string;
+    designation?: string;
+    experienceYears?: string;
+    telephone?: string;
+  };
+  incomeDetails?: { 
+    monthlyIncome?: number;
+    grossMonthlySalary?: string | number;
+    grossMonthlyIncome?: string | number;
+    otherMonthlyIncome?: string | number;
+    netMonthlyIncome?: string | number;
+    totalIncome?: string | number;
+    otherIncomeSource?: string;
+    spouseEmployed?: string | boolean;
+    spouseIncome?: string | number;
+    spouseIncomeSource?: string;
+  };
+  bankingDetails?: { 
+    accountNumber?: string;
+    isUblCustomer?: string | boolean;
+    ublAccountNumber?: string;
+    bankName?: string;
+    branchName?: string;
+    accountType?: string;
+    accountOpeningDate?: string;
+    iban?: string;
+    paymentOption?: string;
+    cardDeliveryPreference?: string;
+    statementDeliveryMethod?: string;
+  };
+  autoDebit?: { 
+    accountNumber?: string;
+    paymentOption?: string;
+    signature?: string;
+    date?: string;
+  };
+  references?: Array<{
+    id?: number;
+    name?: string;
+    relationship?: string;
+    cnic?: string;
+    address?: string;
+    mobile?: string;
+    telephone?: string;
+    telephoneResidence?: string;
+    ntn?: string;
+    houseNo?: string;
+    street?: string;
+    city?: string;
+  }>;
+  declaration?: { 
+    agreed?: boolean;
+    signature?: string;
+    date?: string;
+    contactConfirmation?: boolean;
+  };
+  declarationBank?: { 
+    verified?: boolean;
+    creditGuardian?: boolean;
+    staffDeclarationFile?: string;
+  };
+  creditGuardian?: { 
+    enabled?: boolean;
+    smsAlert?: boolean;
+    creditGuardian?: boolean;
+    signature?: string;
+    date?: string;
+  };
+  supplementaryCard?: { 
+    fullName?: string;
+    title?: string;
+    firstName?: string;
+    middleName?: string;
+    lastName?: string;
+    nameOnCard?: string;
+    fatherHusbandName?: string;
+    creditLimitPercent?: string | number;
+    creditLimitAmount?: string | number;
+    availability?: string;
+    relationshipToPrincipal?: string;
+    dob?: string;
+    gender?: string;
+    nicPassport?: string;
+    oldNicNumber?: string;
+    motherMaidenName?: string;
+    supplementarySignature?: string;
+    basicCardholderSignature?: string;
+    dateSigned?: string;
+  };
+  supplementaryCards?: Array<any>;
+  lienMarked?: { 
+    marked?: boolean;
+    collateralType?: string;
+    bank?: string;
+    branch?: string;
+    accountNo?: string;
+    accountType?: string;
+    lienAmount?: string | number;
+    currency?: string;
+    accountTitle?: string;
+    maturityDate?: string;
+  };
+  bankUseOnly?: { 
+    verified?: boolean;
+    applicationReferenceNumber?: string;
+    channelCode?: string;
+    programCode?: string;
+    branchCode?: string;
+    soEmployeeNo?: string;
+    pbEmployeeNo?: string;
+    smEmployeeNo?: string;
+    salesOfficerName?: string;
+    branchName?: string;
+    regionName?: string;
+    contactConfirmation?: string;
+    bmRecommendation?: string;
+    bmSignature?: string;
+    applicationStatus?: string;
+    reasonCode?: string;
+    analystName?: string;
+    analystSignature?: string;
+  };
+  platinumCard?: {
+    nameOnCard?: string;
+    cnicIssuanceDate?: string;
+    cnicExpiryDate?: string;
+    oldNic?: string;
+    vehicleMake?: string;
+    vehicleModel?: string;
+    vehicleYear?: string | number;
+    vehicleRegistrationNo?: string;
+    ownership?: string;
+    leased?: string;
+    typeOfAccommodation?: string;
+    cardDestination?: string;
+    statementDelivery?: string;
+    estatementEmail?: string;
+  };
   isETB?: boolean;
   cifData?: { customerId?: string };
+  customerId?: string;
+  cnic?: string;
+  otherBanks?: Array<{
+    bankName?: string;
+    branch?: string;
+    accountNumber?: string;
+  }>;
+  otherCreditCards?: Array<{
+    bankName?: string;
+    cardType?: string;
+    cardNumber?: string;
+    creditLimit?: string | number;
+  }>;
+  loanFacilities?: Array<{
+    details?: string;
+    loanDetails?: string;
+  }>;
+  addressDetails?: {
+    currentAddress?: {
+      houseNo?: string;
+      street?: string;
+      tehsil?: string;
+      nearestLandmark?: string;
+      city?: string;
+      postalCode?: string;
+      telephone?: string;
+      residentialStatus?: string;
+      yearsAtAddress?: string;
+    };
+    permanentAddress?: {
+      fullAddress?: string;
+      street?: string;
+      tehsil?: string;
+      nearestLandmark?: string;
+      city?: string;
+      postalCode?: string;
+    };
+  };
 };
 
 const FORM_SECTIONS: { key: SectionKey; label: string }[] = [
@@ -72,29 +285,110 @@ const FORM_SECTIONS: { key: SectionKey; label: string }[] = [
   { key: "bankUse", label: "Bank Use Only" },
 ];
 
-const useSectionFilled = (customerData: CustomerData): Record<SectionKey, boolean> => ({
-  personal:
-    !!customerData?.personalDetails?.fullName &&
-    !!customerData?.personalDetails?.cnic &&
-    !!customerData?.personalDetails?.dateOfBirth,
-  kin: !!customerData?.nextOfKin?.fullName,
-  employment: !!customerData?.employmentDetails?.organization,
-  income: !!customerData?.incomeDetails?.monthlyIncome,
-  banking: !!customerData?.bankingDetails?.accountNumber,
-  autoDebit: !!customerData?.autoDebit?.accountNumber,
-  reference: Array.isArray(customerData?.reference) && customerData.reference.length > 0,
-  declaration: !!customerData?.declaration?.agreed,
-  declarationBank: !!customerData?.declarationBank?.verified,
-  guardianSms: !!customerData?.guardianSms?.enabled,
-  supplementary: !!customerData?.supplementary?.fullName,
-  lien: !!customerData?.lien?.marked,
-  bankUse: !!customerData?.bankUse?.verified,
+// Instead of importing getBaseUrl, remove the import
+// import { getBaseUrl } from "@/lib/api";
+
+// Fix the sections at the top of the file - add proper typing for CustomerData that matches the context
+// Define a hook that returns whether each section is filled
+const useSectionFilled = (data: any): Record<SectionKey, boolean> => ({
+  personal: !!(data?.personalDetails?.fullName),
+  kin: !!(data?.nextOfKin?.fullName || data?.nextOfKin?.name),
+  employment: !!(data?.employmentDetails?.companyName || data?.employmentDetails?.organization),
+  income: !!(data?.incomeDetails?.grossMonthlySalary || data?.incomeDetails?.monthlyIncome),
+  banking: !!(data?.bankingDetails?.accountNumber),
+  autoDebit: !!(data?.autoDebit?.paymentOption),
+  reference: Array.isArray(data?.references) && data.references.length > 0,
+  declaration: !!(data?.declaration?.agreed),
+  declarationBank: !!(data?.declarationBank?.verified),
+  guardianSms: !!(data?.creditGuardian?.smsAlert !== undefined),
+  supplementary: !!(data?.supplementaryCard?.firstName),
+  lien: !!(data?.lienMarked?.collateralType),
+  bankUse: !!(data?.bankUseOnly?.applicationReferenceNumber),
 });
 
-export default function PlatinumCreditCardPage() {
-  const { customerData } = useCustomer();
-  const router = useRouter();
+// Add helper functions for data transformation
+const toValidDate = (dateString?: string) => {
+  if (!dateString) return null;
+  const date = new Date(dateString);
+  return isNaN(date.getTime()) ? null : date.toISOString().split('T')[0]; // YYYY-MM-DD
+};
 
+const toBoolean = (value?: string | boolean) => {
+  if (value === 'Yes' || value === 'true' || value === true) return true;
+  if (value === 'No' || value === 'false' || value === false) return false;
+  return false;
+};
+
+const toNumber = (value?: string | number) => {
+  if (value === undefined || value === null || value === '') return null;
+  const num = Number(value);
+  return isNaN(num) ? null : num;
+};
+
+// Add function to verify required fields are present
+const verifyRequiredFields = (data: any) => {
+  // List of required fields based on the database schema
+  const requiredFields = [
+    'customer_id',
+    'title',
+    'first_name',
+    'last_name',
+    'name_on_card',
+    'nic',
+    'gender',
+    'marital_status'
+  ];
+  
+  const missingFields = requiredFields.filter(field => !data[field]);
+  
+  if (missingFields.length > 0) {
+    console.warn('Missing required fields:', missingFields);
+    
+    // Add default values for missing fields
+    missingFields.forEach(field => {
+      switch (field) {
+        case 'customer_id':
+          data[field] = `PLATINUM-${Date.now()}`;
+          break;
+        case 'title':
+          data[field] = 'Mr';
+          break;
+        case 'first_name':
+          data[field] = 'Unknown';
+          break;
+        case 'last_name':
+          data[field] = 'Unknown';
+          break;
+        case 'name_on_card':
+          data[field] = data.first_name || 'Unknown';
+          break;
+        case 'nic':
+          data[field] = data.customer_id || `ID-${Date.now()}`;
+          break;
+        case 'gender':
+          data[field] = 'Male';
+          break;
+        case 'marital_status':
+          data[field] = 'Single';
+          break;
+        default:
+          data[field] = '';
+      }
+    });
+
+    console.log('Fixed missing fields with defaults:', 
+      missingFields.reduce((obj, field) => ({...obj, [field]: data[field]}), {})
+    );
+  }
+  
+  return data;
+};
+
+export default function PlatinumCreditCardPage() {
+  const { customerData, updateCustomerData } = useCustomer();
+  const router = useRouter();
+  const { toast } = useToast();
+  
   // Create refs for each section
   const personalRef = useRef<HTMLDivElement>(null);
   const kinRef = useRef<HTMLDivElement>(null);
@@ -109,7 +403,8 @@ export default function PlatinumCreditCardPage() {
   const supplementaryRef = useRef<HTMLDivElement>(null);
   const lienRef = useRef<HTMLDivElement>(null);
   const bankUseRef = useRef<HTMLDivElement>(null);
-
+  
+  // Map section keys to refs
   const refs: Record<SectionKey, React.RefObject<HTMLDivElement | null>> = {
     personal: personalRef,
     kin: kinRef,
@@ -125,9 +420,357 @@ export default function PlatinumCreditCardPage() {
     lien: lienRef,
     bankUse: bankUseRef,
   };
-
+  
+  // Define state variables
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentSection, setCurrentSection] = useState<SectionKey | "">("");
   const sectionFilled = useSectionFilled(customerData || {});
+
+  // Add getBaseUrl function above if it doesn't exist before
+  const getBaseUrl = (): string => {
+    // Use environment variable in production
+    if (process.env.NEXT_PUBLIC_API_URL) {
+      return process.env.NEXT_PUBLIC_API_URL;
+    }
+    // Default to localhost:5000 in development
+    return 'http://localhost:5000';
+  };
+
+  // Helper functions for data conversion
+  const toNumber = (value: any): number => {
+    if (value === undefined || value === null || value === '') return 0;
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  const toBoolean = (value: any): boolean => {
+    if (typeof value === 'boolean') return value;
+    if (value === 'Yes' || value === 'yes' || value === 'true' || value === '1') return true;
+    return false;
+  };
+
+  const toValidDate = (date: any): string | null => {
+    if (!date) return null;
+    try {
+      return new Date(date).toISOString().split('T')[0];
+    } catch (e) {
+      return null;
+    }
+  };
+
+  // Update the handleSubmit function to add proper null checks
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      // Make sure customerData exists
+      if (!customerData) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Customer data is missing. Please fill the form first.",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      const fullCustomerData = customerData as unknown as PlatinumCustomerData;
+      
+      // Extract all sections of data with defaults
+      const personalDetails = fullCustomerData?.personalDetails || {};
+      const addressDetails = fullCustomerData?.addressDetails || {};
+      const currentAddress = addressDetails?.currentAddress || {};
+      const permanentAddress = addressDetails?.permanentAddress || {};
+      const employmentDetails = fullCustomerData?.employmentDetails || {};
+      const incomeDetails = fullCustomerData?.incomeDetails || {};
+      const bankingDetails = fullCustomerData?.bankingDetails || {};
+      const nextOfKin = fullCustomerData?.nextOfKin || {};
+      const platinumDetails = fullCustomerData?.platinumCard || {};
+      const autoDebit = fullCustomerData?.autoDebit || {};
+      const declaration = fullCustomerData?.declaration || {};
+      const creditGuardian = fullCustomerData?.creditGuardian || {};
+      const lienMarked = fullCustomerData?.lienMarked || {};
+      const previousEmployment = fullCustomerData?.previousEmployment || {};
+      
+      // Arrays
+      const otherBanks = fullCustomerData?.otherBanks || [];
+      const otherCreditCards = fullCustomerData?.otherCreditCards || [];
+      const loanFacilities = fullCustomerData?.loanFacilities || [];
+      const supplementaryCards = fullCustomerData?.supplementaryCards || [];
+      const references: Array<{
+        id?: number;
+        name?: string;
+        relationship?: string;
+        cnic?: string;
+        address?: string;
+        mobile?: string;
+        telephone?: string;
+        telephoneResidence?: string;
+        ntn?: string;
+        houseNo?: string;
+        street?: string;
+        city?: string;
+      }> = []; // Add references if available in your form
+      
+      // Prepare comprehensive data payload that matches EXACTLY with the database schema
+      const formData = {
+        // Basic customer info - matches database column names exactly
+        customer_id: (fullCustomerData?.customerId || fullCustomerData?.cnic || `PLATINUM-${Date.now()}`),
+        
+        // Personal details
+        title: personalDetails.title || "Mr",
+        first_name: personalDetails.firstName || "",
+        middle_name: personalDetails.middleName || "",
+        last_name: personalDetails.lastName || "",
+        name_on_card: platinumDetails.nameOnCard || personalDetails.fullName || `${personalDetails.firstName || ""} ${personalDetails.lastName || ""}`.trim(),
+        nic: personalDetails.cnic || fullCustomerData.cnic || "",
+        passport_number: personalDetails.passportNumber || "",
+        cnic_issuance_date: toValidDate(platinumDetails.cnicIssuanceDate),
+        cnic_expiry_date: toValidDate(platinumDetails.cnicExpiryDate),
+        old_nic_number: platinumDetails.oldNic || "",
+        father_husband_name: personalDetails.fatherName || "",
+        date_of_birth: toValidDate(personalDetails.dateOfBirth),
+        gender: personalDetails.gender || "Male",
+        mother_maiden_name: personalDetails.motherName || "",
+        marital_status: personalDetails.maritalStatus || "Single",
+        dependents: toNumber(personalDetails.numberOfDependents),
+        education: personalDetails.education || "",
+        
+        // Current Address
+        curr_house: currentAddress.houseNo || "",
+        curr_street: currentAddress.street || "",
+        curr_tehsil: currentAddress.tehsil || "",
+        curr_landmark: currentAddress.nearestLandmark || "",
+        curr_city: currentAddress.city || "",
+        curr_postal_code: currentAddress.postalCode || "",
+        residential_phone: currentAddress.telephone || "",
+        mobile: personalDetails.mobileNumber || "",
+        ntn: personalDetails.ntn || "",
+        type_of_accommodation: platinumDetails.typeOfAccommodation || "",
+        nature_of_residence: currentAddress.residentialStatus || "",
+        residing_since: currentAddress.yearsAtAddress || "",
+        email: personalDetails.email || "",
+        
+        // Permanent Address
+        perm_address: permanentAddress.fullAddress || "",
+        street: permanentAddress.street || "",
+        district: permanentAddress.tehsil || "",
+        nearest_landmark: permanentAddress.nearestLandmark || "",
+        city: permanentAddress.city || "",
+        postal_code: permanentAddress.postalCode || "",
+        
+        // Vehicle details
+        vehicle_make: platinumDetails.vehicleMake || "",
+        vehicle_model: platinumDetails.vehicleModel || "",
+        vehicle_year: platinumDetails.vehicleYear || "",
+        vehicle_registration_no: platinumDetails.vehicleRegistrationNo || "",
+        ownership: platinumDetails.ownership || "",
+        leased: platinumDetails.leased || "",
+        
+        // Next of kin
+        next_of_kin_name: nextOfKin.fullName || nextOfKin.name || "",
+        next_of_kin_relationship: nextOfKin.relationship || "",
+        next_of_kin_tel1: nextOfKin.telephone || nextOfKin.contactNumber || "",
+        next_of_kin_tel2: nextOfKin.alternateNumber || "",
+        
+        // Employment
+        occupation: employmentDetails.occupation || employmentDetails.companyType || "Other",
+        if_salaried: employmentDetails.employmentStatus === "Employed" ? "Yes" : "No",
+        grade_rank: employmentDetails.grade || "",
+        designation: employmentDetails.designation || "",
+        department: employmentDetails.department || "",
+        company_name: employmentDetails.companyName || employmentDetails.organization || "",
+        employment_status: employmentDetails.employmentStatus || "",
+        length_of_service: toNumber(employmentDetails.currentExperience),
+        ubl_employee_id: employmentDetails.employeeNumber || "",
+        business_type: employmentDetails.businessType || employmentDetails.business || "",
+        business_nature: employmentDetails.businessNature || "",
+        office_address: employmentDetails.officeAddress?.fullAddress || "",
+        office_phones: employmentDetails.officePhone || "",
+        office_fax: employmentDetails.officeFax || "",
+        
+        // Previous Employment
+        prev_company_name: previousEmployment?.companyName || "",
+        prev_designation: previousEmployment?.designation || "",
+        prev_experience: previousEmployment?.experienceYears || previousEmployment?.duration || "",
+        prev_company_phone: previousEmployment?.telephone || "",
+        
+        // Income
+        gross_monthly_income: toNumber(incomeDetails.grossMonthlyIncome || incomeDetails.grossMonthlySalary || incomeDetails.monthlyIncome || 0),
+        other_income: toNumber(incomeDetails.otherMonthlyIncome || 0),
+        source_of_other_income: incomeDetails.otherIncomeSource || "",
+        total_income: toNumber(incomeDetails.totalIncome || 0),
+        spouse_employed: toBoolean(incomeDetails.spouseEmployed),
+        spouse_income: toNumber(incomeDetails.spouseIncome || 0),
+        spouse_income_source: incomeDetails.spouseIncomeSource || "",
+        
+        // Card Delivery
+        card_destination: bankingDetails.cardDeliveryPreference || platinumDetails.cardDestination || "",
+        statement_delivery: bankingDetails.statementDeliveryMethod || platinumDetails.statementDelivery || "",
+        estatement_email: platinumDetails.estatementEmail || personalDetails.email || "",
+        
+        // Banking details
+        is_ubl_customer: toBoolean(bankingDetails.isUblCustomer),
+        ubl_account_number: bankingDetails.ublAccountNumber || bankingDetails.accountNumber || "",
+        ubl_branch: bankingDetails.branchName || "",
+        
+        // Signature and Date
+        applicant_signature: null, // Binary data needs to be handled differently
+        applicant_signature_date: toValidDate(declaration.date),
+        
+        // Auto debit
+        payment_option: autoDebit.paymentOption || "",
+        
+        // Bank use only fields - keep empty or default
+        application_reference_number: fullCustomerData?.bankUseOnly?.applicationReferenceNumber || "",
+        channel_code: fullCustomerData?.bankUseOnly?.channelCode || "",
+        program_code: fullCustomerData?.bankUseOnly?.programCode || "",
+        branch_code: fullCustomerData?.bankUseOnly?.branchCode || "",
+        so_employee_no: fullCustomerData?.bankUseOnly?.soEmployeeNo || "",
+        pb_bm_employee_no: fullCustomerData?.bankUseOnly?.pbEmployeeNo || "",
+        sm_employee_no: fullCustomerData?.bankUseOnly?.smEmployeeNo || "",
+        sales_officer_name: fullCustomerData?.bankUseOnly?.salesOfficerName || "",
+        branch_name: fullCustomerData?.bankUseOnly?.branchName || "",
+        region_name: fullCustomerData?.bankUseOnly?.regionName || "",
+        
+        // Declarations
+        customer_contact_confirmation: toBoolean(fullCustomerData?.bankUseOnly?.contactConfirmation),
+        branch_manager_recommendation: fullCustomerData?.bankUseOnly?.bmRecommendation || "",
+        branch_manager_signature: fullCustomerData?.bankUseOnly?.bmSignature || "",
+        application_status: fullCustomerData?.bankUseOnly?.applicationStatus || "",
+        reason_code: fullCustomerData?.bankUseOnly?.reasonCode || "",
+        analyst_name: fullCustomerData?.bankUseOnly?.analystName || "",
+        analyst_signature: fullCustomerData?.bankUseOnly?.analystSignature || "",
+        
+        // Credit guardian
+        avail_sms_alert: toBoolean(fullCustomerData?.creditGuardian?.smsAlert),
+        avail_credit_guardian: toBoolean(fullCustomerData?.creditGuardian?.enabled) || toBoolean(fullCustomerData?.creditGuardian?.creditGuardian),
+        card_applicant_signature: fullCustomerData?.creditGuardian?.signature || "",
+        card_applicant_signature_date: toValidDate(fullCustomerData?.creditGuardian?.date)
+      };
+
+      // Arrays - map to backend expected structure
+      // These arrays will be handled by the backend separately, as child tables
+      const childTables = {
+        other_banks: otherBanks.filter(bank => 
+          (bank as any).bankName || (bank as any).bank_name
+        ).map(bank => ({
+          bank_name: (bank as any).bankName || (bank as any).bank_name || "",
+          branch: (bank as any).branch || "",
+          account_no: (bank as any).accountNumber || (bank as any).account_no || ""
+        })),
+        
+        other_credit_cards: otherCreditCards.filter(card => 
+          (card as any).bankName || (card as any).bank_name
+        ).map(card => ({
+          bank_name: (card as any).bankName || (card as any).bank_name || "",
+          card_type: (card as any).cardType || (card as any).card_type || "",
+          card_number: (card as any).cardNumber || (card as any).card_number || "",
+          credit_limit: toNumber((card as any).creditLimit || (card as any).credit_limit)
+        })),
+        
+        loan_facilities: loanFacilities.filter(loan => 
+          (loan as any).bankName
+        ).map(loan => ({
+          bank_name: (loan as any).bankName || "",
+          loan_type: (loan as any).loanType || "",
+          outstanding: toNumber((loan as any).outstandingAmount),
+          installment: toNumber((loan as any).monthlyInstallment)
+        })),
+        
+        supplementary_cards: Array.isArray(supplementaryCards) && supplementaryCards.length > 0 ? 
+          supplementaryCards.filter(card => 
+            // Only include cards that have at least a name or card number
+            card && (card.first_name || card.name_on_card || card.nic_passport)
+          ).map(card => ({
+            title: card.title || "",
+            first_name: card.first_name || "",
+            middle_name: card.middle_name || "",
+            last_name: card.last_name || "",
+            name_on_card: card.name_on_card || "",
+            father_husband_name: card.father_husband_name || "",
+            credit_limit_percent: card.credit_limit_percent || "",
+            availability: card.availability || "Full",
+            relationship_to_principal: card.relationship_to_principal || "",
+            dob: toValidDate(card.dob),
+            gender: card.gender || "Male",
+            nic_passport: card.nic_passport || "",
+            old_nic_number: card.old_nic_number || "",
+            mother_maiden_name: card.mother_maiden_name || ""
+          })) : [],
+        
+        references: Array.isArray(fullCustomerData?.references) && fullCustomerData.references.length > 0 ? 
+          fullCustomerData.references.map(ref => ({
+            name: ref.name || "",
+            relationship: ref.relationship || "",
+            nic: ref.nic || "",
+            address: ref.address || "",
+            phones: ref.phones || "",
+            ntn: ref.ntn || ""
+          })) : [],
+        
+        lien_marked: lienMarked && (lienMarked.collateralType || lienMarked.bank || lienMarked.accountNo) ? [{
+          collateral_type: lienMarked.collateralType || "",
+          bank: lienMarked.bank || "",
+          branch: lienMarked.branch || "",
+          account_no: lienMarked.accountNo || "",
+          account_type: lienMarked.accountType || "",
+          lien_amount: toNumber(lienMarked.lienAmount) || 0,
+          currency: lienMarked.currency || "PKR",
+          account_title: lienMarked.accountTitle || "",
+          maturity_date: toValidDate(lienMarked.maturityDate)
+        }] : []
+      };
+
+      // Merge the main form data and child tables
+      const fullPayload = {
+        ...formData,
+        other_banks: childTables.other_banks,
+        other_credit_cards: childTables.other_credit_cards,
+        loan_facilities: childTables.loan_facilities,
+        supplementary_cards: childTables.supplementary_cards,
+        references: childTables.references,
+        lien_marked: childTables.lien_marked
+      };
+
+      console.log("Submitting platinum credit card application data with exact schema match:");
+      console.log(JSON.stringify(fullPayload, null, 2));
+
+      // Make API call
+      const response = await fetch(`${getBaseUrl()}/api/platinum_creditcard`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(fullPayload),
+      });
+
+      // Check response
+      if (!response.ok) {
+        console.log("Backend response status:", response.status);
+        const errorText = await response.text();
+        console.log("Raw response text:", errorText);
+        throw new Error(errorText && errorText.includes("{") ? JSON.parse(errorText).error || "Unknown error" : errorText || "Unknown error");
+      }
+
+      const result = await response.json();
+      toast({
+        title: "Success!",
+        description: "Platinum Credit Card application submitted successfully.",
+      });
+      // router.push("/dashboard/applicant");
+    } catch (error) {
+      console.error("Application submission error:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to submit application. Please try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Helper to scroll to section
   const scrollToSection = (key: SectionKey) => {
@@ -253,7 +896,10 @@ export default function PlatinumCreditCardPage() {
       </div>
        </div>
 
-      <form className="space-y-10 mt-10">
+      <form className="space-y-10 mt-10" onSubmit={(e) => {
+        e.preventDefault();
+        handleSubmit(e);
+      }}>
         <div ref={personalRef}><PlatinumPersonalInfoForm /></div>
         <div ref={kinRef}><PlatinumNextOfKinForm /></div>
         <div ref={employmentRef}><PlatinumEmploymentDetailsForm /></div>
@@ -271,8 +917,16 @@ export default function PlatinumCreditCardPage() {
           <button
             type="submit"
             className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 shadow transition"
+            disabled={isSubmitting}
           >
-            Submit Application
+            {isSubmitting ? (
+              <>
+                <span className="animate-spin inline-block mr-2">⟳</span>
+                Submitting...
+              </>
+            ) : (
+              'Submit Application'
+            )}
           </button>
         </div>
       </form>

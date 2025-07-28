@@ -45,7 +45,7 @@ const statsData = [
 const recentApplicants = [
   {
     id: "UBL-2024-001234",
-    name: "Muhammad Ali Khan",
+    name: "Mubashir",
     segment: "Preferred",
     status: "Submitted to SPU",
     lastUpdate: "2 hours ago",
@@ -53,7 +53,7 @@ const recentApplicants = [
   },
   {
     id: "UBL-2024-001235",
-    name: "Fatima Ahmed",
+    name: "Abdul wasay ali",
     segment: "Mass",
     status: "Draft",
     lastUpdate: "4 hours ago",

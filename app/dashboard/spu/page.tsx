@@ -20,7 +20,7 @@ import { useToast } from "@/hooks/use-toast"
 const applicationsData = [
   {
     id: "UBL-2024-001234",
-    applicantName: "Muhammad Ali Khan",
+    applicantName: "Mubashir",
     segment: "Preferred",
     loanType: "Personal Loan",
     amount: "PKR 2,500,000",
@@ -36,7 +36,7 @@ const applicationsData = [
   },
   {
     id: "UBL-2024-001235",
-    applicantName: "Fatima Ahmed",
+    applicantName: "Abdul Wasay Ali",
     segment: "Mass",
     loanType: "Auto Loan",
     amount: "PKR 800,000",

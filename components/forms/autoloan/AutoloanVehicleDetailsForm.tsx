@@ -13,7 +13,7 @@ export const VehicleDetailsForm: React.FC<Props> = ({ formData, handleInputChang
         2. Vehicle Details
       </h2>
 
-      <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Main Vehicle Info */}
         <div>
           <label className="block text-sm font-medium mb-1">Manufacturer</label>
@@ -163,7 +163,7 @@ export const VehicleDetailsForm: React.FC<Props> = ({ formData, handleInputChang
             ))}
           </div>
         </div>
-      </form>
+      </div>
     </section>
   );
 };

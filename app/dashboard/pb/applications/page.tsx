@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -38,133 +38,6 @@ import {
   Paperclip,
   Flag
 } from "lucide-react"
-
-// Enhanced mock data for applications
-const mockApplicationsData = [
-  {
-    id: "UBL-2024-001240",
-    applicantName: "Ali Raza",
-    loanType: "Personal Loan",
-    amount: "PKR 1,500,000",
-    status: "submitted_to_spu",
-    priority: "medium",
-    submittedDate: "2024-01-15 14:30:25",
-    lastUpdate: "2024-01-18 10:45:15",
-    completionPercentage: 95,
-    creditScore: 720,
-    monthlyIncome: "PKR 120,000",
-    age: 32,
-    branch: "Karachi Main",
-    riskLevel: "medium",
-    estimatedProcessingTime: "3-5 days",
-    documents: [
-      { name: "CNIC Copy", status: "submitted", required: true },
-      { name: "Salary Slip", status: "submitted", required: true },
-      { name: "Bank Statement", status: "submitted", required: true },
-      { name: "Employment Letter", status: "submitted", required: false },
-    ],
-    timeline: [
-      { date: "2024-01-15", event: "Application Created", status: "completed" },
-      { date: "2024-01-16", event: "Documents Uploaded", status: "completed" },
-      { date: "2024-01-17", event: "Initial Review", status: "completed" },
-      { date: "2024-01-18", event: "Submitted to SPU", status: "current" },
-      { date: "TBD", event: "SPU Verification", status: "pending" },
-    ],
-  },
-  {
-    id: "UBL-2024-001241",
-    applicantName: "Zara Khan",
-    loanType: "Auto Loan",
-    amount: "PKR 850,000",
-    status: "draft",
-    priority: "low",
-    submittedDate: "2024-01-12 09:20:30",
-    lastUpdate: "2024-01-19 16:15:45",
-    completionPercentage: 60,
-    creditScore: 680,
-    monthlyIncome: "PKR 85,000",
-    age: 28,
-    branch: "Karachi Main",
-    riskLevel: "low",
-    estimatedProcessingTime: "2-3 days",
-    documents: [
-      { name: "CNIC Copy", status: "submitted", required: true },
-      { name: "Salary Slip", status: "missing", required: true },
-      { name: "Bank Statement", status: "missing", required: true },
-      { name: "Vehicle Registration", status: "not_required", required: false },
-    ],
-    timeline: [
-      { date: "2024-01-12", event: "Application Created", status: "completed" },
-      { date: "2024-01-13", event: "Basic Information", status: "completed" },
-      { date: "TBD", event: "Document Upload", status: "current" },
-      { date: "TBD", event: "Review & Submit", status: "pending" },
-    ],
-  },
-  {
-    id: "UBL-2024-001242",
-    applicantName: "Ahmed Bilal",
-    loanType: "Business Loan",
-    amount: "PKR 2,000,000",
-    status: "returned_from_spu",
-    priority: "high",
-    submittedDate: "2024-01-08 11:45:20",
-    lastUpdate: "2024-01-19 14:20:10",
-    completionPercentage: 85,
-    creditScore: 750,
-    monthlyIncome: "PKR 200,000",
-    age: 45,
-    branch: "Lahore Main",
-    riskLevel: "medium",
-    estimatedProcessingTime: "5-7 days",
-    returnReason: "Additional income verification required",
-    documents: [
-      { name: "CNIC Copy", status: "verified", required: true },
-      { name: "Business Registration", status: "verified", required: true },
-      { name: "Tax Returns", status: "submitted", required: true },
-      { name: "Financial Statements", status: "revision_required", required: true },
-    ],
-    timeline: [
-      { date: "2024-01-08", event: "Application Created", status: "completed" },
-      { date: "2024-01-10", event: "Documents Uploaded", status: "completed" },
-      { date: "2024-01-12", event: "Submitted to SPU", status: "completed" },
-      { date: "2024-01-18", event: "Returned from SPU", status: "current" },
-      { date: "TBD", event: "Revision Required", status: "pending" },
-    ],
-  },
-  {
-    id: "UBL-2024-001243",
-    applicantName: "Sara Ahmed",
-    loanType: "Home Loan",
-    amount: "PKR 5,500,000",
-    status: "approved",
-    priority: "high",
-    submittedDate: "2024-01-05 08:30:15",
-    lastUpdate: "2024-01-19 11:30:25",
-    completionPercentage: 100,
-    creditScore: 800,
-    monthlyIncome: "PKR 350,000",
-    age: 35,
-    branch: "Islamabad",
-    riskLevel: "low",
-    estimatedProcessingTime: "7-10 days",
-    approvalDate: "2024-01-18",
-    disbursementDate: "2024-01-22",
-    documents: [
-      { name: "CNIC Copy", status: "verified", required: true },
-      { name: "Salary Slip", status: "verified", required: true },
-      { name: "Property Documents", status: "verified", required: true },
-      { name: "Property Valuation", status: "verified", required: true },
-    ],
-    timeline: [
-      { date: "2024-01-05", event: "Application Created", status: "completed" },
-      { date: "2024-01-07", event: "Documents Uploaded", status: "completed" },
-      { date: "2024-01-10", event: "Submitted to SPU", status: "completed" },
-      { date: "2024-01-15", event: "SPU Verification", status: "completed" },
-      { date: "2024-01-18", event: "Approved", status: "completed" },
-      { date: "2024-01-22", event: "Disbursement", status: "current" },
-    ],
-  },
-];
 
 // Application statistics
 const applicationStats = {
@@ -259,9 +132,165 @@ export default function MyApplicationsPage() {
   const [loanTypeFilter, setLoanTypeFilter] = useState("all");
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("applications");
+  const [applications, setApplications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const filteredApplications = mockApplicationsData.filter((app) => {
+  // Fetch applications from backend
+  const fetchApplications = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch('/api/applications/recent/pb');
+      if (!response.ok) {
+        throw new Error('Failed to fetch applications');
+      }
+      
+      const data = await response.json();
+      setApplications(data);
+    } catch (err) {
+      console.error('Error fetching applications:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch applications');
+      
+      // Fallback to mock data if API fails
+      setApplications([
+        {
+          id: "UBL-2024-001240",
+          applicantName: "Ali Raza",
+          loanType: "Personal Loan",
+          amount: "PKR 1,500,000",
+          status: "submitted_to_spu",
+          priority: "medium",
+          submittedDate: "2024-01-15 14:30:25",
+          lastUpdate: "2024-01-18 10:45:15",
+          completionPercentage: 95,
+          creditScore: 720,
+          monthlyIncome: "PKR 120,000",
+          age: 32,
+          branch: "Karachi Main",
+          riskLevel: "medium",
+          estimatedProcessingTime: "3-5 days",
+          documents: [
+            { name: "CNIC Copy", status: "submitted", required: true },
+            { name: "Salary Slip", status: "submitted", required: true },
+            { name: "Bank Statement", status: "submitted", required: true },
+            { name: "Employment Letter", status: "submitted", required: false },
+          ],
+          timeline: [
+            { date: "2024-01-15", event: "Application Created", status: "completed" },
+            { date: "2024-01-16", event: "Documents Uploaded", status: "completed" },
+            { date: "2024-01-17", event: "Initial Review", status: "completed" },
+            { date: "2024-01-18", event: "Submitted to SPU", status: "current" },
+            { date: "TBD", event: "SPU Verification", status: "pending" },
+          ],
+        },
+        {
+          id: "UBL-2024-001241",
+          applicantName: "Zara Khan",
+          loanType: "Auto Loan",
+          amount: "PKR 850,000",
+          status: "draft",
+          priority: "low",
+          submittedDate: "2024-01-12 09:20:30",
+          lastUpdate: "2024-01-19 16:15:45",
+          completionPercentage: 60,
+          creditScore: 680,
+          monthlyIncome: "PKR 85,000",
+          age: 28,
+          branch: "Karachi Main",
+          riskLevel: "low",
+          estimatedProcessingTime: "2-3 days",
+          documents: [
+            { name: "CNIC Copy", status: "submitted", required: true },
+            { name: "Salary Slip", status: "missing", required: true },
+            { name: "Bank Statement", status: "missing", required: true },
+            { name: "Vehicle Registration", status: "not_required", required: false },
+          ],
+          timeline: [
+            { date: "2024-01-12", event: "Application Created", status: "completed" },
+            { date: "2024-01-13", event: "Basic Information", status: "completed" },
+            { date: "TBD", event: "Document Upload", status: "current" },
+            { date: "TBD", event: "Review & Submit", status: "pending" },
+          ],
+        },
+        {
+          id: "UBL-2024-001242",
+          applicantName: "Ahmed Bilal",
+          loanType: "Business Loan",
+          amount: "PKR 2,000,000",
+          status: "returned_from_spu",
+          priority: "high",
+          submittedDate: "2024-01-08 11:45:20",
+          lastUpdate: "2024-01-19 14:20:10",
+          completionPercentage: 85,
+          creditScore: 750,
+          monthlyIncome: "PKR 200,000",
+          age: 45,
+          branch: "Lahore Main",
+          riskLevel: "medium",
+          estimatedProcessingTime: "5-7 days",
+          returnReason: "Additional income verification required",
+          documents: [
+            { name: "CNIC Copy", status: "verified", required: true },
+            { name: "Business Registration", status: "verified", required: true },
+            { name: "Tax Returns", status: "submitted", required: true },
+            { name: "Financial Statements", status: "revision_required", required: true },
+          ],
+          timeline: [
+            { date: "2024-01-08", event: "Application Created", status: "completed" },
+            { date: "2024-01-10", event: "Documents Uploaded", status: "completed" },
+            { date: "2024-01-12", event: "Submitted to SPU", status: "completed" },
+            { date: "2024-01-18", event: "Returned from SPU", status: "current" },
+            { date: "TBD", event: "Revision Required", status: "pending" },
+          ],
+        },
+        {
+          id: "UBL-2024-001243",
+          applicantName: "Sara Ahmed",
+          loanType: "Home Loan",
+          amount: "PKR 5,500,000",
+          status: "approved",
+          priority: "high",
+          submittedDate: "2024-01-05 08:30:15",
+          lastUpdate: "2024-01-19 11:30:25",
+          completionPercentage: 100,
+          creditScore: 800,
+          monthlyIncome: "PKR 350,000",
+          age: 35,
+          branch: "Islamabad",
+          riskLevel: "low",
+          estimatedProcessingTime: "7-10 days",
+          approvalDate: "2024-01-18",
+          disbursementDate: "2024-01-22",
+          documents: [
+            { name: "CNIC Copy", status: "verified", required: true },
+            { name: "Salary Slip", status: "verified", required: true },
+            { name: "Property Documents", status: "verified", required: true },
+            { name: "Property Valuation", status: "verified", required: true },
+          ],
+          timeline: [
+            { date: "2024-01-05", event: "Application Created", status: "completed" },
+            { date: "2024-01-07", event: "Documents Uploaded", status: "completed" },
+            { date: "2024-01-10", event: "Submitted to SPU", status: "completed" },
+            { date: "2024-01-15", event: "SPU Verification", status: "completed" },
+            { date: "2024-01-18", event: "Approved", status: "completed" },
+            { date: "2024-01-22", event: "Disbursement", status: "current" },
+          ],
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load applications on component mount
+  useEffect(() => {
+    fetchApplications();
+  }, []);
+
+  const filteredApplications = applications.filter((app) => {
     const matchesSearch = 
       app.applicantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       app.id.toLowerCase().includes(searchTerm.toLowerCase());
@@ -308,9 +337,60 @@ export default function MyApplicationsPage() {
     });
   };
 
+  const handleRefresh = () => {
+    fetchApplications();
+    toast({
+      title: "Refreshed",
+      description: "Application data has been refreshed.",
+    });
+  };
+
   const getMissingDocumentsCount = (documents: any[]) => {
     return documents.filter(doc => doc.status === "missing" && doc.required).length;
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">My Applications</h2>
+            <p className="text-muted-foreground">Manage and track your loan applications</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground">Loading applications...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">My Applications</h2>
+            <p className="text-muted-foreground">Manage and track your loan applications</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <AlertTriangle className="h-8 w-8 mx-auto mb-4 text-red-500" />
+            <p className="text-red-600 mb-2">Error loading applications</p>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={fetchApplications} variant="outline">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -320,7 +400,7 @@ export default function MyApplicationsPage() {
           <p className="text-muted-foreground">Manage and track your loan applications</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleRefresh}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>
@@ -430,6 +510,11 @@ export default function MyApplicationsPage() {
                       <SelectItem value="Auto Loan">Auto Loan</SelectItem>
                       <SelectItem value="Business Loan">Business Loan</SelectItem>
                       <SelectItem value="Home Loan">Home Loan</SelectItem>
+                      <SelectItem value="CashPlus Loan">CashPlus Loan</SelectItem>
+                      <SelectItem value="AmeenDrive Loan">AmeenDrive Loan</SelectItem>
+                      <SelectItem value="Commercial Vehicle Loan">Commercial Vehicle Loan</SelectItem>
+                      <SelectItem value="Platinum Credit Card">Platinum Credit Card</SelectItem>
+                      <SelectItem value="Classic Credit Card">Classic Credit Card</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

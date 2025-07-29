@@ -2,12 +2,13 @@
 import { useCustomer } from "@/contexts/CustomerContext";
 import { useEffect, useRef, useState } from "react";
 
-// Define interface for declaration data
+// Define interface for declaration data that matches CustomerContext
 interface DeclarationData {
-  agree: boolean;
-  signature_date: string;
+  termsAgreed: boolean;
+  date: string;
   signature_file?: File | null;
-  signature_url?: string;
+  signature?: string;
+  contactConfirmation?: boolean;
 }
 
 export const SMEDeclarationForm = () => {
@@ -20,25 +21,27 @@ export const SMEDeclarationForm = () => {
   
   // Controlled state
   const [formData, setFormData] = useState<DeclarationData>({
-    agree: false,
-    signature_date: new Date().toISOString().slice(0, 10), // Default to today's date
+    termsAgreed: false,
+    date: new Date().toISOString().slice(0, 10), // Default to today's date
     signature_file: null,
-    signature_url: ""
+    signature: "",
+    contactConfirmation: false
   });
   
-  // Initialize form with data from context (runs once)
+  // Initialize form with data from context when customerData becomes available
   useEffect(() => {
-    if (isInitialized.current) return;
+    if (!customerData || isInitialized.current) return;
     
     // Get existing data from context if available
     const declaration = customerData?.declaration || {};
     
-    // Update form data with existing values
+    // Update form data with existing values, mapping to CustomerContext structure
     setFormData({
-      agree: Boolean(declaration.agree),
-      signature_date: declaration.signature_date ? new Date(declaration.signature_date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+      termsAgreed: Boolean(declaration.termsAgreed),
+      date: declaration.date ? new Date(declaration.date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
       signature_file: null,
-      signature_url: declaration.signature_url || ""
+      signature: declaration.signature || "",
+      contactConfirmation: Boolean(declaration.contactConfirmation)
     });
     
     isInitialized.current = true;
@@ -50,14 +53,15 @@ export const SMEDeclarationForm = () => {
     
     skipNextUpdate.current = true;
     
-    // Map form data to the expected API format
+    // Map form data to the CustomerContext format
     updateCustomerData({
       declaration: {
-        agree: formData.agree,
-        signature_date: formData.signature_date,
-        signature_url: formData.signature_url
+        termsAgreed: formData.termsAgreed,
+        date: formData.date,
+        signature: formData.signature,
+        contactConfirmation: formData.contactConfirmation
       }
-    } as any);
+    });
     
     // Reset the flag after a short delay
     setTimeout(() => {
@@ -74,11 +78,19 @@ export const SMEDeclarationForm = () => {
     saveToContext();
   }, [formData]);
   
-  // Handle checkbox change
-  const handleAgreeChange = (checked: boolean) => {
+  // Handle checkbox change for terms agreement
+  const handleTermsAgreeChange = (checked: boolean) => {
     setFormData(prev => ({
       ...prev,
-      agree: checked
+      termsAgreed: checked
+    }));
+  };
+  
+  // Handle checkbox change for contact confirmation
+  const handleContactConfirmationChange = (checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      contactConfirmation: checked
     }));
   };
   
@@ -86,7 +98,7 @@ export const SMEDeclarationForm = () => {
   const handleDateChange = (date: string) => {
     setFormData(prev => ({
       ...prev,
-      signature_date: date
+      date: date
     }));
   };
   
@@ -95,12 +107,13 @@ export const SMEDeclarationForm = () => {
     const file = event.target.files?.[0] || null;
     if (file) {
       // For this example, we just store the file and could handle upload later
+      const objectUrl = URL.createObjectURL(file);
       setFormData(prev => ({
         ...prev,
         signature_file: file,
         // In a real app, you would upload the file and get a URL back
         // For now, we'll create a local object URL for preview
-        signature_url: URL.createObjectURL(file)
+        signature: objectUrl
       }));
     }
   };
@@ -109,19 +122,31 @@ export const SMEDeclarationForm = () => {
     <section className="mb-10">
       <h3 className="text-2xl rounded-lg text-white font-semibold mb-4 p-4 bg-blue-500">Declaration</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
-        <label className="block text-sm font-medium mb-2">
-          I hereby declare that the information provided is true and complete to the best of my knowledge.
-        </label>
-        <div className="flex gap-6 mt-4">
-          <label className="flex items-center gap-2">
-            <input 
-              type="checkbox" 
-              checked={formData.agree}
-              onChange={(e) => handleAgreeChange(e.target.checked)}
-            /> I Agree
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium mb-2">
+            I hereby declare that the information provided is true and complete to the best of my knowledge.
           </label>
+          <div className="flex gap-6 mt-4">
+            <label className="flex items-center gap-2">
+              <input 
+                type="checkbox" 
+                checked={formData.termsAgreed}
+                onChange={(e) => handleTermsAgreeChange(e.target.checked)}
+              /> I Agree to Terms and Conditions
+            </label>
+          </div>
+          <div className="flex gap-6 mt-4">
+            <label className="flex items-center gap-2">
+              <input 
+                type="checkbox" 
+                checked={formData.contactConfirmation || false}
+                onChange={(e) => handleContactConfirmationChange(e.target.checked)}
+              /> I confirm my contact details are correct
+            </label>
+          </div>
         </div>
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 md:col-span-2">
           <div>
             <label className="block text-sm font-medium mb-1">Applicant Signature</label>
             <input
@@ -130,10 +155,10 @@ export const SMEDeclarationForm = () => {
               onChange={handleFileChange}
               accept="image/*"
             />
-            {formData.signature_url && (
+            {formData.signature && (
               <div className="mt-2">
                 <img 
-                  src={formData.signature_url} 
+                  src={formData.signature} 
                   alt="Signature Preview" 
                   className="max-h-20 border border-gray-300 rounded" 
                 />
@@ -145,7 +170,7 @@ export const SMEDeclarationForm = () => {
             <input
               type="date"
               className="w-full rounded-xl border border-gray-300 px-4 py-2"
-              value={formData.signature_date}
+              value={formData.date}
               onChange={(e) => handleDateChange(e.target.value)}
             />
           </div>

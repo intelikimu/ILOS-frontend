@@ -2,14 +2,15 @@
 import { useCustomer } from "@/contexts/CustomerContext";
 import { useEffect, useRef, useState } from "react";
 
-// Define interface for loan facility data
+// Define interface for loan facility data that matches CustomerContext
 interface LoanFacilityData {
-  facility_type: string;
-  purpose: string;
-  requested_amount: number | null;
-  tenure_months: number | null;
-  repayment_frequency: string;
-  installment_amount: number | null;
+  loanType: string;
+  amountRequested: number | null;
+  tenure: number | null;
+  maxAffordableInstallment: number | null;
+  minAmountAcceptable: number | null;
+  repayment_frequency: string; // Custom field not in CustomerContext
+  purpose: string; // Will map to applicationDetails.loanPurpose
 }
 
 export const SMELoanFacilityDetailsForm = () => {
@@ -22,41 +23,39 @@ export const SMELoanFacilityDetailsForm = () => {
   
   // Controlled state
   const [formData, setFormData] = useState<LoanFacilityData>({
-    facility_type: "",
+    loanType: "",
     purpose: "",
-    requested_amount: null,
-    tenure_months: null,
+    amountRequested: null,
+    tenure: null,
     repayment_frequency: "",
-    installment_amount: null
+    maxAffordableInstallment: null,
+    minAmountAcceptable: null
   });
   
-  // Initialize form with data from context (runs once)
+  // Initialize form with data from context when customerData becomes available
   useEffect(() => {
-    if (isInitialized.current) return;
+    if (!customerData || isInitialized.current) return;
     
     // Get existing data from context if available
-    const existingData = customerData?.loanFacility || {};
+    const loanPreference = customerData?.loanPreference || {};
+    const applicationDetails = customerData?.applicationDetails || {};
+    const smeApplication = customerData?.smeApplication || {};
     
-    // Update form data with existing values
-    const newFormData = {
-      facility_type: existingData.facility_type || "",
-      purpose: existingData.purpose || "",
-      requested_amount: existingData.requested_amount || null,
-      tenure_months: existingData.tenure_months || null,
-      repayment_frequency: existingData.repayment_frequency || "",
-      installment_amount: existingData.installment_amount || null
-    };
+    // Update form data with existing values, mapping from CustomerContext structure
+    setFormData({
+      loanType: loanPreference.loanType || "",
+      purpose: applicationDetails.loanPurpose || "",
+      amountRequested: typeof loanPreference.amountRequested === 'number' ? loanPreference.amountRequested : 
+                      typeof loanPreference.amountRequested === 'string' ? Number(loanPreference.amountRequested) : null,
+      tenure: typeof loanPreference.tenure === 'number' ? loanPreference.tenure : 
+              typeof loanPreference.tenure === 'string' ? Number(loanPreference.tenure) : null,
+      repayment_frequency: smeApplication.repayment_frequency || "",
+      maxAffordableInstallment: typeof loanPreference.maxAffordableInstallment === 'number' ? loanPreference.maxAffordableInstallment :
+                                typeof loanPreference.maxAffordableInstallment === 'string' ? Number(loanPreference.maxAffordableInstallment) : null,
+      minAmountAcceptable: typeof loanPreference.minAmountAcceptable === 'number' ? loanPreference.minAmountAcceptable :
+                          typeof loanPreference.minAmountAcceptable === 'string' ? Number(loanPreference.minAmountAcceptable) : null
+    });
     
-    // Also check for specific SME application fields that might have loan info
-    const smeApp = customerData?.smeApplication || {};
-    if (smeApp.desired_loan_amount && !newFormData.requested_amount) {
-      newFormData.requested_amount = Number(smeApp.desired_loan_amount);
-    }
-    if (smeApp.tenure_years && !newFormData.tenure_months) {
-      newFormData.tenure_months = Number(smeApp.tenure_years) * 12; // Convert years to months
-    }
-    
-    setFormData(newFormData);
     isInitialized.current = true;
   }, [customerData]);
   
@@ -66,14 +65,24 @@ export const SMELoanFacilityDetailsForm = () => {
     
     skipNextUpdate.current = true;
     
-    // Map form data to the expected API format
+    // Map form data to the CustomerContext format
     updateCustomerData({
-      loanFacility: formData,
-      // Also update related SME application fields for consistency
+      loanPreference: {
+        loanType: formData.loanType,
+        amountRequested: formData.amountRequested,
+        tenure: formData.tenure,
+        maxAffordableInstallment: formData.maxAffordableInstallment,
+        minAmountAcceptable: formData.minAmountAcceptable
+      },
+      applicationDetails: {
+        ...(customerData?.applicationDetails || {}),
+        loanPurpose: formData.purpose
+      },
       smeApplication: {
         ...(customerData?.smeApplication || {}),
-        desired_loan_amount: formData.requested_amount,
-        tenure_years: formData.tenure_months ? formData.tenure_months / 12 : null
+        repayment_frequency: formData.repayment_frequency,
+        desired_loan_amount: formData.amountRequested,
+        tenure_months: formData.tenure
       }
     } as any);
     
@@ -108,13 +117,15 @@ export const SMELoanFacilityDetailsForm = () => {
           <label className="block text-sm font-medium mb-1">Type of Facility</label>
           <select 
             className="w-full rounded-xl border border-gray-300 px-4 py-2"
-            value={formData.facility_type}
-            onChange={(e) => handleChange("facility_type", e.target.value)}
+            value={formData.loanType}
+            onChange={(e) => handleChange("loanType", e.target.value)}
           >
             <option value="">--Select--</option>
             <option value="Running Finance">Running Finance</option>
             <option value="Term Finance">Term Finance</option>
             <option value="Letter of Credit">Letter of Credit</option>
+            <option value="SME Loan">SME Loan</option>
+            <option value="Working Capital">Working Capital</option>
             <option value="Other">Other</option>
           </select>
         </div>
@@ -134,8 +145,8 @@ export const SMELoanFacilityDetailsForm = () => {
             type="number" 
             className="w-full rounded-xl border border-gray-300 px-4 py-2" 
             placeholder="Requested Amount" 
-            value={formData.requested_amount === null ? "" : formData.requested_amount}
-            onChange={(e) => handleChange("requested_amount", e.target.value ? Number(e.target.value) : null)}
+            value={formData.amountRequested === null ? "" : formData.amountRequested}
+            onChange={(e) => handleChange("amountRequested", e.target.value ? Number(e.target.value) : null)}
           />
         </div>
         <div>
@@ -144,8 +155,8 @@ export const SMELoanFacilityDetailsForm = () => {
             type="number" 
             className="w-full rounded-xl border border-gray-300 px-4 py-2" 
             placeholder="Tenure (Months)" 
-            value={formData.tenure_months === null ? "" : formData.tenure_months}
-            onChange={(e) => handleChange("tenure_months", e.target.value ? Number(e.target.value) : null)}
+            value={formData.tenure === null ? "" : formData.tenure}
+            onChange={(e) => handleChange("tenure", e.target.value ? Number(e.target.value) : null)}
           />
         </div>
         <div>
@@ -158,17 +169,28 @@ export const SMELoanFacilityDetailsForm = () => {
             <option value="">--Select--</option>
             <option value="Monthly">Monthly</option>
             <option value="Quarterly">Quarterly</option>
+            <option value="Half-Yearly">Half-Yearly</option>
             <option value="Annually">Annually</option>
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Installment Amount (Rs.)</label>
+          <label className="block text-sm font-medium mb-1">Maximum Affordable Installment (Rs.)</label>
           <input 
             type="number" 
             className="w-full rounded-xl border border-gray-300 px-4 py-2" 
-            placeholder="Installment Amount" 
-            value={formData.installment_amount === null ? "" : formData.installment_amount}
-            onChange={(e) => handleChange("installment_amount", e.target.value ? Number(e.target.value) : null)}
+            placeholder="Maximum Affordable Installment" 
+            value={formData.maxAffordableInstallment === null ? "" : formData.maxAffordableInstallment}
+            onChange={(e) => handleChange("maxAffordableInstallment", e.target.value ? Number(e.target.value) : null)}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Minimum Acceptable Amount (Rs.)</label>
+          <input 
+            type="number" 
+            className="w-full rounded-xl border border-gray-300 px-4 py-2" 
+            placeholder="Minimum Acceptable Amount" 
+            value={formData.minAmountAcceptable === null ? "" : formData.minAmountAcceptable}
+            onChange={(e) => handleChange("minAmountAcceptable", e.target.value ? Number(e.target.value) : null)}
           />
         </div>
       </div>

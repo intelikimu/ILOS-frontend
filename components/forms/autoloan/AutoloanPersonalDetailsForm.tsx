@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useCustomer } from '@/contexts/CustomerContext';
 
+
+
 export const PersonalDetailsForm = () => {
   const { customerData } = useCustomer();
   const [formData, setFormData] = useState({

@@ -326,6 +326,8 @@ interface CustomerData {
   employmentIncome?: EmploymentIncomeInterface;
   // Add SME Application property
   smeApplication?: any;
+  // Add Commercial Vehicle property
+  commercialVehicle?: any;
   personalDetails?: {
     title?: string;
     firstName?: string;
@@ -557,6 +559,7 @@ interface CustomerData {
     alternateTelephone?: string;
     cnic?: string;
   };
+
 }
 
 interface CustomerContextType {

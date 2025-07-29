@@ -2,17 +2,22 @@
 import { useCustomer } from "@/contexts/CustomerContext";
 import { useEffect, useRef, useState } from "react";
 
-// Interface for existing loan data
+// Interface for existing loan data that maps to CustomerContext exposures
 interface ExistingLoan {
+  sr_no?: string;
+  bank_name: string;
   facility_type: string;
-  amount: number | null;
+  approved_limit: number | null;
+  outstanding_amount: number | null;
+  monthly_installment?: number | null;
   tenor: number | null;
   purpose: string;
   security_nature_particular: string;
   security_value: number | null;
   repayment_frequency: string;
-  monthly_installment?: number | null;
-  bank_name?: string;
+  nature?: string;
+  current_outstanding?: number | null;
+  as_of?: string;
 }
 
 export const SMEExistingLoanDetailsForm = () => {
@@ -25,39 +30,94 @@ export const SMEExistingLoanDetailsForm = () => {
   
   const [existingLoans, setExistingLoans] = useState<ExistingLoan[]>([
     {
+      sr_no: "1",
       bank_name: "",
       facility_type: "",
-      amount: null,
+      approved_limit: null,
+      outstanding_amount: null,
       monthly_installment: null,
       tenor: null,
       purpose: "",
       security_nature_particular: "",
       security_value: null,
-      repayment_frequency: "Monthly"
+      repayment_frequency: "Monthly",
+      nature: "",
+      current_outstanding: null,
+      as_of: new Date().toISOString().slice(0, 10)
     }
   ]);
   
-  // Initialize form with data from context (runs once)
+  // Initialize form with data from context when customerData becomes available
   useEffect(() => {
-    if (isInitialized.current) return;
+    if (!customerData || isInitialized.current) return;
     
-    // Check if existing loans exist in context
-    const savedExistingLoans = Array.isArray(customerData?.existing_loans) ? 
-      customerData.existing_loans : [];
-      
-    // Map saved loans to our local state format
-    if (savedExistingLoans.length > 0) {
-      setExistingLoans(savedExistingLoans.map(loan => ({
+    // Get existing data from context exposures
+    const exposures = customerData?.exposures || {};
+    const personalLoans = exposures.personalLoansExisting || [];
+    const otherFacilities = exposures.otherFacilities || [];
+    const smeLoans = customerData?.smeApplication?.existing_loans || [];
+    
+    // Combine all existing loans from different sources
+    const allExistingLoans = [
+      ...personalLoans.map((loan, index) => ({
+        sr_no: loan.sr_no || String(index + 1),
+        bank_name: loan.bank_name || "",
+        facility_type: "Personal Loan",
+        approved_limit: typeof loan.approved_limit === 'number' ? loan.approved_limit : 
+                       typeof loan.approved_limit === 'string' ? Number(loan.approved_limit) : null,
+        outstanding_amount: typeof loan.outstanding_amount === 'number' ? loan.outstanding_amount :
+                           typeof loan.outstanding_amount === 'string' ? Number(loan.outstanding_amount) : null,
+        monthly_installment: null,
+        tenor: null,
+        purpose: "Personal Loan",
+        security_nature_particular: "",
+        security_value: null,
+        repayment_frequency: "Monthly",
+        nature: "Personal Loan",
+        current_outstanding: typeof loan.outstanding_amount === 'number' ? loan.outstanding_amount :
+                            typeof loan.outstanding_amount === 'string' ? Number(loan.outstanding_amount) : null,
+        as_of: loan.as_of || new Date().toISOString().slice(0, 10)
+      })),
+      ...otherFacilities.map((loan, index) => ({
+        sr_no: loan.sr_no || String(personalLoans.length + index + 1),
+        bank_name: loan.bank_name || "",
+        facility_type: loan.nature || "Other Facility",
+        approved_limit: typeof loan.approved_limit === 'number' ? loan.approved_limit :
+                       typeof loan.approved_limit === 'string' ? Number(loan.approved_limit) : null,
+        outstanding_amount: typeof loan.current_outstanding === 'number' ? loan.current_outstanding :
+                           typeof loan.current_outstanding === 'string' ? Number(loan.current_outstanding) : null,
+        monthly_installment: null,
+        tenor: null,
+        purpose: loan.nature || "",
+        security_nature_particular: "",
+        security_value: null,
+        repayment_frequency: "Monthly",
+        nature: loan.nature || "",
+        current_outstanding: typeof loan.current_outstanding === 'number' ? loan.current_outstanding :
+                            typeof loan.current_outstanding === 'string' ? Number(loan.current_outstanding) : null,
+        as_of: new Date().toISOString().slice(0, 10)
+      })),
+      ...smeLoans.map((loan: any, index: number) => ({
+        sr_no: String(personalLoans.length + otherFacilities.length + index + 1),
         bank_name: loan.bank_name || "",
         facility_type: loan.facility_type || "",
-        amount: loan.amount || null,
+        approved_limit: loan.amount || null,
+        outstanding_amount: loan.amount || null,
         monthly_installment: loan.monthly_installment || null,
         tenor: loan.tenor || null,
         purpose: loan.purpose || "",
         security_nature_particular: loan.security_nature_particular || "",
         security_value: loan.security_value || null,
-        repayment_frequency: loan.repayment_frequency || "Monthly"
-      })));
+        repayment_frequency: loan.repayment_frequency || "Monthly",
+        nature: loan.facility_type || "",
+        current_outstanding: loan.amount || null,
+        as_of: new Date().toISOString().slice(0, 10)
+      }))
+    ];
+    
+    // Set the loans or keep the default empty loan
+    if (allExistingLoans.length > 0) {
+      setExistingLoans(allExistingLoans);
     }
     
     isInitialized.current = true;
@@ -74,9 +134,38 @@ export const SMEExistingLoanDetailsForm = () => {
       loan => loan.bank_name?.trim() !== "" || loan.facility_type?.trim() !== ""
     );
     
+    // Map to different exposure categories
+    const personalLoansExisting = validLoans
+      .filter(loan => loan.facility_type === "Personal Loan")
+      .map((loan, index) => ({
+        sr_no: String(index + 1),
+        bank_name: loan.bank_name,
+        approved_limit: loan.approved_limit,
+        outstanding_amount: loan.outstanding_amount,
+        as_of: loan.as_of || new Date().toISOString().slice(0, 10)
+      }));
+    
+    const otherFacilities = validLoans
+      .filter(loan => loan.facility_type !== "Personal Loan")
+      .map((loan, index) => ({
+        sr_no: String(index + 1),
+        bank_name: loan.bank_name,
+        approved_limit: loan.approved_limit,
+        nature: loan.facility_type,
+        current_outstanding: loan.outstanding_amount
+      }));
+    
     // Update the context with loans data
     updateCustomerData({
-      existing_loans: validLoans
+      exposures: {
+        ...(customerData?.exposures || {}),
+        personalLoansExisting: personalLoansExisting,
+        otherFacilities: otherFacilities
+      },
+      smeApplication: {
+        ...(customerData?.smeApplication || {}),
+        existing_loans: validLoans
+      }
     } as any);
     
     // Reset the flag after a short delay
@@ -109,15 +198,20 @@ export const SMEExistingLoanDetailsForm = () => {
     setExistingLoans([
       ...existingLoans,
       {
+        sr_no: String(existingLoans.length + 1),
         bank_name: "",
         facility_type: "",
-        amount: null,
+        approved_limit: null,
+        outstanding_amount: null,
         monthly_installment: null,
         tenor: null,
         purpose: "",
         security_nature_particular: "",
         security_value: null,
-        repayment_frequency: "Monthly"
+        repayment_frequency: "Monthly",
+        nature: "",
+        current_outstanding: null,
+        as_of: new Date().toISOString().slice(0, 10)
       }
     ]);
   };
@@ -125,7 +219,13 @@ export const SMEExistingLoanDetailsForm = () => {
   // Remove a loan entry
   const removeLoan = (index: number) => {
     if (existingLoans.length <= 1) return; // Always keep at least one entry
-    setExistingLoans(existingLoans.filter((_, i) => i !== index));
+    const updatedLoans = existingLoans.filter((_, i) => i !== index);
+    // Update serial numbers
+    const reindexedLoans = updatedLoans.map((loan, idx) => ({
+      ...loan,
+      sr_no: String(idx + 1)
+    }));
+    setExistingLoans(reindexedLoans);
   };
   
   return (
@@ -146,12 +246,29 @@ export const SMEExistingLoanDetailsForm = () => {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Type of Facility</label>
-            <input
-              type="text"
+            <select
               className="w-full rounded-xl border border-gray-300 px-4 py-2"
-              placeholder="Type of Facility"
               value={loan.facility_type}
               onChange={(e) => handleInputChange(index, "facility_type", e.target.value)}
+            >
+              <option value="">--Select--</option>
+              <option value="Personal Loan">Personal Loan</option>
+              <option value="Running Finance">Running Finance</option>
+              <option value="Term Finance">Term Finance</option>
+              <option value="Letter of Credit">Letter of Credit</option>
+              <option value="Working Capital">Working Capital</option>
+              <option value="SME Loan">SME Loan</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Approved Limit (Rs.)</label>
+            <input
+              type="number"
+              className="w-full rounded-xl border border-gray-300 px-4 py-2"
+              placeholder="Approved Limit"
+              value={loan.approved_limit === null ? "" : loan.approved_limit}
+              onChange={(e) => handleInputChange(index, "approved_limit", e.target.value ? Number(e.target.value) : null)}
             />
           </div>
           <div>
@@ -160,8 +277,8 @@ export const SMEExistingLoanDetailsForm = () => {
               type="number"
               className="w-full rounded-xl border border-gray-300 px-4 py-2"
               placeholder="Outstanding Amount"
-              value={loan.amount === null ? "" : loan.amount}
-              onChange={(e) => handleInputChange(index, "amount", e.target.value ? Number(e.target.value) : null)}
+              value={loan.outstanding_amount === null ? "" : loan.outstanding_amount}
+              onChange={(e) => handleInputChange(index, "outstanding_amount", e.target.value ? Number(e.target.value) : null)}
             />
           </div>
           <div>
@@ -205,7 +322,7 @@ export const SMEExistingLoanDetailsForm = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Security Value</label>
+            <label className="block text-sm font-medium mb-1">Security Value (Rs.)</label>
             <input
               type="number"
               className="w-full rounded-xl border border-gray-300 px-4 py-2"
@@ -225,6 +342,7 @@ export const SMEExistingLoanDetailsForm = () => {
               <option value="Weekly">Weekly</option>
               <option value="Monthly">Monthly</option>
               <option value="Quarterly">Quarterly</option>
+              <option value="Half-Yearly">Half-Yearly</option>
               <option value="Annually">Annually</option>
             </select>
           </div>
@@ -234,7 +352,7 @@ export const SMEExistingLoanDetailsForm = () => {
             <div className="md:col-span-2 flex justify-end">
               <button 
                 type="button"
-                className="text-red-600 hover:text-red-800"
+                className="px-4 py-2 text-red-600 hover:text-red-800 border border-red-300 rounded-lg hover:bg-red-50"
                 onClick={() => removeLoan(index)}
               >
                 Remove Loan
@@ -248,7 +366,7 @@ export const SMEExistingLoanDetailsForm = () => {
       <div className="flex justify-center mt-4">
         <button
           type="button"
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
           onClick={addLoan}
         >
           Add Another Loan

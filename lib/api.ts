@@ -92,5 +92,35 @@ export const getSmeAsaanApplicationsByCustomer = async (customerId: string) => {
  */
 export const getSmeAsaanApplicationById = async (applicationId: string) => {
   return apiRequest(`api/smeasaan/${applicationId}`);
+};
+
+/**
+ * Submit a new Commercial Vehicle application to the backend
+ * @param applicationData - Complete Commercial Vehicle application data
+ * @returns Response from the backend with created application details
+ */
+export const submitCommercialVehicleApplication = async (applicationData: any) => {
+  return apiRequest('api/commercialvehicle', {
+    method: 'POST',
+    body: JSON.stringify(applicationData)
+  });
+};
+
+/**
+ * Fetch all Commercial Vehicle applications for a specific customer
+ * @param customerId - Customer ID to fetch applications for
+ * @returns Array of Commercial Vehicle applications for the customer
+ */
+export const getCommercialVehicleApplicationsByCustomer = async (customerId: string) => {
+  return apiRequest(`api/commercialvehicle/by-customer/${customerId}`);
+};
+
+/**
+ * Fetch a specific Commercial Vehicle application by ID
+ * @param applicationId - Application ID to fetch
+ * @returns Details of the specific Commercial Vehicle application
+ */
+export const getCommercialVehicleApplicationById = async (applicationId: string) => {
+  return apiRequest(`api/commercialvehicle/${applicationId}`);
 }; 
 

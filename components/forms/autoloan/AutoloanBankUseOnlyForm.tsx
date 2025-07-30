@@ -8,8 +8,11 @@ interface Props {
 }
 
 export const BankUseOnlyForm: React.FC<Props> = ({ formData, handleInputChange, setFormData }) => {
+  // Ensure application_source is always an array to prevent controlled/uncontrolled input issues
+  const applicationSource = Array.isArray(formData.application_source) ? formData.application_source : [];
+  
   const toggleApplicationSource = (source: string) => {
-    const updated = [...(formData.application_source || [])];
+    const updated = [...applicationSource];
     if (updated.includes(source)) {
       setFormData((prev: any) => ({
         ...prev,
@@ -29,7 +32,7 @@ export const BankUseOnlyForm: React.FC<Props> = ({ formData, handleInputChange, 
       <h2 className="text-2xl text-white font-semibold mb-4 rounded-lg p-4 bg-blue-500">
         13. For Banks Use Only
       </h2>
-      <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="flex flex-col col-span-2">
           <label className="font-semibold mb-2">Application Source</label>
           <div className="flex gap-4">
@@ -37,7 +40,7 @@ export const BankUseOnlyForm: React.FC<Props> = ({ formData, handleInputChange, 
               <label key={src} className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  checked={formData.application_source?.includes(src)}
+                  checked={applicationSource.includes(src)}
                   onChange={() => toggleApplicationSource(src)}
                 />
                 {src}
@@ -76,7 +79,7 @@ export const BankUseOnlyForm: React.FC<Props> = ({ formData, handleInputChange, 
           <label className="block mb-1">Branch Sign & Stamp</label>
           <input type="file" className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-2 text-base shadow-sm transition" />
         </div>
-      </form>
+      </div>
     </section>
   );
 };

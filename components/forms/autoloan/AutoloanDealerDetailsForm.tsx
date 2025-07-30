@@ -12,7 +12,7 @@ export const DealerDetailsForm: React.FC<Props> = ({ formData, handleInputChange
       <h2 className="text-2xl text-white font-semibold mb-4 rounded-lg p-4 bg-blue-500">
         4. Dealer Details
       </h2>
-      <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium mb-1">Dealer Name</label>
           <input
@@ -35,7 +35,7 @@ export const DealerDetailsForm: React.FC<Props> = ({ formData, handleInputChange
           />
           <small className="text-xs text-gray-500">*Stamp upload not yet connected to backend.</small>
         </div>
-      </form>
+      </div>
     </section>
   );
 };

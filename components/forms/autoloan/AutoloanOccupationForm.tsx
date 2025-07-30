@@ -60,7 +60,7 @@ export const OccupationForm = ({ formData, handleInputChange }: OccupationFormPr
         </div>
       )}
 
-      <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="flex flex-col md:col-span-2">
           <label className="font-semibold text-sm mb-2">Employment Type</label>
           <div className="flex gap-4">
@@ -107,7 +107,7 @@ export const OccupationForm = ({ formData, handleInputChange }: OccupationFormPr
             />
           </div>
         ))}
-      </form>
+      </div>
     </section>
   );
 };

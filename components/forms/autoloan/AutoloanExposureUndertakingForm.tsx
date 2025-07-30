@@ -16,7 +16,7 @@ export const ExposureUndertakingForm = ({ formData, handleInputChange }: Exposur
         9. Undertaking – Existing Exposure from Entire Banking Sector
       </h2>
 
-      <form className="space-y-10">
+      <div className="space-y-10">
         {/* A. Credit Cards (Clean) */}
         <div>
           <h3 className="text-lg font-semibold mb-4">A. Credit Cards (Clean)</h3>
@@ -177,7 +177,7 @@ export const ExposureUndertakingForm = ({ formData, handleInputChange }: Exposur
             />
           </div>
         </div>
-      </form>
+      </div>
     </section>
   );
 };

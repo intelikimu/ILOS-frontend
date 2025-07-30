@@ -150,16 +150,16 @@ export const PersonalDetailsForm = () => {
         newFormData.nextOfKin = customerData.nextOfKin.name;
         prefilled.add('nextOfKin');
       }
-      if (customerData.nextOfKin.relation) {
-        newFormData.nextOfKinRelation = customerData.nextOfKin.relation;
+      if (customerData.nextOfKin.relationship) {
+        newFormData.nextOfKinRelation = customerData.nextOfKin.relationship;
         prefilled.add('nextOfKinRelation');
       }
       if (customerData.nextOfKin.cnic) {
         newFormData.nextOfKinCnic = customerData.nextOfKin.cnic;
         prefilled.add('nextOfKinCnic');
       }
-      if (customerData.nextOfKin.contact) {
-        newFormData.nextOfKinContact = customerData.nextOfKin.contact;
+      if (customerData.nextOfKin.contactNumber) {
+        newFormData.nextOfKinContact = customerData.nextOfKin.contactNumber;
         prefilled.add('nextOfKinContact');
       }
     }
@@ -179,8 +179,8 @@ export const PersonalDetailsForm = () => {
         newFormData.currentArea = currentAddr.area;
         prefilled.add('currentArea');
       }
-      if (currentAddr.landmark) {
-        newFormData.currentLandmark = currentAddr.landmark;
+      if (currentAddr.nearestLandmark) {
+        newFormData.currentLandmark = currentAddr.nearestLandmark;
         prefilled.add('currentLandmark');
       }
       if (currentAddr.city) {
@@ -282,7 +282,7 @@ export const PersonalDetailsForm = () => {
         </div>
       )}
 
-      <form className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Title */}
         <div>
           <label className="block text-sm font-medium mb-1">Title</label>
@@ -779,7 +779,7 @@ export const PersonalDetailsForm = () => {
             onChange={(e) => handleInputChange('permanentPostalCode', e.target.value)}
           />
         </div>
-      </form>
+      </div>
     </section>
   );
 };

@@ -59,7 +59,7 @@ export const IncomeDetailsForm = ({ formData, handleInputChange }: Props) => {
     <section className="bg-white rounded-2xl shadow p-8 mb-10">
       <h2 className="text-2xl text-white font-semibold mb-4 rounded-lg p-4 bg-blue-500">7. Income Details</h2>
 
-      <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <input
           type="number"
           name="gross_monthly_salary"
@@ -163,7 +163,7 @@ export const IncomeDetailsForm = ({ formData, handleInputChange }: Props) => {
             </label>
           ))}
         </div>
-      </form>
+      </div>
     </section>
   );
 };

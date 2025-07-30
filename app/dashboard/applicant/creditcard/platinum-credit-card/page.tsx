@@ -746,6 +746,8 @@ export default function PlatinumCreditCardPage() {
         body: JSON.stringify(fullPayload),
       });
 
+      console.log("✅ Platinum Credit Card submission response status:", response.status);
+
       // Check response
       if (!response.ok) {
         console.log("Backend response status:", response.status);
@@ -913,7 +915,8 @@ export default function PlatinumCreditCardPage() {
         <div ref={supplementaryRef}><PlatinumSupplementaryCardForm /></div>
         <div ref={lienRef}><PlatinumLienMarkedForm /></div>
         <div ref={bankUseRef}><PlatinumBankUseOnlyForm /></div>
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
+
           <button
             type="submit"
             className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 shadow transition"

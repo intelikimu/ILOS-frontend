@@ -137,21 +137,82 @@ export default function MyApplicationsPage() {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
+
+
   // Fetch applications from backend
   const fetchApplications = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/applications/recent/pb');
+      console.log('🔄 Starting to fetch applications...');
+      
+      // Use the Next.js API route instead of direct backend call
+      const timestamp = new Date().getTime();
+      const response = await fetch(`/api/applications/recent/pb?t=${timestamp}`, {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
+        cache: 'no-store'
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch applications');
       }
       
       const data = await response.json();
-      setApplications(data);
+      console.log('📊 Raw data from API:', data);
+      console.log('📊 Number of applications received:', data.length);
+      
+      // Log each application type
+      data.forEach((app: any, index: number) => {
+        console.log(`📋 Application ${index + 1}:`, {
+          id: app.id,
+          applicantName: app.applicantName,
+          loanType: app.loanType,
+          amount: app.amount,
+          status: app.status
+        });
+      });
+      
+      // Ensure all application types are properly mapped
+      const mappedApplications = data.map((app: any, index: number) => ({
+        id: app.id || `UBL-2024-${String(index + 1).padStart(6, '0')}`,
+        applicantName: app.applicantName || app.applicant_name || 'Unknown Applicant',
+        loanType: app.loanType || app.loan_type || 'Personal Loan',
+        amount: app.amount || 'PKR 0',
+        status: app.status || 'draft',
+        priority: app.priority || 'medium',
+        submittedDate: app.submittedDate || app.submitted_date || new Date().toISOString(),
+        lastUpdate: app.lastUpdate || app.last_update || new Date().toISOString(),
+        completionPercentage: app.completionPercentage || app.completion_percentage || 0,
+        branch: app.branch || 'Main Branch',
+        // Mock data for fields not in database
+        creditScore: app.creditScore || Math.floor(Math.random() * 200) + 600,
+        monthlyIncome: app.monthlyIncome || `PKR ${Math.floor(Math.random() * 200000) + 50000}`,
+        age: app.age || Math.floor(Math.random() * 30) + 25,
+        riskLevel: app.riskLevel || ['low', 'medium', 'high'][Math.floor(Math.random() * 3)],
+        estimatedProcessingTime: app.estimatedProcessingTime || `${Math.floor(Math.random() * 5) + 2}-${Math.floor(Math.random() * 3) + 5} days`,
+        documents: app.documents || [
+          { name: "CNIC Copy", status: "submitted", required: true },
+          { name: "Salary Slip", status: "submitted", required: true },
+          { name: "Bank Statement", status: "submitted", required: true },
+          { name: "Employment Letter", status: "submitted", required: false },
+        ],
+        timeline: app.timeline || [
+          { date: new Date(app.submittedDate || app.submitted_date).toISOString().split('T')[0], event: "Application Created", status: "completed" },
+          { date: new Date(app.submittedDate || app.submitted_date).toISOString().split('T')[0], event: "Documents Uploaded", status: "completed" },
+          { date: new Date(app.submittedDate || app.submitted_date).toISOString().split('T')[0], event: "Initial Review", status: "completed" },
+          { date: "TBD", event: "SPU Verification", status: "pending" },
+        ],
+      }));
+      
+      console.log('✅ Mapped applications:', mappedApplications);
+      console.log('✅ Setting applications state with', mappedApplications.length, 'applications');
+      setApplications(mappedApplications);
     } catch (err) {
-      console.error('Error fetching applications:', err);
+      console.error('❌ Error fetching applications:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch applications');
       
       // Fallback to mock data if API fails
@@ -159,7 +220,7 @@ export default function MyApplicationsPage() {
         {
           id: "UBL-2024-001240",
           applicantName: "Ali Raza",
-          loanType: "Personal Loan",
+          loanType: "CashPlus Loan",
           amount: "PKR 1,500,000",
           status: "submitted_to_spu",
           priority: "medium",
@@ -509,8 +570,10 @@ export default function MyApplicationsPage() {
                       <SelectItem value="Personal Loan">Personal Loan</SelectItem>
                       <SelectItem value="Auto Loan">Auto Loan</SelectItem>
                       <SelectItem value="Business Loan">Business Loan</SelectItem>
+                      <SelectItem value="SME Loan">SME Loan</SelectItem>
                       <SelectItem value="Home Loan">Home Loan</SelectItem>
                       <SelectItem value="CashPlus Loan">CashPlus Loan</SelectItem>
+                      <SelectItem value="Auto Loan">Auto Loan</SelectItem>
                       <SelectItem value="AmeenDrive Loan">AmeenDrive Loan</SelectItem>
                       <SelectItem value="Commercial Vehicle Loan">Commercial Vehicle Loan</SelectItem>
                       <SelectItem value="Platinum Credit Card">Platinum Credit Card</SelectItem>
@@ -521,6 +584,8 @@ export default function MyApplicationsPage() {
               </div>
             </CardContent>
           </Card>
+
+
 
           {/* Applications Table */}
           <Card>

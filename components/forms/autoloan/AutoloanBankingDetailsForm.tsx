@@ -19,7 +19,7 @@ export const BankingDetailsForm: React.FC<Props> = ({ formData, handleInputChang
         8. Banking Details - Direct Debit / Repayment Account
       </h2>
 
-      <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Bank Name */}
         <div>
           <label className="block text-sm font-medium mb-1">Bank Name</label>
@@ -96,7 +96,7 @@ export const BankingDetailsForm: React.FC<Props> = ({ formData, handleInputChang
             ))}
           </div>
         </div>
-      </form>
+      </div>
     </section>
   );
 };

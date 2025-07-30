@@ -459,6 +459,8 @@ const refs: Record<string, React.RefObject<HTMLDivElement | null>> = {
         body: JSON.stringify(formData),
       });
 
+      console.log("✅ Credit Card submission response status:", response.status);
+
       const data = await response.json();
 
       if (response.ok) {
@@ -589,7 +591,8 @@ const refs: Record<string, React.RefObject<HTMLDivElement | null>> = {
         <div ref={refs.lien}><CreditCardLienCreditCardForm /></div>
         <div ref={refs.declaration}><CreditCardDeclarationForm /></div>
         
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
+
           <Button
             type="submit"
             onClick={handleSubmit}

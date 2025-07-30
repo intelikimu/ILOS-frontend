@@ -1,16 +1,200 @@
-AUTO-LOAN done
-with 2 subform Done
+all good good now we are moving to creditcard here is schema :
+CREDIT CARD
 
-nextcmd:
-see these documents and scan it proper
- and make the  form(UI) for our project
-  and remember our project is on
-   nextjs and remeber all thing what 
-   we have done these before in all 
-   forms like labbel input fields are 
-   same and clear visuall and give a 
-   code in component wise
+(CREDIT CARD)
+
+(MAIN creditcard table)
 
 
+CREATE TABLE creditcard_applications (
+    id SERIAL PRIMARY KEY,
+    customer_id VARCHAR(50) NOT NULL REFERENCES cif_customers(customer_id),
 
-input fields are not visisble make sure these are vissible  and also remeber we have some chechboxes replace checkboxes with radio button :
+    -- Card Choice
+    card_type VARCHAR(20),                 -- Gold, Classic
+    card_category VARCHAR(30),             -- Standard, Non-Photo, Photo
+    special_card_option VARCHAR(30),       -- UBL PSO Auto, Galleria
+    photo_submission_method VARCHAR(30),
+    reward_program VARCHAR(30),            -- For PSO/Galleria
+
+    -- Personal Information
+    title VARCHAR(10),
+    full_name VARCHAR(100),
+    name_on_card VARCHAR(100),
+    nic_or_passport VARCHAR(30),
+    cnic_issuance_date DATE,
+    cnic_expiry_date DATE,
+    old_nic VARCHAR(30),
+    father_husband_name VARCHAR(100),
+    date_of_birth DATE,
+    gender VARCHAR(10),
+    mother_maiden_name VARCHAR(100),
+    marital_status VARCHAR(20),
+    num_dependents INTEGER,
+    education_qualification VARCHAR(50),
+
+    -- Address Details
+    curr_house_apt VARCHAR(50),
+    curr_street VARCHAR(100),
+    curr_tehsil_district VARCHAR(100),
+    curr_landmark VARCHAR(100),
+    curr_city VARCHAR(50),
+    curr_postal_code VARCHAR(10),
+    curr_tel_residence VARCHAR(20),
+    curr_mobile VARCHAR(20),
+    ntn VARCHAR(30),
+    type_of_residence VARCHAR(20),
+    nature_of_residence VARCHAR(30),
+    residing_since VARCHAR(50),
+    curr_email VARCHAR(100),
+
+    perm_street VARCHAR(100),
+    perm_tehsil_district VARCHAR(100),
+    perm_landmark VARCHAR(100),
+    perm_city VARCHAR(50),
+    perm_postal_code VARCHAR(10),
+
+    -- Car Info
+    car_year SMALLINT,
+    car_model VARCHAR(50),
+    car_registration_no VARCHAR(30),
+    car_ownership VARCHAR(20),
+
+    -- Next of Kin
+    next_of_kin_name VARCHAR(100),
+    next_of_kin_relationship VARCHAR(50),
+    next_of_kin_tel1 VARCHAR(20),
+    next_of_kin_tel2 VARCHAR(20),
+
+    -- Employment Details
+    occupation VARCHAR(50),
+    sector VARCHAR(50),
+    grade_or_rank VARCHAR(50,)
+    designation VARCHAR(50),
+    department VARCHAR(50),
+    company_employer_name VARCHAR(100),
+    
+    employment_status VARCHAR(20),
+    length_of_employment VARCHAR(20), 
+    employee_number VARCHAR(20),   
+business_type  VARCHAR(50),
+    business_nature VARCHAR(50),
+    office_address VARCHAR(200),
+    office_street VARCHAR(100),
+    office_district VARCHAR(100),
+    office_landmark VARCHAR(100),
+    office_city VARCHAR(50),
+    office_postal_code VARCHAR(10),
+    office_phone1 VARCHAR(20),
+    office_phone2 VARCHAR(20),
+    office_fax VARCHAR(20),
+
+    -- Previous Employment
+    prev_employer VARCHAR(100),
+    prev_designation VARCHAR(50),
+    prev_experience_years INTEGER,
+    prev_employer_tel VARCHAR(20),
+
+    -- Income Details
+    gross_monthly_income NUMERIC,
+    other_income_source VARCHAR(100),
+    total_income NUMERIC,
+    spouse_employed BOOLEAN,
+    spouse_income NUMERIC,
+    spouse_income_source VARCHAR(100),
+
+    -- Statement & Card Delivery
+    card_destination VARCHAR(20),          -- Home, Office
+    statement_delivery VARCHAR(30),        -- Email, Physical
+    email_for_statement VARCHAR(100),
+
+    -- Banking Details (current account info)
+    is_ubl_customer BOOLEAN,
+    ubl_account_number VARCHAR(30),
+    ubl_branch VARCHAR(100),
+
+    -- Auto Debit Instruction
+    payment_option VARCHAR(30),            -- Minimum Monthly, Full Payment
+    applicant_signature BYTEA,
+    signature_date DATE,
+
+    -- Reference for Non-UBL staff/Non-relative
+    reference_name VARCHAR(100),
+    reference_relationship VARCHAR(50),
+    reference_nic_or_passport VARCHAR(30),
+    reference_address_street VARCHAR(100),
+    reference_address_tehsil VARCHAR(100),
+    reference_address_landmark VARCHAR(100),
+    reference_address_city VARCHAR(50),
+    reference_address_postal_code VARCHAR(10),
+    reference_tel_res VARCHAR(20),
+    reference_tel_office VARCHAR(20),
+    reference_mobile VARCHAR(20),
+    reference_ntn VARCHAR(30),
+
+    -- For Bank's Use Only
+    application_id_form VARCHAR(50),
+    application_reference_number VARCHAR(50),
+    channel_code VARCHAR(10),
+    program_code VARCHAR(10),
+    branch_code VARCHAR(10),
+    sales_officer_name VARCHAR(100),
+    branch_name VARCHAR(100),
+    region_name VARCHAR(100),
+    customer_contact_confirmation BOOLEAN,
+    branch_manager_remarks TEXT,
+    branch_manager_signature BYTEA,
+    application_status VARCHAR(20),
+    reason_code VARCHAR(30),
+    analyst_name VARCHAR(100),
+    analyst_signature BYTEA,
+
+    -- Card Option Fields
+    card_photo BYTEA,
+    supplementary_card_photo BYTEA,
+
+    -- Credit Guardian & SMS Alert
+    avail_sms_alert BOOLEAN,
+    avail_credit_guardian BOOLEAN,
+    card_applicant_signature BYTEA,
+    card_applicant_signature_date DATE,
+
+    -- Supplementary Card Section
+    supplementary_cardholder_title VARCHAR(10),
+    supplementary_cardholder_first_name VARCHAR(100),
+    supplementary_cardholder_middle_name VARCHAR(100),
+    supplementary_cardholder_last_name VARCHAR(100),
+    supplementary_cardholder_name_on_card VARCHAR(100),
+    supplementary_cardholder_father_husband_name VARCHAR(100),
+    supplementary_card_type VARCHAR(30),
+    supplementary_card_limit_type VARCHAR(20),
+    supplementary_usage_frequency VARCHAR(30),
+    supplementary_relationship_to_principal VARCHAR(30),
+    supplementary_dob DATE,
+    supplementary_gender VARCHAR(10),
+    supplementary_nic_or_passport VARCHAR(30),
+    supplementary_mother_maiden_name VARCHAR(100),
+    supplementary_declaration_signature BYTEA,
+    supplementary_basic_cardholder_signature BYTEA,
+    supplementary_date DATE,
+
+    -- For Lien Marked Credit Cards
+    collateral_type VARCHAR(50),
+    collateral_bank VARCHAR(100),
+    collateral_branch VARCHAR(100),
+    collateral_account_no VARCHAR(50),
+    collateral_account_type VARCHAR(30),
+    collateral_lien_amount NUMERIC,
+    collateral_currency VARCHAR(10),
+    collateral_title VARCHAR(100),
+    collateral_maturity_date DATE,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
+
+now what you can do the thing is set logic in the backend of these file ILOS-backend/route/application.js
+here you can same logic as many of logic is done in the file and 
+then attched to frontend that data rendered in the page ILOS-frontend/app/dashboard/pb/application.tsx same as like ccashplus , commmercial, and some loan, and remember one thing in these you mentioned loan type is ameen drive  

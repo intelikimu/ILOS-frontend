@@ -490,39 +490,39 @@ export default function SMEAsaanPage() {
         main_business_account_open_date: toValidDate(bankingDetails.mainAccountOpenDate),
 
         // Vehicle Details (if applicable)
-        vehicle_manufacturer: vehicleDetails.manufacturer || "",
-        vehicle_model: vehicleDetails.model || "",
-        vehicle_year: vehicleDetails.year || "",
-        vehicle_local_assembled: vehicleDetails.assembledType === "local",
-        vehicle_imported: vehicleDetails.assembledType === "imported",
-        vehicle_new: vehicleDetails.newUsed === "new",
-        vehicle_used: vehicleDetails.newUsed === "used",
-        engine_no: vehicleDetails.engineNo || "",
-        engine_size_cc: toNumber(vehicleDetails.engineSize),
-        chassis_no: vehicleDetails.chassisNo || "",
-        purchase_poa: toValidDate(vehicleDetails.purchaseAdvance),
-        purchase_pod: toValidDate(vehicleDetails.purchaseDelivery),
-        vehicle_price: toNumber(vehicleDetails.price),
+        vehicle_manufacturer: (vehicleDetails || {}).manufacturer || "",
+        vehicle_model: (vehicleDetails || {}).model || "",
+        vehicle_year: (vehicleDetails || {}).year || "",
+        vehicle_local_assembled: (vehicleDetails || {}).assembledType === "local",
+        vehicle_imported: (vehicleDetails || {}).assembledType === "imported",
+        vehicle_new: (vehicleDetails || {}).newUsed === "new",
+        vehicle_used: (vehicleDetails || {}).newUsed === "used",
+        engine_no: (vehicleDetails || {}).engineNo || "",
+        engine_size_cc: toNumber((vehicleDetails || {}).engineSize),
+        chassis_no: (vehicleDetails || {}).chassisNo || "",
+        purchase_poa: toValidDate((vehicleDetails || {}).purchaseAdvance),
+        purchase_pod: toValidDate((vehicleDetails || {}).purchaseDelivery),
+        vehicle_price: toNumber((vehicleDetails || {}).price),
 
         // Seller/Dealer Info (if applicable)
-        seller_name: sellerDealerDetails.sellerName || "",
-        seller_cnic: sellerDealerDetails.sellerCnic || "",
-        seller_address: sellerDealerDetails.sellerAddress || "",
-        seller_contact_no: sellerDealerDetails.sellerContact || "",
-        dealer_name: sellerDealerDetails.dealerName || "",
-        dealer_address: sellerDealerDetails.dealerAddress || "",
-        dealer_email: sellerDealerDetails.dealerEmail || "",
-        dealer_contact_no: sellerDealerDetails.dealerContact || "",
+        seller_name: (sellerDealerDetails || {}).sellerName || "",
+        seller_cnic: (sellerDealerDetails || {}).sellerCnic || "",
+        seller_address: (sellerDealerDetails || {}).sellerAddress || "",
+        seller_contact_no: (sellerDealerDetails || {}).sellerContact || "",
+        dealer_name: (sellerDealerDetails || {}).dealerName || "",
+        dealer_address: (sellerDealerDetails || {}).dealerAddress || "",
+        dealer_email: (sellerDealerDetails || {}).dealerEmail || "",
+        dealer_contact_no: (sellerDealerDetails || {}).dealerContact || "",
 
         // Loan Details
-        vehicle_name: proposedLoanDetails.vehicleName || "",
-        desired_loan_amount: toNumber(proposedLoanDetails.desiredLoanAmount),
-        tenure_years: toNumber(proposedLoanDetails.tenureYears),
-        pricing: proposedLoanDetails.pricing || "",
-        down_payment_percent: toNumber(proposedLoanDetails.downPaymentPercent),
-        down_payment_amount: toNumber(proposedLoanDetails.downPaymentAmount),
-        insurance_company_name: proposedLoanDetails.insuranceCompany || "",
-        tracker_company_name: proposedLoanDetails.trackerCompany || "",
+        vehicle_name: (proposedLoanDetails || {}).vehicleName || "",
+        desired_loan_amount: toNumber((proposedLoanDetails || {}).desiredLoanAmount),
+        tenure_years: toNumber((proposedLoanDetails || {}).tenureYears),
+        pricing: (proposedLoanDetails || {}).pricing || "",
+        down_payment_percent: toNumber((proposedLoanDetails || {}).downPaymentPercent),
+        down_payment_amount: toNumber((proposedLoanDetails || {}).downPaymentAmount),
+        insurance_company_name: (proposedLoanDetails || {}).insuranceCompany || "",
+        tracker_company_name: (proposedLoanDetails || {}).trackerCompany || "",
 
         // Declaration
         declaration_agreed: toBoolean(declaration.agreed),
@@ -607,6 +607,13 @@ export default function SMEAsaanPage() {
 
       // Log the form data being sent for debugging
       console.log("Sending data to backend:", formData);
+      console.log("Raw customer data:", customerData);
+      console.log("SME Application data:", customerData?.smeApplication);
+      console.log("Personal details:", customerData?.personalDetails);
+      console.log("Banking details:", customerData?.bankingDetails);
+      console.log("Vehicle details:", vehicleDetails);
+      console.log("Seller/Dealer details:", sellerDealerDetails);
+      console.log("Proposed loan details:", proposedLoanDetails);
 
       // Add better debugging to check key fields
       console.log("Critical fields check:", {
@@ -664,7 +671,8 @@ export default function SMEAsaanPage() {
             if (cleanedData[dateField]) {
               try {
                 const date = new Date(cleanedData[dateField]);
-                if (isNaN(date.getTime())) {
+                // Check if it's a valid date and not the epoch date (1970-01-01)
+                if (isNaN(date.getTime()) || date.getTime() === 0) {
                   cleanedData[dateField] = null;
                 } else {
                   cleanedData[dateField] = date.toISOString().substring(0, 10);
@@ -739,6 +747,19 @@ export default function SMEAsaanPage() {
         // 4. Remove any undefined or circular reference values
         const safeData = JSON.parse(JSON.stringify(cleanedData));
 
+        // 5. Additional validation - check for problematic values
+        const problematicFields = [];
+        Object.entries(safeData).forEach(([key, value]) => {
+          if (value === "1970-01-01" || value === "1970-01-01T00:00:00.000Z") {
+            safeData[key] = null;
+            problematicFields.push(key);
+          }
+        });
+        
+        if (problematicFields.length > 0) {
+          console.warn("Fixed problematic date fields:", problematicFields);
+        }
+
         console.log("Sending cleaned data to backend:", safeData);
 
         let response;
@@ -796,6 +817,12 @@ export default function SMEAsaanPage() {
         }
 
         if (!response.ok) {
+          console.error("Backend error details:", {
+            status: response.status,
+            statusText: response.statusText,
+            responseText: responseText,
+            result: result
+          });
           throw new Error(result.error || result.message || `Server responded with status: ${response.status}`);
         }
 
@@ -863,14 +890,32 @@ export default function SMEAsaanPage() {
                 </div>
               </div>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => router.push('/dashboard/applicant')}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Selection
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/debug-smeasaan-submission', { method: 'POST' });
+                    const data = await response.json();
+                    console.log('🧪 Test submission result:', data);
+                    alert(`Test result: ${data.success ? 'SUCCESS' : 'FAILED'}\n${data.message || data.error}`);
+                  } catch (error) {
+                    console.error('Test failed:', error);
+                    alert('Test failed');
+                  }
+                }}
+              >
+                Test Submission
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => router.push('/dashboard/applicant')}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Selection
+              </Button>
+            </div>
           </div>
 
           {customerData?.personalDetails && (

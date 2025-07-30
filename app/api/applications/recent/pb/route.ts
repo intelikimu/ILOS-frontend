@@ -5,6 +5,9 @@ export async function GET(request: NextRequest) {
     // Get the base URL for the backend
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
     
+    console.log('🔄 Frontend: Starting to fetch applications...');
+    console.log('🔄 Frontend: Backend URL:', `${baseUrl}/api/applications/recent/pb`);
+    
     // Make request to backend
     const response = await fetch(`${baseUrl}/api/applications/recent/pb`, {
       method: 'GET',
@@ -13,22 +16,28 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    console.log('🔄 Frontend: Backend response status:', response.status);
+
     if (!response.ok) {
+      console.error('❌ Frontend: Backend responded with status:', response.status);
       throw new Error(`Backend responded with status: ${response.status}`);
     }
 
     const data = await response.json();
+    console.log('✅ Frontend: Backend returned applications:', data);
+    console.log('✅ Frontend: Number of applications received:', data.length);
     
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error fetching recent applications:', error);
+    console.error('❌ Frontend: Error fetching recent applications:', error);
     
     // Return fallback data if backend is not available
+    console.log('Returning fallback data due to backend error');
     return NextResponse.json([
       {
         id: "UBL-2024-001240",
         applicantName: "Ali Raza",
-        loanType: "Personal Loan",
+        loanType: "CashPlus Loan",
         amount: "PKR 1,500,000",
         status: "submitted_to_spu",
         priority: "medium",

@@ -12,7 +12,7 @@ export const FinancingOptionForm: React.FC<Props> = ({ formData, handleInputChan
       <h2 className="text-2xl text-white font-semibold mb-4 rounded-lg p-4 bg-blue-500">
         11. Financing / Leasing Option
       </h2>
-      <form>
+      <div>
         <label className="block font-semibold text-sm mb-3">Select Option</label>
         <div className="flex flex-col gap-4">
           <label className="flex items-center gap-2 text-base font-medium">
@@ -46,7 +46,7 @@ export const FinancingOptionForm: React.FC<Props> = ({ formData, handleInputChan
             Leasing with RV Option (Vehicle in Bank's name)
           </label>
         </div>
-      </form>
+      </div>
     </section>
   );
 };

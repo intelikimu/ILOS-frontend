@@ -65,25 +65,26 @@ const AutoLoanPage = () => {
   const [currentSection, setCurrentSection] = useState("product");
 
   const refs = {
-    product: useRef(null),
-    vehicle: useRef(null),
-    insurance: useRef(null),
-    dealer: useRef(null),
-    personal: useRef(null),
-    occupation: useRef(null),
-    income: useRef(null),
-    banking: useRef(null),
-    exposure: useRef(null),
-    references: useRef(null),
-    financing: useRef(null),
-    signatures: useRef(null),
-    bankUse: useRef(null),
+    product: useRef<HTMLDivElement>(null),
+    vehicle: useRef<HTMLDivElement>(null),
+    insurance: useRef<HTMLDivElement>(null),
+    dealer: useRef<HTMLDivElement>(null),
+    personal: useRef<HTMLDivElement>(null),
+    occupation: useRef<HTMLDivElement>(null),
+    income: useRef<HTMLDivElement>(null),
+    banking: useRef<HTMLDivElement>(null),
+    exposure: useRef<HTMLDivElement>(null),
+    references: useRef<HTMLDivElement>(null),
+    financing: useRef<HTMLDivElement>(null),
+    signatures: useRef<HTMLDivElement>(null),
+    bankUse: useRef<HTMLDivElement>(null),
   };
 
   const [formData, setFormData] = useState<any>({
     customer_id: customerData?.customerId || "",
     applicant_cnic: customerData?.personalDetails?.cnic || "",
     auto_application_id: `AUTO-${Math.floor(100 + Math.random() * 900)}`,
+    application_source: [], // Initialize as empty array to prevent controlled/uncontrolled input issues
     references: [{}, {}],
     credit_cards_clean: [{}],
     credit_cards_secured: [{}],
@@ -137,50 +138,182 @@ const AutoLoanPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-
     const payload = {
-    ...formData,
+      ...formData,
 
-    // remap frontend camelCase to backend snake_case
-    company_name: formData.companyName,
-    nature_of_business: formData.natureOfBusiness,
-    shareholding_percent: formData.sharePct,
-    employer_city: formData.employerCity,
-    employer_country: formData.employerCountry,
-    tehsil: formData.tehsil,
+      // Map frontend fields to backend expected fields
+      // Personal Details
+      title: formData.title || null,
+      first_name: formData.firstName || null,
+      middle_name: formData.middleName || null,
+      last_name: formData.lastName || null,
+      gender: formData.gender || null,
+      marital_status: formData.maritalStatus || null,
+      date_of_birth: formData.dateOfBirth || null,
+      passport_no: formData.passportNo || null,
+      educational_qualification: formData.educationalQualification || null,
+      mothers_maiden_name: formData.mothersMaidenName || null,
+      father_or_husband_name: formData.fatherHusbandName || null,
+      num_children: formData.numChildren || null,
+      num_other_dependents: formData.numOtherDependents || null,
+      dependents_specify: formData.dependentsSpecify || null,
+      next_of_kin: formData.nextOfKin || null,
+      next_of_kin_relation: formData.nextOfKinRelation || null,
+      next_of_kin_cnic: formData.nextOfKinCnic || null,
+      next_of_kin_contact: formData.nextOfKinContact || null,
 
+      // Current Address
+      curr_house_no: formData.currHouseNo || null,
+      curr_street: formData.currStreet || null,
+      curr_area: formData.currArea || null,
+      curr_landmark: formData.currLandmark || null,
+      curr_city: formData.currCity || null,
+      curr_country: formData.currCountry || null,
+      curr_postal_code: formData.currPostalCode || null,
+      curr_tel_residence: formData.currTelResidence || null,
+      curr_mobile: formData.currMobile || null,
+      curr_email: formData.currEmail || null,
+      curr_years_address: formData.currYearsAddress || null,
+      curr_years_city: formData.currYearsCity || null,
+      residential_status: formData.residentialStatus || null,
+      monthly_rent: formData.monthlyRent || null,
 
-    // Exposure/References mappings
-    credit_cards_clean: formData.credit_cards_clean?.map((item: any) => ({
-      bank_name: item.name,
-      approved_limit: item.limit,
-    })),
-    credit_cards_secured: formData.credit_cards_secured?.map((item: any) => ({
-      bank_name: item.name,
-      approved_limit: item.limit,
-    })),
-    personal_loans_clean: formData.personal_loans_clean?.map((item: any) => ({
-      bank_name: item.name,
-      approved_limit: item.limit,
-      outstanding_amount: item.outstanding,
-    })),
-    personal_loans_secured: formData.personal_loans_secured?.map((item: any) => ({
-      bank_name: item.name,
-      approved_limit: item.limit,
-      outstanding_amount: item.outstanding,
-    })),
-    other_facilities: formData.other_facilities?.map((item: any) => ({
-      bank_name: item.name,
-      approved_limit: item.limit,
-      nature: item.nature,
-      current_outstanding: item.outstanding,
-    })),
-    applied_limits: formData.applied_limits?.map((item: any) => ({
-      bank_name: item.name,
-      facility_under_process: item.facility,
-      nature_of_facility: item.nature,
-    })),
-  };
+      // Permanent Address
+      perm_house_no: formData.permHouseNo || null,
+      perm_street: formData.permStreet || null,
+      perm_area: formData.permArea || null,
+      perm_city: formData.permCity || null,
+      perm_country: formData.permCountry || null,
+      perm_postal_code: formData.permPostalCode || null,
+      perm_tel_residence: formData.permTelResidence || null,
+
+      // Employment Details
+      employment_type: formData.employmentType || null,
+      employment_status: formData.employmentStatus || null,
+      business_type: formData.businessType || null,
+      business_type_other: formData.businessTypeOther || null,
+      years_in_business: formData.yearsInBusiness || null,
+      business_address: formData.employerAddress || null,
+      business_street: formData.businessStreet || null,
+      business_area: formData.businessArea || null,
+      business_city: formData.employerCity || null,
+      business_country: formData.employerCountry || null,
+      business_postal_code: formData.businessPostalCode || null,
+      business_tel: formData.employerPhone || null,
+      business_landmark: formData.nearestLandmark || null,
+      prev_employer_name: formData.prevEmployerName || null,
+      prev_designation: formData.prevDesignation || null,
+      prev_experience_years: formData.prevExperience || null,
+      prev_employer_tel: formData.prevPhone || null,
+
+      // Co-borrower Details
+      co_borrower_case: formData.coBorrowerCase || null,
+      co_borrower_name: formData.coBorrowerName || null,
+      co_borrower_relationship: formData.coBorrowerRelationship || null,
+      co_borrower_cnic: formData.coBorrowerCnic || null,
+
+      // Signature Dates
+      applicant_signature_date: formData.applicantSignatureDate || null,
+      co_borrower_signature_date: formData.coBorrowerSignatureDate || null,
+
+      // Convert application_source array to JSON string
+      application_source: JSON.stringify(formData.application_source || []),
+
+      // Add missing required fields with defaults
+      city: formData.city || 'Test City',
+      product_type: formData.productType || 'Auto Loan',
+      payment_mode: formData.paymentMode || 'Monthly',
+      pricing_plan: formData.pricingPlan || 'Standard',
+      fixed_rate: formData.fixedRate || 0,
+      kibor_rate: formData.kiborRate || 0,
+      margin: formData.margin || 0,
+      vehicle_manufacturer: formData.vehicleManufacturer || 'Test Manufacturer',
+      vehicle_model: formData.vehicleModel || 'Test Model',
+      year_of_manufacture: formData.yearOfManufacture || 2025,
+      vehicle_class_engine_size: formData.vehicleClassEngineSize || '1000cc',
+      price_value: formData.priceValue || 1000000,
+      down_payment_percent: formData.downPaymentPercent || 20,
+      down_payment_amount: formData.downPaymentAmount || 200000,
+      desired_loan_amount: formData.desiredLoanAmount || 800000,
+      installment_period: formData.installmentPeriod || 60,
+      insurance_company_name: formData.insuranceCompanyName || 'Test Insurance',
+      insurance_rate: formData.insuranceRate || 0,
+      dealer_name: formData.dealerName || 'Test Dealer',
+      gross_monthly_salary: formData.grossMonthlySalary || 0,
+      other_monthly_income: formData.otherMonthlyIncome || 0,
+      total_gross_monthly_income: formData.totalGrossMonthlyIncome || 0,
+      net_monthly_income: formData.netMonthlyIncome || 0,
+      other_income_type: formData.otherIncomeType || '',
+      other_income_specify: formData.otherIncomeSpecify || '',
+      spouse_employed: formData.spouseEmployed || 'No',
+      spousal_income: formData.spousalIncome || 0,
+      spouse_income_source: formData.spouseIncomeSource || '',
+      statement_to_be_sent: formData.statementToBeSent || 'Home',
+      repayment_account_type: formData.repaymentAccountType || 'Current',
+      repayment_currency_type: formData.repaymentCurrencyType || 'PKR',
+      channel_code: formData.channelCode || 'BRANCH',
+      program_code: formData.programCode || 'AUTO',
+      branch_code: formData.branchCode || '001',
+      so_employee_no: formData.soEmployeeNo || 'EMP001',
+      so_employee_name: formData.soEmployeeName || 'Test Employee',
+      pb_bm_employee_no: formData.pbBmEmployeeNo || 'BM001',
+      pb_bm_employee_name: formData.pbBmEmployeeName || 'Test BM',
+      sm_employee_no: formData.smEmployeeNo || 'SM001',
+      sm_employee_name: formData.smEmployeeName || 'Test SM',
+      dealership_name: formData.dealershipName || 'Test Dealership',
+      branch_name_code: formData.branchNameCode || '001',
+      financing_option: formData.financingOption || 'Auto Financing',
+
+      // References - ensure proper structure
+      references: formData.references?.map((ref: any, index: number) => ({
+        reference_no: index + 1,
+        name: ref.name || '',
+        cnic: ref.cnic || '',
+        relationship: ref.relationship || '',
+        relationship_other: ref.relationshipOther || '',
+        house_no: ref.houseNo || '',
+        street: ref.street || '',
+        area: ref.area || '',
+        city: ref.city || '',
+        country: ref.country || 'Pakistan',
+        postal_code: ref.postalCode || '',
+        tel_residence: ref.telResidence || '',
+        tel_office: ref.telOffice || '',
+        mobile_no: ref.mobileNo || '',
+        email: ref.email || ''
+      })) || [],
+
+      // Exposure/References mappings
+      credit_cards_clean: formData.credit_cards_clean?.map((item: any) => ({
+        bank_name: item.name || '',
+        approved_limit: item.limit || 0,
+      })) || [],
+      credit_cards_secured: formData.credit_cards_secured?.map((item: any) => ({
+        bank_name: item.name || '',
+        approved_limit: item.limit || 0,
+      })) || [],
+      personal_loans_clean: formData.personal_loans_clean?.map((item: any) => ({
+        bank_name: item.name || '',
+        approved_limit: item.limit || 0,
+        outstanding_amount: item.outstanding || 0,
+      })) || [],
+      personal_loans_secured: formData.personal_loans_secured?.map((item: any) => ({
+        bank_name: item.name || '',
+        approved_limit: item.limit || 0,
+        outstanding_amount: item.outstanding || 0,
+      })) || [],
+      other_facilities: formData.other_facilities?.map((item: any) => ({
+        bank_name: item.name || '',
+        approved_limit: item.limit || 0,
+        nature: item.nature || '',
+        current_outstanding: item.outstanding || 0,
+      })) || [],
+      applied_limits: formData.applied_limits?.map((item: any) => ({
+        bank_name: item.name || '',
+        facility_under_process: item.facility || '',
+        nature_of_facility: item.nature || '',
+      })) || [],
+    };
 
   console.log("✅ Final Payload:", payload);
 
@@ -192,10 +325,21 @@ const AutoLoanPage = () => {
     });
     const result = await res.json();
     console.log("✅ Submission Result:", result);
+    
+    if (!res.ok) {
+      console.error("❌ Backend Error:", result);
+      const errorMessage = result.error || result.errorDetails || 'Unknown error';
+      alert(`Submission failed: ${errorMessage}`);
+    } else {
+      alert("Application submitted successfully!");
+    }
   } catch (err) {
     console.error("❌ Submission Error:", err);
+    alert("Submission failed. Please try again.");
   }
 };
+
+
 
   const handleScrollTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
   const scrollToSection = (key: keyof typeof refs) =>
@@ -269,22 +413,88 @@ const AutoLoanPage = () => {
             </button>
           ))}
         </div>
+        
+
       </div>
 
       <div className="space-y-10">
-        <div ref={refs.product}><ProductProgramForm formData={formData} handleInputChange={handleInputChange} /></div>
-        <div ref={refs.vehicle}><VehicleDetailsForm formData={formData} handleInputChange={handleInputChange} /></div>
-        <div ref={refs.insurance}><InsuranceDetailsForm formData={formData} handleInputChange={handleInputChange} /></div>
-        <div ref={refs.dealer}><DealerDetailsForm formData={formData} handleInputChange={handleInputChange} /></div>
-        <div ref={refs.personal}><PersonalDetailsForm formData={formData} handleInputChange={handleInputChange} /></div>
-        <div ref={refs.occupation}><OccupationForm formData={formData} handleInputChange={handleInputChange} /></div>
-        <div ref={refs.income}><IncomeDetailsForm formData={formData} handleInputChange={handleInputChange} /></div>
-        <div ref={refs.banking}><BankingDetailsForm formData={formData} handleInputChange={handleInputChange} /></div>
-        <div ref={refs.exposure}><ExposureUndertakingForm formData={formData} handleInputChange={handleExposureChange} /></div>
-        <div ref={refs.references}><ReferencesForm formData={formData} handleReferenceChange={handleReferenceChange} /></div>
-        <div ref={refs.financing}><FinancingOptionForm formData={formData} handleInputChange={handleInputChange} /></div>
-        <div ref={refs.signatures}><SignaturesForm formData={formData} handleInputChange={handleInputChange} /></div>
-        <div ref={refs.bankUse}><BankUseOnlyForm formData={formData} handleInputChange={handleInputChange} setFormData={setFormData} /></div>
+        <div ref={refs.product}>
+          <ProductProgramForm 
+            formData={formData} 
+            handleInputChange={handleInputChange} 
+          />
+        </div>
+        <div ref={refs.vehicle}>
+          <VehicleDetailsForm 
+            formData={formData} 
+            handleInputChange={handleInputChange} 
+          />
+        </div>
+        <div ref={refs.insurance}>
+          <InsuranceDetailsForm 
+            formData={formData} 
+            handleInputChange={handleInputChange} 
+          />
+        </div>
+        <div ref={refs.dealer}>
+          <DealerDetailsForm 
+            formData={formData} 
+            handleInputChange={handleInputChange} 
+          />
+        </div>
+        <div ref={refs.personal}>
+          <PersonalDetailsForm />
+        </div>
+        <div ref={refs.occupation}>
+          <OccupationForm 
+            formData={formData} 
+            handleInputChange={handleInputChange} 
+          />
+        </div>
+        <div ref={refs.income}>
+          <IncomeDetailsForm 
+            formData={formData} 
+            handleInputChange={handleInputChange} 
+          />
+        </div>
+        <div ref={refs.banking}>
+          <BankingDetailsForm 
+            formData={formData} 
+            handleInputChange={handleInputChange} 
+            setFormData={setFormData}
+          />
+        </div>
+        <div ref={refs.exposure}>
+          <ExposureUndertakingForm 
+            formData={formData} 
+            handleInputChange={handleExposureChange} 
+          />
+        </div>
+        <div ref={refs.references}>
+          <ReferencesForm 
+            formData={formData} 
+            handleReferenceChange={handleReferenceChange} 
+          />
+        </div>
+        <div ref={refs.financing}>
+          <FinancingOptionForm 
+            formData={formData} 
+            handleInputChange={handleInputChange} 
+          />
+        </div>
+        <div ref={refs.signatures}>
+          <SignaturesForm 
+            formData={formData} 
+            handleInputChange={handleInputChange} 
+          />
+        </div>
+        <div ref={refs.bankUse}>
+          <BankUseOnlyForm 
+            formData={formData} 
+            handleInputChange={handleInputChange} 
+            setFormData={setFormData} 
+          />
+        </div>
       </div>
 
       <div className="flex justify-end mt-6">

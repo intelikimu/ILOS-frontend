@@ -12,7 +12,7 @@ export const InsuranceDetailsForm: React.FC<Props> = ({ formData, handleInputCha
       <h2 className="text-2xl text-white font-semibold mb-4 rounded-lg p-4 bg-blue-500">
         3. Insurance Details
       </h2>
-      <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium mb-1">Insurance Company Name</label>
           <input
@@ -35,7 +35,7 @@ export const InsuranceDetailsForm: React.FC<Props> = ({ formData, handleInputCha
             className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-2"
           />
         </div>
-      </form>
+      </div>
     </section>
   );
 };

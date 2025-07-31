@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { Search, Filter, Clock, CheckCircle, AlertTriangle, FileText, Eye, MoreHorizontal, ArrowRight, ArrowLeft, X } from "lucide-react"
+import { Search, Filter, Clock, CheckCircle, AlertTriangle, FileText, Eye, MoreHorizontal, ArrowRight, ArrowLeft, X, Download, ExternalLink, Check, Ban } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 // Mock data for SPU dashboard
@@ -108,16 +108,20 @@ const statsData = [
 
 function getStatusBadge(status: string) {
   switch (status) {
+    case "submitted_to_spu":
+      return <Badge className="bg-blue-100 text-blue-800">New</Badge>
+    case "under_review":
+      return <Badge className="bg-yellow-100 text-yellow-800">Under Review</Badge>
+    case "verified":
+      return <Badge className="bg-green-100 text-green-800">Verified</Badge>
+    case "returned":
+      return <Badge variant="destructive">Returned</Badge>
     case "New":
       return <Badge className="bg-blue-100 text-blue-800">New</Badge>
     case "Document Check":
       return <Badge className="bg-yellow-100 text-yellow-800">Document Check</Badge>
     case "Final Review":
       return <Badge className="bg-purple-100 text-purple-800">Final Review</Badge>
-    case "Verified":
-      return <Badge className="bg-green-100 text-green-800">Verified</Badge>
-    case "Returned":
-      return <Badge variant="destructive">Returned</Badge>
     default:
       return <Badge variant="secondary">{status}</Badge>
   }
@@ -144,7 +148,18 @@ export default function SPUDashboardPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [spuApplications, setSpuApplications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [stats, setStats] = useState(statsData)
+  const [selectedDocument, setSelectedDocument] = useState<any>(null)
+  const [showDocumentViewer, setShowDocumentViewer] = useState(false)
+  const [verificationComments, setVerificationComments] = useState("")
+  const [fieldVerification, setFieldVerification] = useState({
+    nameVerified: false,
+    cnicVerified: false,
+    incomeVerified: false,
+    addressVerified: false,
+    employmentVerified: false
+  })
   const { toast } = useToast()
 
   // Fetch SPU applications from backend
@@ -155,30 +170,57 @@ export default function SPUDashboardPage() {
   const fetchSpuApplications = async () => {
     try {
       setLoading(true)
-      const response = await fetch('http://localhost:5000/api/spu/applications')
-      const data = await response.json()
+      setError(null)
       
-      if (response.ok) {
-        setSpuApplications(data)
-        // Update stats based on real data
-        setStats(prev => [
-          { ...prev[0], value: data.filter((app: any) => app.status === 'pending_review').length.toString() },
-          { ...prev[1], value: data.filter((app: any) => app.status === 'verified').length.toString() },
-          { ...prev[2], value: data.filter((app: any) => app.status === 'returned').length.toString() },
-          { ...prev[3], value: data.length.toString() }
-        ])
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to fetch applications",
-          variant: "destructive"
-        })
+      console.log('🔄 Starting to fetch SPU applications...')
+      
+      // Use the Next.js API route instead of direct backend call
+      const timestamp = new Date().getTime()
+      const response = await fetch(`/api/applications/spu?t=${timestamp}`, {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
+        cache: 'no-store'
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch SPU applications')
       }
-    } catch (error) {
-      console.error('Error fetching SPU applications:', error)
+      
+      const data = await response.json()
+      console.log('📊 Raw SPU data from API:', data)
+      console.log('📊 Number of SPU applications received:', data.length)
+      
+      // Log each application
+      data.forEach((app: any, index: number) => {
+        console.log(`📋 SPU Application ${index + 1}:`, {
+          id: app.id,
+          los_id: app.los_id,
+          applicant_name: app.applicant_name,
+          loan_type: app.loan_type,
+          loan_amount: app.loan_amount,
+          status: app.status
+        })
+      })
+      
+      setSpuApplications(data)
+      
+      // Update stats based on real data
+      setStats(prev => [
+        { ...prev[0], value: data.filter((app: any) => app.status === 'submitted_to_spu').length.toString() },
+        { ...prev[1], value: data.filter((app: any) => app.status === 'verified').length.toString() },
+        { ...prev[2], value: data.filter((app: any) => app.status === 'returned').length.toString() },
+        { ...prev[3], value: data.length.toString() }
+      ])
+    } catch (err) {
+      console.error('❌ Error fetching SPU applications:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch SPU applications')
+      
       toast({
         title: "Error",
-        description: "Failed to connect to server",
+        description: "Failed to fetch SPU applications",
         variant: "destructive"
       })
     } finally {
@@ -196,7 +238,17 @@ export default function SPUDashboardPage() {
   })
 
   const handleVerifyDocument = (docId: string) => {
-    // Update document status logic would go here
+    if (!selectedApplication) return
+    
+    // Update document status in the application
+    const updatedApplication = {
+      ...selectedApplication,
+      documents: selectedApplication.documents.map((doc: any) => 
+        doc.id === docId ? { ...doc, status: "verified" } : doc
+      )
+    }
+    setSelectedApplication(updatedApplication)
+    
     toast({
       title: "Document Verified",
       description: "Document has been marked as verified",
@@ -204,29 +256,129 @@ export default function SPUDashboardPage() {
   }
 
   const handleRejectDocument = (docId: string) => {
-    // Update document status logic would go here
+    if (!selectedApplication) return
+    
+    // Update document status in the application
+    const updatedApplication = {
+      ...selectedApplication,
+      documents: selectedApplication.documents.map((doc: any) => 
+        doc.id === docId ? { ...doc, status: "rejected" } : doc
+      )
+    }
+    setSelectedApplication(updatedApplication)
+    
     toast({
       title: "Document Rejected",
       description: "Document has been marked as rejected",
     })
   }
 
+  const handleViewDocument = (document: any) => {
+    setSelectedDocument(document)
+    setShowDocumentViewer(true)
+  }
+
+  const handleDownloadDocument = (document: any) => {
+    // Simulate document download
+    const link = document.createElement('a')
+    link.href = `http://localhost:8081/explorer/ilos_loan_application_documents/${selectedApplication?.application_type}/${selectedApplication?.los_id}/${document.name}`
+    link.download = document.name
+    link.target = '_blank'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    toast({
+      title: "Download Started",
+      description: `Downloading ${document.name}...`,
+    })
+  }
+
   const handleVerifyApplication = () => {
-    // Update application status logic would go here
+    if (!selectedApplication) return
+    
+    // Check if all required documents are verified
+    const requiredDocuments = selectedApplication.documents.filter((doc: any) => doc.required)
+    const unverifiedRequired = requiredDocuments.filter((doc: any) => doc.status !== "verified")
+    
+    if (unverifiedRequired.length > 0) {
+      toast({
+        title: "Verification Incomplete",
+        description: "All required documents must be verified before proceeding",
+        variant: "destructive"
+      })
+      return
+    }
+    
+    // Check if all field verifications are complete
+    const allFieldsVerified = Object.values(fieldVerification).every(verified => verified)
+    if (!allFieldsVerified) {
+      toast({
+        title: "Field Verification Incomplete",
+        description: "All field verifications must be completed before proceeding",
+        variant: "destructive"
+      })
+      return
+    }
+    
+    // Update application status
+    const updatedApplications = spuApplications.map(app => 
+      app.id === selectedApplication.id 
+        ? { ...app, status: "verified" }
+        : app
+    )
+    setSpuApplications(updatedApplications)
+    
     toast({
       title: "Application Verified",
       description: "Application has been verified and sent to COPS",
     })
     setSelectedApplication(null)
+    setVerificationStep(1)
+    setVerificationComments("")
+    setFieldVerification({
+      nameVerified: false,
+      cnicVerified: false,
+      incomeVerified: false,
+      addressVerified: false,
+      employmentVerified: false
+    })
   }
 
   const handleReturnApplication = () => {
-    // Update application status logic would go here
+    if (!selectedApplication) return
+    
+    if (!verificationComments.trim()) {
+      toast({
+        title: "Comments Required",
+        description: "Please provide comments for returning the application",
+        variant: "destructive"
+      })
+      return
+    }
+    
+    // Update application status
+    const updatedApplications = spuApplications.map(app => 
+      app.id === selectedApplication.id 
+        ? { ...app, status: "returned" }
+        : app
+    )
+    setSpuApplications(updatedApplications)
+    
     toast({
       title: "Application Returned",
       description: "Application has been returned to PB for corrections",
     })
     setSelectedApplication(null)
+    setVerificationStep(1)
+    setVerificationComments("")
+    setFieldVerification({
+      nameVerified: false,
+      cnicVerified: false,
+      incomeVerified: false,
+      addressVerified: false,
+      employmentVerified: false
+    })
   }
 
   return (
@@ -292,8 +444,8 @@ export default function SPUDashboardPage() {
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="submitted_to_spu">New</SelectItem>
-                    <SelectItem value="spu_verified">Verified</SelectItem>
-                    <SelectItem value="spu_returned">Returned</SelectItem>
+                    <SelectItem value="verified">Verified</SelectItem>
+                    <SelectItem value="returned">Returned</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -458,36 +610,48 @@ export default function SPUDashboardPage() {
                                                 {getDocumentStatusBadge(doc.status)}
                                               </TableCell>
                                               <TableCell>{doc.required ? "Yes" : "No"}</TableCell>
-                                              <TableCell className="text-right">
-                                                <div className="flex justify-end gap-2">
-                                                  <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => handleVerifyDocument(doc.id)}
-                                                  >
-                                                    <Eye className="h-4 w-4 mr-1" />
-                                                    View
-                                                  </Button>
-                                                  <Button
-                                                    variant="default"
-                                                    size="sm"
-                                                    onClick={() => handleVerifyDocument(doc.id)}
-                                                    disabled={doc.status === "verified"}
-                                                  >
-                                                    <CheckCircle className="h-4 w-4 mr-1" />
-                                                    Verify
-                                                  </Button>
-                                                  <Button
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    onClick={() => handleRejectDocument(doc.id)}
-                                                    disabled={doc.status === "rejected"}
-                                                  >
-                                                    <X className="h-4 w-4 mr-1" />
-                                                    Reject
-                                                  </Button>
-                                                </div>
-                                              </TableCell>
+                                                                                             <TableCell className="text-right">
+                                                 <div className="flex justify-end gap-2">
+                                                   <Button
+                                                     variant="outline"
+                                                     size="sm"
+                                                     onClick={() => handleViewDocument(doc)}
+                                                     title="View Document"
+                                                   >
+                                                     <Eye className="h-4 w-4 mr-1" />
+                                                     View
+                                                   </Button>
+                                                   <Button
+                                                     variant="outline"
+                                                     size="sm"
+                                                     onClick={() => handleDownloadDocument(doc)}
+                                                     title="Download Document"
+                                                   >
+                                                     <Download className="h-4 w-4 mr-1" />
+                                                     Download
+                                                   </Button>
+                                                   <Button
+                                                     variant="default"
+                                                     size="sm"
+                                                     onClick={() => handleVerifyDocument(doc.id)}
+                                                     disabled={doc.status === "verified"}
+                                                     title="Verify Document"
+                                                   >
+                                                     <Check className="h-4 w-4 mr-1" />
+                                                     Verify
+                                                   </Button>
+                                                   <Button
+                                                     variant="destructive"
+                                                     size="sm"
+                                                     onClick={() => handleRejectDocument(doc.id)}
+                                                     disabled={doc.status === "rejected"}
+                                                     title="Reject Document"
+                                                   >
+                                                     <Ban className="h-4 w-4 mr-1" />
+                                                     Reject
+                                                   </Button>
+                                                 </div>
+                                               </TableCell>
                                             </TableRow>
                                           ))}
                                         </TableBody>
@@ -520,23 +684,76 @@ export default function SPUDashboardPage() {
                                         Verify application details match with documents
                                       </CardDescription>
                                     </CardHeader>
-                                    <CardContent>
-                                      <div className="space-y-4">
-                                        <div className="grid grid-cols-2 gap-4">
-                                          {/* Add checkboxes */}
-                                          {/* ... as you had ... */}
-                                          {/* ... name, cnic, income, address ... */}
-                                        </div>
+                                                                         <CardContent>
+                                       <div className="space-y-6">
+                                         <div className="grid grid-cols-2 gap-4">
+                                           <div className="space-y-4">
+                                             <div className="flex items-center space-x-2">
+                                               <Checkbox
+                                                 id="nameVerified"
+                                                 checked={fieldVerification.nameVerified}
+                                                 onCheckedChange={(checked) => 
+                                                   setFieldVerification(prev => ({ ...prev, nameVerified: !!checked }))
+                                                 }
+                                               />
+                                               <Label htmlFor="nameVerified">Applicant Name Verified</Label>
+                                             </div>
+                                             <div className="flex items-center space-x-2">
+                                               <Checkbox
+                                                 id="cnicVerified"
+                                                 checked={fieldVerification.cnicVerified}
+                                                 onCheckedChange={(checked) => 
+                                                   setFieldVerification(prev => ({ ...prev, cnicVerified: !!checked }))
+                                                 }
+                                               />
+                                               <Label htmlFor="cnicVerified">CNIC Verified</Label>
+                                             </div>
+                                             <div className="flex items-center space-x-2">
+                                               <Checkbox
+                                                 id="incomeVerified"
+                                                 checked={fieldVerification.incomeVerified}
+                                                 onCheckedChange={(checked) => 
+                                                   setFieldVerification(prev => ({ ...prev, incomeVerified: !!checked }))
+                                                 }
+                                               />
+                                               <Label htmlFor="incomeVerified">Income Details Verified</Label>
+                                             </div>
+                                           </div>
+                                           <div className="space-y-4">
+                                             <div className="flex items-center space-x-2">
+                                               <Checkbox
+                                                 id="addressVerified"
+                                                 checked={fieldVerification.addressVerified}
+                                                 onCheckedChange={(checked) => 
+                                                   setFieldVerification(prev => ({ ...prev, addressVerified: !!checked }))
+                                                 }
+                                               />
+                                               <Label htmlFor="addressVerified">Address Verified</Label>
+                                             </div>
+                                             <div className="flex items-center space-x-2">
+                                               <Checkbox
+                                                 id="employmentVerified"
+                                                 checked={fieldVerification.employmentVerified}
+                                                 onCheckedChange={(checked) => 
+                                                   setFieldVerification(prev => ({ ...prev, employmentVerified: !!checked }))
+                                                 }
+                                               />
+                                               <Label htmlFor="employmentVerified">Employment Details Verified</Label>
+                                             </div>
+                                           </div>
+                                         </div>
 
-                                        <div className="space-y-2">
-                                          <Label htmlFor="comments">Comments</Label>
-                                          <Textarea
-                                            id="comments"
-                                            placeholder="Add any comments or notes about this application..."
-                                          />
-                                        </div>
-                                      </div>
-                                    </CardContent>
+                                         <div className="space-y-2">
+                                           <Label htmlFor="comments">Verification Comments</Label>
+                                           <Textarea
+                                             id="comments"
+                                             placeholder="Add any comments or notes about this verification..."
+                                             value={verificationComments}
+                                             onChange={(e) => setVerificationComments(e.target.value)}
+                                           />
+                                         </div>
+                                       </div>
+                                     </CardContent>
                                   </Card>
 
                                   <div className="flex justify-between">
@@ -594,8 +811,81 @@ export default function SPUDashboardPage() {
             <p>Returned applications will appear here...</p>
           </CardContent>
         </Card>
-      </TabsContent>
-    </Tabs>
-  </div>
-);
-}
+             </TabsContent>
+     </Tabs>
+
+     {/* Document Viewer Modal */}
+     <Dialog open={showDocumentViewer} onOpenChange={setShowDocumentViewer}>
+       <DialogContent className="max-w-4xl max-h-[80vh]">
+         <DialogHeader>
+           <DialogTitle>Document Viewer</DialogTitle>
+           <DialogDescription>
+             {selectedDocument ? `Viewing: ${selectedDocument.name}` : "Loading document..."}
+           </DialogDescription>
+         </DialogHeader>
+         
+         {selectedDocument && (
+           <div className="space-y-4">
+             <div className="flex items-center justify-between">
+               <div>
+                 <h3 className="font-medium">{selectedDocument.name}</h3>
+                 <p className="text-sm text-muted-foreground">
+                   Status: {getDocumentStatusBadge(selectedDocument.status)}
+                 </p>
+               </div>
+               <div className="flex gap-2">
+                 <Button
+                   variant="outline"
+                   size="sm"
+                   onClick={() => handleDownloadDocument(selectedDocument)}
+                 >
+                   <Download className="h-4 w-4 mr-2" />
+                   Download
+                 </Button>
+                                   <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(`http://localhost:8081/explorer/ilos_loan_application_documents/${selectedApplication?.application_type}/${selectedApplication?.los_id}/${selectedDocument.name}`, '_blank')}
+                  >
+                   <ExternalLink className="h-4 w-4 mr-2" />
+                   Open in New Tab
+                 </Button>
+               </div>
+             </div>
+             
+             <div className="border rounded-lg p-4 bg-gray-50 min-h-[400px] flex items-center justify-center">
+               <div className="text-center">
+                 <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                 <p className="text-gray-600 mb-2">Document Preview</p>
+                 <p className="text-sm text-gray-500">
+                   Click "Open in New Tab" to view the full document
+                 </p>
+               </div>
+             </div>
+             
+             <div className="flex justify-end gap-2">
+               <Button
+                 variant="outline"
+                 onClick={() => setShowDocumentViewer(false)}
+               >
+                 Close
+               </Button>
+               <Button
+                 variant="default"
+                 onClick={() => {
+                   handleVerifyDocument(selectedDocument.id)
+                   setShowDocumentViewer(false)
+                 }}
+                 disabled={selectedDocument.status === "verified"}
+               >
+                 <Check className="h-4 w-4 mr-2" />
+                 Verify Document
+               </Button>
+             </div>
+           </div>
+         )}
+       </DialogContent>
+     </Dialog>
+   </div>
+ );
+ }

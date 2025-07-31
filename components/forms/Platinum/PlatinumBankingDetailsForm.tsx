@@ -11,6 +11,7 @@ export const PlatinumBankingDetailsForm = () => {
   const otherBanks = typedCustomerData?.otherBanks || [{}, {}];
   const otherCreditCards = typedCustomerData?.otherCreditCards || [{}, {}];
   const loanFacilities = typedCustomerData?.loanFacilities || [{}, {}];
+  console.log( "loanFacilities ==>", loanFacilities);
   
   const handleBankingChange = (field: string, value: any) => {
     updateCustomerData({
@@ -227,8 +228,8 @@ export const PlatinumBankingDetailsForm = () => {
           <thead className="bg-gray-100">
             <tr>
               <th className="px-2 py-1 border">Bank</th>
-              <th className="px-2 py-1 border">Type</th>
-              <th className="px-2 py-1 border">Outstanding</th>
+              <th className="px-2 py-1 border">LoanType</th>
+              <th className="px-2 py-1 border">Loan Amount</th>
               <th className="px-2 py-1 border">Monthly Installment</th>
             </tr>
           </thead>

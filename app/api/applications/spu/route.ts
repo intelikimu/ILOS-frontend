@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔄 Frontend API: Fetching recent applications for PB dashboard...');
+    console.log('🔄 Frontend API: Fetching SPU applications...');
     
-    // Fetch recent applications from the backend
-    const response = await fetch('http://192.168.1.170:5000/api/applications/recent/pb', {
+    // Fetch SPU applications from the backend
+    const response = await fetch('http://192.168.1.170:5000/api/applications/spu', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     if (response.ok) {
       const data = await response.json();
-      console.log('✅ Frontend API: Successfully fetched applications:', data.length);
+      console.log('✅ Frontend API: Successfully fetched SPU applications:', data.length);
       
       return NextResponse.json(data);
     } else {
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       
       return NextResponse.json(
         { 
-          error: 'Failed to fetch applications', 
+          error: 'Failed to fetch SPU applications', 
           details: errorText,
           status: response.status 
         },

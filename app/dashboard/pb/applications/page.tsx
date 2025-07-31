@@ -178,7 +178,7 @@ export default function MyApplicationsPage() {
       
       // Ensure all application types are properly mapped
       const mappedApplications = data.map((app: any, index: number) => ({
-        id: app.id || `UBL-2024-${String(index + 1).padStart(6, '0')}`,
+        id: app.id || `ILOS-${String(index + 1).padStart(6, '0')}`,
         applicantName: app.applicantName || app.applicant_name || 'Unknown Applicant',
         loanType: app.loanType || app.loan_type || 'Personal Loan',
         amount: app.amount || 'PKR 0',

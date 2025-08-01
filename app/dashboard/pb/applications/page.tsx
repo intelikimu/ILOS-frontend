@@ -149,7 +149,7 @@ export default function MyApplicationsPage() {
       
       // Use the Next.js API route instead of direct backend call
       const timestamp = new Date().getTime();
-      const response = await fetch(`/api/applications/recent/pb?t=${timestamp}`, {
+      const response = await fetch(`http://localhost:5000/api/applications/department/pb`, {
         method: 'GET',
         headers: {
           'Cache-Control': 'no-cache',
@@ -171,7 +171,7 @@ export default function MyApplicationsPage() {
           id: app.los_id,
           applicantName: app.applicantName,
           loanType: app.loanType,
-          amount: app.amount,
+          amount: app.loan_amount,
           status: app.status
         });
       });
@@ -181,7 +181,7 @@ export default function MyApplicationsPage() {
         id: app.los_id || app.id || `ILOS-${String(index + 1).padStart(6, '0')}`,
         applicantName: app.applicantName || app.applicant_name || 'Unknown Applicant',
         loanType: app.loanType || app.loan_type || 'Personal Loan',
-        amount: app.amount || 'PKR 0',
+        amount: "PKR " + (app.loan_amount ? app.loan_amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : '-'),
         status: app.status || 'draft',
         priority: app.priority || 'medium',
         submittedDate: app.submittedDate || app.submitted_date || new Date().toISOString(),

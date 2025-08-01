@@ -168,7 +168,7 @@ export default function MyApplicationsPage() {
       // Log each application type
       data.forEach((app: any, index: number) => {
         console.log(`📋 Application ${index + 1}:`, {
-          id: app.id,
+          id: app.los_id,
           applicantName: app.applicantName,
           loanType: app.loanType,
           amount: app.amount,
@@ -178,7 +178,7 @@ export default function MyApplicationsPage() {
       
       // Ensure all application types are properly mapped
       const mappedApplications = data.map((app: any, index: number) => ({
-        id: app.id || `ILOS-${String(index + 1).padStart(6, '0')}`,
+        id: app.los_id || app.id || `ILOS-${String(index + 1).padStart(6, '0')}`,
         applicantName: app.applicantName || app.applicant_name || 'Unknown Applicant',
         loanType: app.loanType || app.loan_type || 'Personal Loan',
         amount: app.amount || 'PKR 0',
@@ -201,9 +201,27 @@ export default function MyApplicationsPage() {
           { name: "Employment Letter", status: "submitted", required: false },
         ],
         timeline: app.timeline || [
-          { date: new Date(app.submittedDate || app.submitted_date).toISOString().split('T')[0], event: "Application Created", status: "completed" },
-          { date: new Date(app.submittedDate || app.submitted_date).toISOString().split('T')[0], event: "Documents Uploaded", status: "completed" },
-          { date: new Date(app.submittedDate || app.submitted_date).toISOString().split('T')[0], event: "Initial Review", status: "completed" },
+          { 
+            date: app.submittedDate || app.submitted_date 
+              ? new Date(app.submittedDate || app.submitted_date).toISOString().split('T')[0] 
+              : new Date().toISOString().split('T')[0], 
+            event: "Application Created", 
+            status: "completed" 
+          },
+          { 
+            date: app.submittedDate || app.submitted_date 
+              ? new Date(app.submittedDate || app.submitted_date).toISOString().split('T')[0] 
+              : new Date().toISOString().split('T')[0], 
+            event: "Documents Uploaded", 
+            status: "completed" 
+          },
+          { 
+            date: app.submittedDate || app.submitted_date 
+              ? new Date(app.submittedDate || app.submitted_date).toISOString().split('T')[0] 
+              : new Date().toISOString().split('T')[0], 
+            event: "Initial Review", 
+            status: "completed" 
+          },
           { date: "TBD", event: "SPU Verification", status: "pending" },
         ],
       }));

@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
     console.log('🔄 Frontend API: Fetching SPU applications...');
     
     // Fetch SPU applications from the backend
-    const response = await fetch('http://localhost:5000/api/applications/spu', {
+    const response = await fetch('http://localhost:5000/api/applications/department/spu', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

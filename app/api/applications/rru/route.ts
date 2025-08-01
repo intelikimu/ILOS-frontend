@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔄 Frontend API: Fetching recent applications for PB dashboard...');
-    
-    // Fetch recent applications from the backend
-    const response = await fetch('http://localhost:5000/api/applications/department/pb', {
+    console.log('🔄 Frontend API: Fetching RRU applications...');
+
+    // Fetch RRU applications from the backend
+    const response = await fetch('http://localhost:5000/api/applications/department/rru', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -16,19 +16,19 @@ export async function GET(request: NextRequest) {
 
     if (response.ok) {
       const data = await response.json();
-      console.log('✅ Frontend API: Successfully fetched applications:', data.length);
-      
+      console.log('✅ Frontend API: Successfully fetched RRU applications:', data.length);
+
       return NextResponse.json(data);
     } else {
       const errorText = await response.text();
       console.error('❌ Frontend API: Backend error response:', errorText);
       console.error('❌ Frontend API: Response status:', response.status);
-      
+
       return NextResponse.json(
-        { 
-          error: 'Failed to fetch applications', 
+        {
+          error: 'Failed to fetch RRU applications',
           details: errorText,
-          status: response.status 
+          status: response.status
         },
         { status: response.status }
       );
@@ -36,9 +36,9 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('❌ Frontend API: Exception caught:', error);
     return NextResponse.json(
-      { 
-        error: 'Internal server error', 
-        details: error instanceof Error ? error.message : 'Unknown error' 
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     );

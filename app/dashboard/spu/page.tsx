@@ -866,8 +866,7 @@ export default function SPUDashboardPage() {
              <div className="flex justify-end gap-2">
                <Button
                  variant="outline"
-                 onClick={() => setShowDocumentViewer(false)}
-               >
+                 onClick={() => setShowDocumentViewer(false)} >
                  Close
                </Button>
                <Button

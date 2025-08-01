@@ -48,14 +48,14 @@ export function Header({ userRole = 'pb' }: HeaderProps) {
   
     <nav className="bg-blue-500 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-16">
+        <div className="flex items-center h-30">
           <div className="flex items-center space-x-2">
             <Image
               src="/ublimage.png" // <-- Replace this path with your actual logo path
               alt="UBL Logo"
-              width={100}
-              height={100}
-              style={{ width: 'auto', height: 'auto' }}
+              width={150}
+              height={130}
+              className="pb-2"
             />
  
           </div>

@@ -70,11 +70,11 @@ const navigationByRole: Record<UserRole, any[]> = {
           url: "/dashboard/pb/applications",
           icon: FileText,
         },
-        {
-          title: "Disbursed Loans",
-          url: "/dashboard/pb/disbursed",
-          icon: CheckCircle,
-        },
+        // {
+        //   title: "Disbursed Loans",
+        //   url: "/dashboard/pb/disbursed",
+        //   icon: CheckCircle,
+        // },
       ],
     },
     {
@@ -113,12 +113,12 @@ const navigationByRole: Record<UserRole, any[]> = {
           url: "/dashboard/spu",
           icon: LayoutDashboard,
         },
-        {
-          title: "New Applications",
-          url: "/dashboard/spu/new",
-          icon: FileText,
-          badge: "5",
-        },
+        // {
+        //   title: "New Applications",
+        //   url: "/dashboard/spu/new",
+        //   icon: FileText,
+        //   badge: "5",
+        // },
         {
           title: "Verified Applications",
           url: "/dashboard/spu/verified",
@@ -131,27 +131,27 @@ const navigationByRole: Record<UserRole, any[]> = {
         },
       ],
     },
-    {
-      title: "Documents",
-      items: [
-        {
-          title: "Document Verification",
-          url: "/dashboard/spu/document-verification",
-          icon: FileText,
-        },
-        {
-          title: "Missing Documents",
-          url: "/dashboard/spu/missing-documents",
-          icon: AlertTriangle,
-          badge: "12",
-        },
-      ],
-    },
+    // {
+    //   title: "Documents",
+    //   items: [
+    //     {
+    //       title: "Document Verification",
+    //       url: "/dashboard/spu/document-verification",
+    //       icon: FileText,
+    //     },
+    //     {
+    //       title: "Missing Documents",
+    //       url: "/dashboard/spu/missing-documents",
+    //       icon: AlertTriangle,
+    //       badge: "12",
+    //     },
+    //   ],
+    // },
     {
       title: "Reports",
       items: [
         {
-          title: "Daily Report",
+          title: "Reports",
           url: "/dashboard/spu/reports/daily",
           icon: BarChart3,
         },

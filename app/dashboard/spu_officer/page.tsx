@@ -31,7 +31,7 @@ export default function SPUOfficerDashboard() {
   const fetchPendingApplications = async () => {
     try {
       setLoading(true)
-      const response = await fetch('http://192.168.1.170:5000/api/spu-officer/officer/pending-reviews')
+      const response = await fetch('http://localhost:5000/api/spu-officer/officer/pending-reviews')
       const data = await response.json()
       
       if (response.ok) {
@@ -57,7 +57,7 @@ export default function SPUOfficerDashboard() {
 
   const handleApproveApplication = async (id: number) => {
     try {
-      const response = await fetch(`http://192.168.1.170:5000/api/spu-officer/officer/review/${id}/approve`, {
+      const response = await fetch(`http://localhost:5000/api/spu-officer/officer/review/${id}/approve`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -91,7 +91,7 @@ export default function SPUOfficerDashboard() {
 
   const handleRejectApplication = async (id: number) => {
     try {
-      const response = await fetch(`http://192.168.1.170:5000/api/spu-officer/officer/review/${id}/reject`, {
+      const response = await fetch(`http://localhost:5000/api/spu-officer/officer/review/${id}/reject`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

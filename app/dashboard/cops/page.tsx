@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -17,63 +17,20 @@ import { Progress } from "@/components/ui/progress"
 import { Search, Filter, Clock, CheckCircle, AlertTriangle, FileText, Eye, MoreHorizontal, ArrowRight, Database, CheckSquare, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
-// Mock data for COPS dashboard
-const applicationsData = [
-  {
-    id: "UBL-2024-001234",
-    applicantName: "Muhammad Ali Khan",
-    segment: "Preferred",
-    loanType: "Personal Loan",
-    amount: "PKR 2,500,000",
-    status: "cops_data_entry",
-    lastUpdate: "2024-01-15",
-    assignedTo: "Zainab Ali",
-    priority: "High",
-    dataEntryProgress: 40,
-    complianceChecks: [
-      { id: "check1", name: "KYC Verification", status: "pending" },
-      { id: "check2", name: "Credit Score Check", status: "pending" },
-      { id: "check3", name: "AML Screening", status: "pending" },
-      { id: "check4", name: "Internal Policy Check", status: "pending" },
-    ],
-  },
-  {
-    id: "UBL-2024-001235",
-    applicantName: "Fatima Ahmed",
-    segment: "Mass",
-    loanType: "Auto Loan",
-    amount: "PKR 800,000",
-    status: "cops_compliance_check",
-    lastUpdate: "2024-01-14",
-    assignedTo: "Omar Khan",
-    priority: "Medium",
-    dataEntryProgress: 100,
-    complianceChecks: [
-      { id: "check5", name: "KYC Verification", status: "completed" },
-      { id: "check6", name: "Credit Score Check", status: "completed" },
-      { id: "check7", name: "AML Screening", status: "pending" },
-      { id: "check8", name: "Internal Policy Check", status: "pending" },
-    ],
-  },
-  {
-    id: "UBL-2024-001236",
-    applicantName: "Hassan Raza",
-    segment: "SME",
-    loanType: "Business Loan",
-    amount: "PKR 5,000,000",
-    status: "cops_data_entry",
-    lastUpdate: "2024-01-13",
-    assignedTo: "Unassigned",
-    priority: "High",
-    dataEntryProgress: 20,
-    complianceChecks: [
-      { id: "check9", name: "KYC Verification", status: "pending" },
-      { id: "check10", name: "Credit Score Check", status: "pending" },
-      { id: "check11", name: "AML Screening", status: "pending" },
-      { id: "check12", name: "Internal Policy Check", status: "pending" },
-    ],
-  },
-]
+// Real data interface for COPS applications
+interface COPSApplication {
+  id: string
+  los_id: string
+  applicant_name: string
+  loan_type: string
+  loan_amount: string
+  status: string
+  priority: string
+  created_at: string
+  application_type: string
+  assigned_officer?: string
+  branch?: string
+}
 
 // Stats for dashboard
 const statsData = [
@@ -140,28 +97,86 @@ function getCheckStatusBadge(status: string) {
 
 export default function COPSDashboardPage() {
   const [activeTab, setActiveTab] = useState("data-entry")
-  const [selectedApplication, setSelectedApplication] = useState<any>(null)
+  const [selectedApplication, setSelectedApplication] = useState<COPSApplication | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [applicationsData, setApplicationsData] = useState<COPSApplication[]>([])
+  const [loading, setLoading] = useState(true)
   const { toast } = useToast()
 
-  const filteredApplications = applicationsData.filter((app) => {
-    const matchesSearch = app.applicantName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          app.id.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === "all" || app.status === statusFilter
-    
-    if (activeTab === "data-entry") {
-      return matchesSearch && matchesStatus && app.status === "cops_data_entry"
-    } else if (activeTab === "compliance") {
-      return matchesSearch && matchesStatus && app.status === "cops_compliance_check"
-    } else if (activeTab === "processed") {
-      return matchesSearch && matchesStatus && app.status === "cops_verified"
+  // Fetch COPS applications from API
+  useEffect(() => {
+    const fetchApplications = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/applications/cops')
+        const data = await response.json()
+        
+        if (response.ok) {
+          setApplicationsData(data)
+          console.log('✅ COPS: Fetched', data.length, 'applications')
+          console.log('📋 COPS Applications:', data)
+        } else {
+          console.error('❌ COPS: Failed to fetch applications:', data)
+          toast({
+            title: "Error",
+            description: "Failed to fetch applications",
+            variant: "destructive"
+          })
+        }
+      } catch (error) {
+        console.error('❌ COPS: Error fetching applications:', error)
+        toast({
+          title: "Error",
+          description: "Failed to connect to server",
+          variant: "destructive"
+        })
+      } finally {
+        setLoading(false)
+      }
     }
+
+    fetchApplications()
+  }, [toast])
+
+  const filteredApplications = applicationsData.filter((app: COPSApplication) => {
+    const matchesSearch = app.applicant_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          app.los_id.toLowerCase().includes(searchTerm.toLowerCase())
     
-    return matchesSearch && matchesStatus
+    
+ 
+    
+    // Debug logging
+    console.log('🔍 COPS Filtering:', {
+      appId: app.id,
+      appStatus: app.status,
+      activeTab,
+      matchesSearch,
+    })
+    
+  
+    
+    return matchesSearch
   })
 
-  const handleCompleteDataEntry = () => {
+  // Debug: Log filtered results
+  console.log('🎯 COPS Filtered Applications:', filteredApplications.length, 'out of', applicationsData.length)
+
+  const handleCompleteDataEntry = async () => {
+
+//  update the status of the application to cops_compliance_check
+await fetch('/api/applications/update-status', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    losId: selectedApplication?.los_id.replace('LOS-', ''), // Extract just the number
+    status: 'SUBMITTED_TO_CIU',
+    applicationType: selectedApplication?.application_type
+  })
+})
+
     // Update application status logic would go here
     toast({
       title: "Data Entry Completed",
@@ -205,11 +220,7 @@ export default function COPSDashboardPage() {
       </div>
 
       <Tabs defaultValue="data-entry" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="data-entry">Data Entry</TabsTrigger>
-          {/* <TabsTrigger value="compliance">Compliance Check</TabsTrigger>
-          <TabsTrigger value="processed">Processed</TabsTrigger> */}
-        </TabsList>
+        
         <TabsContent value="data-entry" className="space-y-4">
           {/* Filters */}
           <Card>
@@ -242,8 +253,8 @@ export default function COPSDashboardPage() {
           {/* Applications Table */}
           <Card>
             <CardHeader>
-              <CardTitle>Data Entry Queue ({filteredApplications.length})</CardTitle>
-              <CardDescription>Applications requiring data entry into core banking systems</CardDescription>
+              <CardTitle>Applications ({filteredApplications.length})</CardTitle>
+              <CardDescription>All applications accessible to COPS department</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -254,6 +265,7 @@ export default function COPSDashboardPage() {
                     <TableHead>Loan Type</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Progress</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Last Update</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -261,27 +273,28 @@ export default function COPSDashboardPage() {
                 <TableBody>
                   {filteredApplications.map((app) => (
                     <TableRow key={app.id}>
-                      <TableCell className="font-mono text-sm">{app.id}</TableCell>
+                      <TableCell className="font-mono text-sm">{app.los_id}</TableCell>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{app.applicantName}</div>
+                          <div className="font-medium">{app.applicant_name}</div>
                           <div className="text-sm text-muted-foreground">
-                            {app.assignedTo !== "Unassigned" ? `Assigned to: ${app.assignedTo}` : "Unassigned"}
+                            {app.assigned_officer ? `Assigned to: ${app.assigned_officer}` : "Unassigned"}
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>{app.loanType}</TableCell>
-                      <TableCell className="font-medium">{app.amount}</TableCell>
+                      <TableCell>{app.loan_type}</TableCell>
+                      <TableCell className="font-medium">PKR {Number(app.loan_amount).toLocaleString()}</TableCell>
                       <TableCell>
                         <div className="w-full">
                           <div className="flex justify-between items-center mb-1">
-                            <span className="text-xs">{app.dataEntryProgress}%</span>
+                            <span className="text-xs">75%</span>
                           </div>
-                          <Progress value={app.dataEntryProgress} className="h-2" />
+                          <Progress value={75} className="h-2" />
                         </div>
                       </TableCell>
+                      <TableCell>{getStatusBadge(app.status)}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {new Date(app.lastUpdate).toLocaleDateString()}
+                        {new Date(app.created_at).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right">
                         <Dialog>
@@ -308,19 +321,19 @@ export default function COPSDashboardPage() {
                                     <div className="grid grid-cols-2 gap-4">
                                       <div>
                                         <Label className="text-sm font-medium">Applicant Name</Label>
-                                        <p className="text-sm">{selectedApplication.applicantName}</p>
+                                        <p className="text-sm">{selectedApplication.applicant_name}</p>
                                       </div>
                                       <div>
                                         <Label className="text-sm font-medium">Loan Type</Label>
-                                        <p className="text-sm">{selectedApplication.loanType}</p>
+                                        <p className="text-sm">{selectedApplication.loan_type}</p>
                                       </div>
                                       <div>
                                         <Label className="text-sm font-medium">Amount</Label>
-                                        <p className="text-sm">{selectedApplication.amount}</p>
+                                        <p className="text-sm">PKR {Number(selectedApplication.loan_amount).toLocaleString()}</p>
                                       </div>
                                       <div>
-                                        <Label className="text-sm font-medium">Segment</Label>
-                                        <p className="text-sm">{selectedApplication.segment}</p>
+                                        <Label className="text-sm font-medium">Application Type</Label>
+                                        <p className="text-sm">{selectedApplication.application_type}</p>
                                       </div>
                                     </div>
                                   </CardContent>

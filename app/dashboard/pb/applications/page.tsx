@@ -610,8 +610,8 @@ export default function MyApplicationsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredApplications.map((app) => (
-                      <TableRow key={app.id}>
+                    {filteredApplications.map((app,index) => (
+                      <TableRow key={index}>
                         <TableCell className="font-mono text-sm">{app.id}</TableCell>
                         <TableCell>
                           <div>

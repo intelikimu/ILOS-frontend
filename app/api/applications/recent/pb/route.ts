@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
     console.log('🔄 Frontend API: Fetching recent applications for PB dashboard...');
     
     // Fetch recent applications from the backend
-    const response = await fetch('http://192.168.1.170:5000/api/applications/recent/pb', {
+    const response = await fetch('http://localhost:5000/api/applications/recent/pb', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

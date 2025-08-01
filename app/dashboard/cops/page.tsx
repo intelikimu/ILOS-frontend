@@ -207,8 +207,8 @@ export default function COPSDashboardPage() {
       <Tabs defaultValue="data-entry" value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="data-entry">Data Entry</TabsTrigger>
-          <TabsTrigger value="compliance">Compliance Check</TabsTrigger>
-          <TabsTrigger value="processed">Processed</TabsTrigger>
+          {/* <TabsTrigger value="compliance">Compliance Check</TabsTrigger>
+          <TabsTrigger value="processed">Processed</TabsTrigger> */}
         </TabsList>
         <TabsContent value="data-entry" className="space-y-4">
           {/* Filters */}
@@ -387,7 +387,7 @@ export default function COPSDashboardPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="compliance" className="space-y-4">
+        {/* <TabsContent value="compliance" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Compliance Check Queue</CardTitle>
@@ -515,9 +515,9 @@ export default function COPSDashboardPage() {
               </Table>
             </CardContent>
           </Card>
-        </TabsContent>
+        </TabsContent> */}
 
-        <TabsContent value="processed" className="space-y-4">
+        {/* <TabsContent value="processed" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Processed Applications</CardTitle>
@@ -527,7 +527,7 @@ export default function COPSDashboardPage() {
               <p>Processed applications will appear here...</p>
             </CardContent>
           </Card>
-        </TabsContent>
+        </TabsContent> */}
       </Tabs>
     </div>
   )

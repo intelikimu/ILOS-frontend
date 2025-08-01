@@ -15,60 +15,61 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Search, Filter, Clock, CheckCircle, AlertTriangle, FileText, Eye, MoreHorizontal, ArrowRight, ArrowLeft, X, Download, ExternalLink, Check, Ban } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import DocumentExplorer from "@/components/document-explorer"
 
-// Mock data for SPU dashboard
-const applicationsData = [
-  {
-    id: "UBL-2024-001234",
-    applicantName: "Mubashir",
-    segment: "Preferred",
-    loanType: "Personal Loan",
-    amount: "PKR 2,500,000",
-    status: "submitted_to_spu",
-    lastUpdate: "2024-01-15",
-    assignedTo: "Ahmed Khan",
-    priority: "High",
-    documents: [
-      { id: "doc1", name: "CNIC Copy", status: "verified", required: true },
-      { id: "doc2", name: "Salary Slip", status: "pending", required: true },
-      { id: "doc3", name: "Bank Statement", status: "pending", required: true },
-    ],
-  },
-  {
-    id: "UBL-2024-001235",
-    applicantName: "Abdul Wasay Ali",
-    segment: "Mass",
-    loanType: "Auto Loan",
-    amount: "PKR 800,000",
-    status: "submitted_to_spu",
-    lastUpdate: "2024-01-14",
-    assignedTo: "Unassigned",
-    priority: "Medium",
-    documents: [
-      { id: "doc4", name: "CNIC Copy", status: "verified", required: true },
-      { id: "doc5", name: "Salary Slip", status: "rejected", required: true },
-      { id: "doc6", name: "Bank Statement", status: "verified", required: true },
-      { id: "doc7", name: "Employment Letter", status: "verified", required: true },
-    ],
-  },
-  {
-    id: "UBL-2024-001236",
-    applicantName: "Hassan Raza",
-    segment: "SME",
-    loanType: "Business Loan",
-    amount: "PKR 5,000,000",
-    status: "submitted_to_spu",
-    lastUpdate: "2024-01-13",
-    assignedTo: "Unassigned",
-    priority: "High",
-    documents: [
-      { id: "doc8", name: "CNIC Copy", status: "verified", required: true },
-      { id: "doc9", name: "Business Registration", status: "pending", required: true },
-      { id: "doc10", name: "Bank Statement", status: "pending", required: true },
-      { id: "doc11", name: "Tax Returns", status: "missing", required: true },
-    ],
-  },
-]
+// // Mock data for SPU dashboard
+// const applicationsData = [
+//   {
+//     id: "UBL-2024-001234",
+//     applicantName: "Mubashir",
+//     segment: "Preferred",
+//     loanType: "Personal Loan",
+//     amount: "PKR 2,500,000",
+//     status: "submitted_to_spu",
+//     lastUpdate: "2024-01-15",
+//     assignedTo: "Ahmed Khan",
+//     priority: "High",
+//     documents: [
+//       { id: "doc1", name: "CNIC Copy", status: "verified", required: true },
+//       { id: "doc2", name: "Salary Slip", status: "pending", required: true },
+//       { id: "doc3", name: "Bank Statement", status: "pending", required: true },
+//     ],
+//   },
+//   {
+//     id: "UBL-2024-001235",
+//     applicantName: "Abdul Wasay Ali",
+//     segment: "Mass",
+//     loanType: "Auto Loan",
+//     amount: "PKR 800,000",
+//     status: "submitted_to_spu",
+//     lastUpdate: "2024-01-14",
+//     assignedTo: "Unassigned",
+//     priority: "Medium",
+//     documents: [
+//       { id: "doc4", name: "CNIC Copy", status: "verified", required: true },
+//       { id: "doc5", name: "Salary Slip", status: "rejected", required: true },
+//       { id: "doc6", name: "Bank Statement", status: "verified", required: true },
+//       { id: "doc7", name: "Employment Letter", status: "verified", required: true },
+//     ],
+//   },
+//   {
+//     id: "UBL-2024-001236",
+//     applicantName: "Hassan Raza",
+//     segment: "SME",
+//     loanType: "Business Loan",
+//     amount: "PKR 5,000,000",
+//     status: "submitted_to_spu",
+//     lastUpdate: "2024-01-13",
+//     assignedTo: "Unassigned",
+//     priority: "High",
+//     documents: [
+//       { id: "doc8", name: "CNIC Copy", status: "verified", required: true },
+//       { id: "doc9", name: "Business Registration", status: "pending", required: true },
+//       { id: "doc10", name: "Bank Statement", status: "pending", required: true },
+//       { id: "doc11", name: "Tax Returns", status: "missing", required: true },
+//     ],
+//   },
+// ]
 
 // Stats for dashboard
 const statsData = [
@@ -160,7 +161,175 @@ export default function SPUDashboardPage() {
     addressVerified: false,
     employmentVerified: false
   })
+  const [showDocumentsModal, setShowDocumentsModal] = useState(false)
+  const [showDocumentExplorer, setShowDocumentExplorer] = useState(false)
+  const [applicationDocuments, setApplicationDocuments] = useState<any[]>([])
+  const [documentVerificationStatus, setDocumentVerificationStatus] = useState<{[key: string]: boolean}>({})
   const { toast } = useToast()
+
+  // Helper function to get application type path for file system
+  const getApplicationTypePath = (appType: string) => {
+    switch (appType) {
+      case 'CashPlus':
+        return 'cashplus'
+      case 'AutoLoan':
+        return 'AutoLoan'
+      case 'SMEASAAN':
+        return 'smeasaan'
+      case 'CommercialVehicle':
+        return 'commercialVehicle'
+      case 'AmeenDrive':
+        return 'ameendrive'
+      case 'PlatinumCreditCard':
+      case 'ClassicCreditCard':
+        return 'creditcard'
+      default:
+        return 'temp'
+    }
+  }
+
+  // Function to get dynamic document checklist based on loan type
+  const getDocumentChecklist = (application: any) => {
+    // Base documents common to all loan types
+    const baseDocuments = [
+      { name: "Verification office/residence document", required: true },
+      { name: "CNIC", required: true },
+      { name: "Photo 1", required: true },
+      { name: "Photo 2", required: true },
+      { name: "Reference 1 CNIC", required: true },
+      { name: "Reference 1 Contact", required: true },
+      { name: "Reference 2 CNIC", required: true },
+      { name: "Reference 2 Contact", required: true },
+      { name: "Calculation Sheet", required: true },
+      { name: "Key Fact Statement (KFS)", required: true },
+      { name: "Loan Declaration Form", required: true },
+      { name: "Salary Slip 1", required: true },
+      { name: "Salary Slip 2", required: true },
+      { name: "Salary Slip 3", required: true },
+      { name: "Bank Statement (1 Year)", required: true },
+      { name: "Business Bank Statement", required: true },
+      { name: "Business NTN", required: true },
+      { name: "Business Letterhead Request", required: true }
+    ]
+
+    // Additional documents specific to loan types
+    let additionalDocuments: any[] = []
+    
+    switch (application.loan_type) {
+      case 'CashPlus Loan':
+        additionalDocuments = [
+          { name: "Retrieval Letter", required: true },
+          { name: "Filer Undertaking", required: true },
+          { name: "POA Undertaking", required: true },
+          { name: "Personal Use Undertaking", required: true },
+          { name: "Private Registration Undertaking", required: true }
+        ]
+        break
+      case 'Auto Loan':
+        additionalDocuments = [
+          { name: "Retrieval Letter", required: true },
+          { name: "Filer Undertaking", required: true },
+          { name: "POA Undertaking", required: true },
+          { name: "Personal Use Undertaking", required: true },
+          { name: "Private Registration Undertaking", required: true }
+        ]
+        break
+      case 'Ameen Drive':
+        additionalDocuments = [
+          { name: "Financial Checklist", required: true },
+          { name: "PR Checklist", required: true }
+        ]
+        break
+      case 'SME Asaan':
+        // No additional documents for SME Asaan
+        break
+      case 'Commercial':
+        // No additional documents for Commercial
+        break
+    }
+
+    const allDocuments = [...baseDocuments, ...additionalDocuments]
+    
+    return allDocuments.map((doc, index) => {
+      const docId = `checklist-${application.id}-${index}`
+      return {
+        id: docId,
+        name: doc.name,
+        required: doc.required,
+        verified: documentVerificationStatus[docId] || false,
+        rejected: documentVerificationStatus[`${docId}-rejected`] || false
+      }
+    })
+  }
+
+  // Function to get all documents for an application (for document explorer)
+  const getApplicationDocuments = (application: any) => {
+    const appTypePath = getApplicationTypePath(application.application_type)
+    const losId = application.los_id?.replace('LOS-', '') || application.id?.split('-')[1]
+    
+    // Common documents that are typically uploaded
+    const commonDocuments = [
+      { name: "CNIC Copy.pdf", type: "pdf", category: "Identity" },
+      { name: "Salary Slip.pdf", type: "pdf", category: "Income" },
+      { name: "Bank Statement.pdf", type: "pdf", category: "Financial" },
+      { name: "Employment Letter.pdf", type: "pdf", category: "Employment" },
+      { name: "Utility Bill.pdf", type: "pdf", category: "Address" },
+      { name: "Property Documents.pdf", type: "pdf", category: "Property" },
+      { name: "Vehicle Registration.pdf", type: "pdf", category: "Vehicle" },
+      { name: "Business Registration.pdf", type: "pdf", category: "Business" },
+      { name: "Tax Returns.pdf", type: "pdf", category: "Tax" },
+      { name: "Financial Statements.pdf", type: "pdf", category: "Financial" }
+    ]
+
+    // Add application-specific documents based on loan type
+    let additionalDocuments: any[] = []
+    
+    switch (application.loan_type) {
+      case 'Auto Loan':
+        additionalDocuments = [
+          { name: "Vehicle Invoice.pdf", type: "pdf", category: "Vehicle" },
+          { name: "Insurance Certificate.pdf", type: "pdf", category: "Insurance" }
+        ]
+        break
+      case 'SME Loan':
+        additionalDocuments = [
+          { name: "Business Plan.pdf", type: "pdf", category: "Business" },
+          { name: "Cash Flow Statement.pdf", type: "pdf", category: "Financial" }
+        ]
+        break
+      case 'CashPlus Loan':
+        additionalDocuments = [
+          { name: "Income Declaration.pdf", type: "pdf", category: "Income" },
+          { name: "Asset Statement.pdf", type: "pdf", category: "Financial" }
+        ]
+        break
+    }
+
+    const allDocuments = [...commonDocuments, ...additionalDocuments]
+    
+    return allDocuments.map((doc, index) => ({
+      id: `doc-${application.id}-${index}`,
+      name: doc.name,
+      type: doc.type,
+      category: doc.category,
+      url: `http://localhost:8081/explorer/ilos_loan_application_documents/${appTypePath}/los-${losId}/${doc.name}`,
+      status: "uploaded", // Assume uploaded for now
+      required: ["CNIC Copy.pdf", "Salary Slip.pdf", "Bank Statement.pdf"].includes(doc.name)
+    }))
+  }
+
+  // Function to handle viewing all documents
+  const handleViewAllDocuments = (application: any) => {
+    const documents = getApplicationDocuments(application)
+    setApplicationDocuments(documents)
+    setShowDocumentsModal(true)
+  }
+
+  // Function to handle opening document explorer for an application
+  const handleOpenDocumentExplorer = (application: any) => {
+    setSelectedApplication(application)
+    setShowDocumentExplorer(true)
+  }
 
   // Fetch SPU applications from backend
   useEffect(() => {
@@ -240,14 +409,12 @@ export default function SPUDashboardPage() {
   const handleVerifyDocument = (docId: string) => {
     if (!selectedApplication) return
     
-    // Update document status in the application
-    const updatedApplication = {
-      ...selectedApplication,
-      documents: selectedApplication.documents.map((doc: any) => 
-        doc.id === docId ? { ...doc, status: "verified" } : doc
-      )
-    }
-    setSelectedApplication(updatedApplication)
+    // Update document verification status
+    setDocumentVerificationStatus(prev => ({
+      ...prev,
+      [docId]: true,
+      [`${docId}-rejected`]: false // Clear rejection if it was previously rejected
+    }))
     
     toast({
       title: "Document Verified",
@@ -258,14 +425,12 @@ export default function SPUDashboardPage() {
   const handleRejectDocument = (docId: string) => {
     if (!selectedApplication) return
     
-    // Update document status in the application
-    const updatedApplication = {
-      ...selectedApplication,
-      documents: selectedApplication.documents.map((doc: any) => 
-        doc.id === docId ? { ...doc, status: "rejected" } : doc
-      )
-    }
-    setSelectedApplication(updatedApplication)
+    // Update document verification status
+    setDocumentVerificationStatus(prev => ({
+      ...prev,
+      [docId]: false,
+      [`${docId}-rejected`]: true
+    }))
     
     toast({
       title: "Document Rejected",
@@ -294,12 +459,13 @@ export default function SPUDashboardPage() {
     })
   }
 
-  const handleVerifyApplication = () => {
+  const handleVerifyApplication = async () => {
     if (!selectedApplication) return
     
-    // Check if all required documents are verified
-    const requiredDocuments = selectedApplication.documents.filter((doc: any) => doc.required)
-    const unverifiedRequired = requiredDocuments.filter((doc: any) => doc.status !== "verified")
+    // Check if all required documents are verified using the dynamic checklist
+    const documentChecklist = getDocumentChecklist(selectedApplication)
+    const requiredDocuments = documentChecklist.filter((doc: any) => doc.required)
+    const unverifiedRequired = requiredDocuments.filter((doc: any) => !doc.verified)
     
     if (unverifiedRequired.length > 0) {
       toast({
@@ -310,75 +476,117 @@ export default function SPUDashboardPage() {
       return
     }
     
-    // Check if all field verifications are complete
-    const allFieldsVerified = Object.values(fieldVerification).every(verified => verified)
-    if (!allFieldsVerified) {
+    try {
+      // Update status in backend
+      const losId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
+      console.log('Frontend sending losId:', losId, 'applicationType:', selectedApplication.application_type)
+      const response = await fetch('/api/applications/update-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          losId: losId,
+          status: 'SUBMITTED_TO_COPS',
+          applicationType: selectedApplication.application_type
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.text()
+        console.error('Backend error response:', errorData)
+        throw new Error(`Failed to update status: ${errorData}`)
+      }
+      
+      // Update application status in frontend
+      const updatedApplications = spuApplications.map(app => 
+        app.id === selectedApplication.id 
+          ? { ...app, status: "submitted_to_cops" }
+          : app
+      )
+      setSpuApplications(updatedApplications)
+      
       toast({
-        title: "Field Verification Incomplete",
-        description: "All field verifications must be completed before proceeding",
+        title: "Application Verified",
+        description: "Application has been verified and sent to COPS",
+      })
+      setSelectedApplication(null)
+      setVerificationStep(1)
+      setVerificationComments("")
+      setDocumentVerificationStatus({})
+      setFieldVerification({
+        nameVerified: false,
+        cnicVerified: false,
+        incomeVerified: false,
+        addressVerified: false,
+        employmentVerified: false
+      })
+    } catch (error) {
+      console.error('Error updating status:', error)
+      toast({
+        title: "Error",
+        description: "Failed to update application status",
         variant: "destructive"
       })
-      return
     }
-    
-    // Update application status
-    const updatedApplications = spuApplications.map(app => 
-      app.id === selectedApplication.id 
-        ? { ...app, status: "verified" }
-        : app
-    )
-    setSpuApplications(updatedApplications)
-    
-    toast({
-      title: "Application Verified",
-      description: "Application has been verified and sent to COPS",
-    })
-    setSelectedApplication(null)
-    setVerificationStep(1)
-    setVerificationComments("")
-    setFieldVerification({
-      nameVerified: false,
-      cnicVerified: false,
-      incomeVerified: false,
-      addressVerified: false,
-      employmentVerified: false
-    })
   }
 
-  const handleReturnApplication = () => {
+  const handleReturnApplication = async () => {
     if (!selectedApplication) return
     
-    if (!verificationComments.trim()) {
+    try {
+      // Update status in backend
+      const losId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
+      console.log('Frontend sending losId:', losId, 'applicationType:', selectedApplication.application_type)
+      const response = await fetch('/api/applications/update-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          losId: losId,
+          status: 'SUBMITTED_TO_RRU',
+          applicationType: selectedApplication.application_type
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.text()
+        console.error('Backend error response:', errorData)
+        throw new Error(`Failed to update status: ${errorData}`)
+      }
+      
+      // Update application status in frontend
+      const updatedApplications = spuApplications.map(app => 
+        app.id === selectedApplication.id 
+          ? { ...app, status: "submitted_to_rru" }
+          : app
+      )
+      setSpuApplications(updatedApplications)
+      
       toast({
-        title: "Comments Required",
-        description: "Please provide comments for returning the application",
+        title: "Application Sent to RRU",
+        description: "Application has been sent to Risk Review Unit",
+      })
+      setSelectedApplication(null)
+      setVerificationStep(1)
+      setVerificationComments("")
+      setDocumentVerificationStatus({})
+      setFieldVerification({
+        nameVerified: false,
+        cnicVerified: false,
+        incomeVerified: false,
+        addressVerified: false,
+        employmentVerified: false
+      })
+    } catch (error) {
+      console.error('Error updating status:', error)
+      toast({
+        title: "Error",
+        description: "Failed to update application status",
         variant: "destructive"
       })
-      return
     }
-    
-    // Update application status
-    const updatedApplications = spuApplications.map(app => 
-      app.id === selectedApplication.id 
-        ? { ...app, status: "returned" }
-        : app
-    )
-    setSpuApplications(updatedApplications)
-    
-    toast({
-      title: "Application Returned",
-      description: "Application has been returned to PB for corrections",
-    })
-    setSelectedApplication(null)
-    setVerificationStep(1)
-    setVerificationComments("")
-    setFieldVerification({
-      nameVerified: false,
-      cnicVerified: false,
-      incomeVerified: false,
-      addressVerified: false,
-      employmentVerified: false
-    })
   }
 
   return (
@@ -409,8 +617,8 @@ export default function SPUDashboardPage() {
     <Tabs defaultValue="new" value={activeTab} onValueChange={setActiveTab}>
       <TabsList>
         <TabsTrigger value="new">New Applications</TabsTrigger>
-        <TabsTrigger value="verified">Verified</TabsTrigger>
-        <TabsTrigger value="returned">Returned</TabsTrigger>
+        {/* <TabsTrigger value="verified">Verified</TabsTrigger>
+        <TabsTrigger value="returned">Returned</TabsTrigger> */}
       </TabsList>
 
       {/* New Applications Tab */}
@@ -512,19 +720,109 @@ export default function SPUDashboardPage() {
                       <TableCell className="text-sm text-muted-foreground">
                         {new Date(app.created_at).toLocaleDateString()}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              onClick={() => {
-                                setSelectedApplication(app);
-                                setVerificationStep(1);
-                              }}
-                            >
-                              Verify
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-4xl">
+                                             <TableCell className="text-right">
+                         <div className="flex gap-2 justify-end">
+                           <Dialog>
+                             <DialogTrigger asChild>
+                               <Button
+                                 variant="outline"
+                                 size="sm"
+                                 onClick={() => setSelectedApplication(app)}
+                               >
+                                 <Eye className="mr-2 h-4 w-4" />
+                                 View
+                               </Button>
+                             </DialogTrigger>
+                             <DialogContent className="max-w-4xl">
+                               <DialogHeader>
+                                 <DialogTitle>Application Details - {selectedApplication?.los_id}</DialogTitle>
+                                 <DialogDescription>
+                                   Complete application information for SPU verification
+                                 </DialogDescription>
+                               </DialogHeader>
+                               {selectedApplication && (
+                                 <div className="space-y-6">
+                                   <div className="grid grid-cols-2 gap-4">
+                                     <div>
+                                       <Label className="text-sm font-medium">Applicant Information</Label>
+                                       <div className="space-y-2 mt-2">
+                                         <p><strong>Name:</strong> {selectedApplication.applicant_name}</p>
+                                         <p><strong>Loan Type:</strong> {selectedApplication.loan_type}</p>
+                                         <p><strong>Amount:</strong> PKR {selectedApplication.loan_amount?.toLocaleString()}</p>
+                                         <p><strong>Status:</strong> {getStatusBadge(selectedApplication.status)}</p>
+                                         <p><strong>Branch:</strong> {selectedApplication.branch}</p>
+                                       </div>
+                                     </div>
+                                     <div>
+                                       <Label className="text-sm font-medium">Application Details</Label>
+                                       <div className="space-y-2 mt-2">
+                                         <p><strong>LOS ID:</strong> {selectedApplication.los_id}</p>
+                                         <p><strong>Application Type:</strong> {selectedApplication.application_type}</p>
+                                         <p><strong>Created:</strong> {new Date(selectedApplication.created_at).toLocaleDateString()}</p>
+                                         <p><strong>Priority:</strong> {selectedApplication.priority}</p>
+                                         <p><strong>Assigned Officer:</strong> {selectedApplication.assigned_officer || 'Unassigned'}</p>
+                                       </div>
+                                     </div>
+                                   </div>
+
+                                   <div>
+                                     <Label className="text-sm font-medium">Required Documents</Label>
+                                     <div className="mt-2 space-y-2">
+                                       {selectedApplication.documents.map((doc: any, index: number) => (
+                                         <div key={index} className="flex items-center justify-between p-2 border rounded">
+                                           <div className="flex items-center gap-2">
+                                             <FileText className="h-4 w-4 text-muted-foreground" />
+                                             <span className="text-sm">{doc.name}</span>
+                                             {doc.required && <span className="text-red-500">*</span>}
+                                           </div>
+                                           {getDocumentStatusBadge(doc.status)}
+                                         </div>
+                                       ))}
+                                     </div>
+                                   </div>
+
+                                                                       <div className="flex gap-2">
+                                                                             <Button
+                                         variant="outline"
+                                         onClick={() => handleOpenDocumentExplorer(selectedApplication)}
+                                       >
+                                         <FileText className="mr-2 h-4 w-4" />
+                                         View Documents
+                                       </Button>
+                                      <Button
+                                        variant="outline"
+                                        onClick={() => {
+                                          setSelectedApplication(null);
+                                          setVerificationStep(1);
+                                        }}
+                                      >
+                                        Close
+                                      </Button>
+                                      <Button
+                                        onClick={() => {
+                                          setVerificationStep(1);
+                                        }}
+                                      >
+                                        Start Verification
+                                      </Button>
+                                    </div>
+                                 </div>
+                               )}
+                             </DialogContent>
+                           </Dialog>
+                           
+                           <Dialog>
+                             <DialogTrigger asChild>
+                               <Button
+                                 onClick={() => {
+                                   setSelectedApplication(app);
+                                   setVerificationStep(1);
+                                 }}
+                               >
+                                 Verify
+                               </Button>
+                             </DialogTrigger>
+                             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                             <DialogHeader>
                               <DialogTitle>Application Verification</DialogTitle>
                               <DialogDescription>
@@ -535,48 +833,20 @@ export default function SPUDashboardPage() {
                             </DialogHeader>
 
                             {/* Verification Steps */}
-                            <div className="py-4">
-                              <div className="flex items-center justify-between mb-8">
+                            <div className="py-4 px-2">
+                                                            <div className="flex items-center justify-between mb-8">
                                 <div className="flex items-center">
                                   <div
                                     className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                                      verificationStep === 1
-                                        ? "bg-blue-100 text-blue-600"
-                                        : "bg-green-100 text-green-600"
+                                      "bg-blue-100 text-blue-600"
                                     }`}
                                   >
-                                    {verificationStep > 1 ? (
-                                      <CheckCircle className="h-5 w-5" />
-                                    ) : (
-                                      "1"
-                                    )}
+                                    1
                                   </div>
                                   <div className="ml-3">
                                     <p className="font-medium">Document Verification</p>
                                     <p className="text-sm text-muted-foreground">
                                       Check all required documents
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="flex-1 mx-4 border-t border-gray-200"></div>
-                                <div className="flex items-center">
-                                  <div
-                                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                                      verificationStep === 2
-                                        ? "bg-blue-100 text-blue-600"
-                                        : "bg-gray-100 text-gray-400"
-                                    }`}
-                                  >
-                                    {verificationStep > 2 ? (
-                                      <CheckCircle className="h-5 w-5" />
-                                    ) : (
-                                      "2"
-                                    )}
-                                  </div>
-                                  <div className="ml-3">
-                                    <p className="font-medium">Field Verification</p>
-                                    <p className="text-sm text-muted-foreground">
-                                      Validate application details
                                     </p>
                                   </div>
                                 </div>
@@ -603,53 +873,37 @@ export default function SPUDashboardPage() {
                                           </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                          {selectedApplication.documents.map((doc: any) => (
+                                          {getDocumentChecklist(selectedApplication).map((doc: any) => (
                                             <TableRow key={doc.id}>
                                               <TableCell>{doc.name}</TableCell>
                                               <TableCell>
-                                                {getDocumentStatusBadge(doc.status)}
+                                                <Badge variant={doc.verified ? "default" : doc.rejected ? "destructive" : "secondary"}>
+                                                  {doc.verified ? "Verified" : doc.rejected ? "Rejected" : "Pending"}
+                                                </Badge>
                                               </TableCell>
                                               <TableCell>{doc.required ? "Yes" : "No"}</TableCell>
-                                                                                             <TableCell className="text-right">
-                                                 <div className="flex justify-end gap-2">
-                                                   <Button
-                                                     variant="outline"
-                                                     size="sm"
-                                                     onClick={() => handleViewDocument(doc)}
-                                                     title="View Document"
-                                                   >
-                                                     <Eye className="h-4 w-4 mr-1" />
-                                                     View
-                                                   </Button>
-                                                   <Button
-                                                     variant="outline"
-                                                     size="sm"
-                                                     onClick={() => handleDownloadDocument(doc)}
-                                                     title="Download Document"
-                                                   >
-                                                     <Download className="h-4 w-4 mr-1" />
-                                                     Download
-                                                   </Button>
-                                                   <Button
-                                                     variant="default"
-                                                     size="sm"
-                                                     onClick={() => handleVerifyDocument(doc.id)}
-                                                     disabled={doc.status === "verified"}
-                                                     title="Verify Document"
-                                                   >
-                                                     <Check className="h-4 w-4 mr-1" />
-                                                     Verify
-                                                   </Button>
-                                                   <Button
-                                                     variant="destructive"
-                                                     size="sm"
-                                                     onClick={() => handleRejectDocument(doc.id)}
-                                                     disabled={doc.status === "rejected"}
-                                                     title="Reject Document"
-                                                   >
-                                                     <Ban className="h-4 w-4 mr-1" />
-                                                     Reject
-                                                   </Button>
+                                              <TableCell className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                  <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => handleVerifyDocument(doc.id)}
+                                                    disabled={doc.verified}
+                                                    title="Verify Document"
+                                                  >
+                                                    <Check className="h-4 w-4 mr-1" />
+                                                    Verify
+                                                  </Button>
+                                                  <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    onClick={() => handleRejectDocument(doc.id)}
+                                                    disabled={doc.rejected}
+                                                    title="Reject Document"
+                                                  >
+                                                    <Ban className="h-4 w-4 mr-1" />
+                                                    Reject
+                                                  </Button>
                                                  </div>
                                                </TableCell>
                                             </TableRow>
@@ -659,111 +913,16 @@ export default function SPUDashboardPage() {
                                     </CardContent>
                                   </Card>
 
-                                  <div className="flex justify-between">
+                                  <div className="flex justify-between pb-4">
                                     <Button
                                       variant="outline"
                                       onClick={() => setSelectedApplication(null)}
                                     >
                                       Cancel
                                     </Button>
-                                    <Button onClick={() => setVerificationStep(2)}>
-                                      Next
-                                      <ArrowRight className="ml-2 h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Step 2 */}
-                              {verificationStep === 2 && (
-                                <div className="space-y-6">
-                                  <Card>
-                                    <CardHeader>
-                                      <CardTitle className="text-lg">Field Verification</CardTitle>
-                                      <CardDescription>
-                                        Verify application details match with documents
-                                      </CardDescription>
-                                    </CardHeader>
-                                                                         <CardContent>
-                                       <div className="space-y-6">
-                                         <div className="grid grid-cols-2 gap-4">
-                                           <div className="space-y-4">
-                                             <div className="flex items-center space-x-2">
-                                               <Checkbox
-                                                 id="nameVerified"
-                                                 checked={fieldVerification.nameVerified}
-                                                 onCheckedChange={(checked) => 
-                                                   setFieldVerification(prev => ({ ...prev, nameVerified: !!checked }))
-                                                 }
-                                               />
-                                               <Label htmlFor="nameVerified">Applicant Name Verified</Label>
-                                             </div>
-                                             <div className="flex items-center space-x-2">
-                                               <Checkbox
-                                                 id="cnicVerified"
-                                                 checked={fieldVerification.cnicVerified}
-                                                 onCheckedChange={(checked) => 
-                                                   setFieldVerification(prev => ({ ...prev, cnicVerified: !!checked }))
-                                                 }
-                                               />
-                                               <Label htmlFor="cnicVerified">CNIC Verified</Label>
-                                             </div>
-                                             <div className="flex items-center space-x-2">
-                                               <Checkbox
-                                                 id="incomeVerified"
-                                                 checked={fieldVerification.incomeVerified}
-                                                 onCheckedChange={(checked) => 
-                                                   setFieldVerification(prev => ({ ...prev, incomeVerified: !!checked }))
-                                                 }
-                                               />
-                                               <Label htmlFor="incomeVerified">Income Details Verified</Label>
-                                             </div>
-                                           </div>
-                                           <div className="space-y-4">
-                                             <div className="flex items-center space-x-2">
-                                               <Checkbox
-                                                 id="addressVerified"
-                                                 checked={fieldVerification.addressVerified}
-                                                 onCheckedChange={(checked) => 
-                                                   setFieldVerification(prev => ({ ...prev, addressVerified: !!checked }))
-                                                 }
-                                               />
-                                               <Label htmlFor="addressVerified">Address Verified</Label>
-                                             </div>
-                                             <div className="flex items-center space-x-2">
-                                               <Checkbox
-                                                 id="employmentVerified"
-                                                 checked={fieldVerification.employmentVerified}
-                                                 onCheckedChange={(checked) => 
-                                                   setFieldVerification(prev => ({ ...prev, employmentVerified: !!checked }))
-                                                 }
-                                               />
-                                               <Label htmlFor="employmentVerified">Employment Details Verified</Label>
-                                             </div>
-                                           </div>
-                                         </div>
-
-                                         <div className="space-y-2">
-                                           <Label htmlFor="comments">Verification Comments</Label>
-                                           <Textarea
-                                             id="comments"
-                                             placeholder="Add any comments or notes about this verification..."
-                                             value={verificationComments}
-                                             onChange={(e) => setVerificationComments(e.target.value)}
-                                           />
-                                         </div>
-                                       </div>
-                                     </CardContent>
-                                  </Card>
-
-                                  <div className="flex justify-between">
-                                    <Button variant="outline" onClick={() => setVerificationStep(1)}>
-                                      <ArrowLeft className="mr-2 h-4 w-4" />
-                                      Previous
-                                    </Button>
                                     <div className="space-x-2">
                                       <Button variant="destructive" onClick={handleReturnApplication}>
-                                        Return to PB
+                                        Send to RRU
                                       </Button>
                                       <Button onClick={handleVerifyApplication}>
                                         Verify & Send to COPS
@@ -772,9 +931,12 @@ export default function SPUDashboardPage() {
                                   </div>
                                 </div>
                               )}
+
+
                             </div>
                           </DialogContent>
                         </Dialog>
+                         </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -883,8 +1045,46 @@ export default function SPUDashboardPage() {
              </div>
            </div>
          )}
-       </DialogContent>
-     </Dialog>
-   </div>
- );
- }
+               </DialogContent>
+      </Dialog>
+
+             {/* Document Explorer Modal */}
+       <Dialog open={showDocumentExplorer} onOpenChange={setShowDocumentExplorer}>
+         <DialogContent className="max-w-6xl max-h-[90vh]">
+           <DialogHeader>
+             <DialogTitle>Document Explorer - {selectedApplication?.los_id}</DialogTitle>
+             <DialogDescription>
+               Browse and view all documents uploaded by Personal Banking for this application
+             </DialogDescription>
+           </DialogHeader>
+           
+           {selectedApplication && (
+             <div className="space-y-4">
+               <div className="flex items-center justify-between mb-4">
+                 <div>
+                   <h3 className="font-medium">Application: {selectedApplication.applicant_name}</h3>
+                   <p className="text-sm text-muted-foreground">
+                     LOS ID: {selectedApplication.los_id} | Type: {selectedApplication.application_type}
+                   </p>
+                 </div>
+                 <Button
+                   variant="outline"
+                   onClick={() => setShowDocumentExplorer(false)}
+                 >
+                   Close
+                 </Button>
+               </div>
+               
+               <DocumentExplorer 
+                 onFileSelect={(file) => {
+                   // Handle file selection if needed
+                   console.log('Selected file:', file)
+                 }}
+               />
+             </div>
+           )}
+         </DialogContent>
+       </Dialog>
+    </div>
+  );
+  }

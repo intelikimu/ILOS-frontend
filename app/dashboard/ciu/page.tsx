@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Progress } from "@/components/ui/progress"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 import { Clock, CheckCircle, AlertTriangle, FileText, Eye, MoreHorizontal, Search, Shield, User, DollarSign, Activity, FolderOpen } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -102,6 +104,9 @@ export default function CIUDashboardPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
   const [showDocumentExplorer, setShowDocumentExplorer] = useState(false)
+  const [commentText, setCommentText] = useState("")
+  const [existingComments, setExistingComments] = useState<{ [key: string]: string }>({})
+  const [allDepartmentComments, setAllDepartmentComments] = useState<{ [key: string]: any[] }>({})
   const { toast } = useToast()
 
   // Function to handle viewing application form data
@@ -154,6 +159,10 @@ export default function CIUDashboardPage() {
       console.log('✅ Form data fetched successfully:', data); 
       
       setSelectedApplication({ ...application, formData: data.formData });
+      
+      // Fetch all department comments for this application
+      await fetchAllDepartmentComments(losId);
+      
       toast({ 
         title: "Form Data Loaded", 
         description: `Application form data has been loaded successfully.` 
@@ -202,6 +211,103 @@ export default function CIUDashboardPage() {
 
     fetchApplications()
   }, [toast])
+
+  // Handle comment updates
+  const handleUpdateComment = async () => {
+    if (!selectedApplication || !commentText.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a comment before saving",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      const losId = selectedApplication.los_id.replace('LOS-', '')
+      const fieldName = 'ciu_comments' // Department-specific comment field
+      
+      console.log(`🔄 CIU: Updating comment for LOS ID: ${losId}, Field: ${fieldName}`)
+
+      const response = await fetch('/api/applications/update-comment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          losId,
+          fieldName,
+          commentText: commentText.trim()
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ CIU: Failed to update comment:', errorData)
+        toast({
+          title: "Error",
+          description: "Failed to save comment. Please try again.",
+          variant: "destructive"
+        })
+        return
+      }
+
+      const data = await response.json()
+      console.log(`✅ CIU: Comment updated successfully for LOS ID: ${losId}`)
+
+      // Update local state to show the comment
+      setExistingComments(prev => ({
+        ...prev,
+        [losId]: commentText.trim()
+      }))
+
+      toast({
+        title: "Comment Saved",
+        description: "Your comment has been saved successfully",
+      })
+
+      // Clear the input field
+      setCommentText("")
+
+    } catch (error) {
+      console.error('❌ CIU: Error updating comment:', error)
+      toast({
+        title: "Error",
+        description: "Failed to save comment. Please try again.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const fetchAllDepartmentComments = async (losId: string) => {
+    try {
+      const response = await fetch(`/api/applications/comments/${losId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ Error fetching comments:', errorData)
+        return
+      }
+
+      const data = await response.json()
+      console.log('✅ All department comments fetched successfully:', data)
+
+      if (data.success && data.comments) {
+        setAllDepartmentComments(prev => ({
+          ...prev,
+          [losId]: data.comments
+        }))
+      }
+
+    } catch (error) {
+      console.error('❌ Error fetching all department comments:', error)
+    }
+  }
 
   const filteredApplications = applicationsData.filter((app: CIUApplication) => {
     const matchesSearch = app.applicant_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -617,6 +723,50 @@ export default function CIUDashboardPage() {
                                           </div>
                                         )}
 
+                                        {/* Comments Section */}
+                                        <div>
+                                          <h4 className="font-semibold mb-3 text-purple-600">All Department Comments</h4>
+                                          {allDepartmentComments[selectedApplication.los_id.replace('LOS-', '')] && 
+                                           allDepartmentComments[selectedApplication.los_id.replace('LOS-', '')].length > 0 ? (
+                                            <div className="space-y-3">
+                                              {allDepartmentComments[selectedApplication.los_id.replace('LOS-', '')].map((comment: any, index: number) => (
+                                                <div key={index} className={`border rounded-lg p-3 ${
+                                                  comment.department === 'PB' ? 'bg-blue-50 border-blue-200' :
+                                                  comment.department === 'SPU' ? 'bg-green-50 border-green-200' :
+                                                  comment.department === 'COPS' ? 'bg-purple-50 border-purple-200' :
+                                                  comment.department === 'EAMVU' ? 'bg-orange-50 border-orange-200' :
+                                                  comment.department === 'CIU' ? 'bg-red-50 border-red-200' :
+                                                  comment.department === 'RRU' ? 'bg-indigo-50 border-indigo-200' :
+                                                  'bg-gray-50 border-gray-200'
+                                                }`}>
+                                                  <div className="flex justify-between items-start mb-2">
+                                                    <span className={`text-xs font-medium px-2 py-1 rounded ${
+                                                      comment.department === 'PB' ? 'bg-blue-100 text-blue-800' :
+                                                      comment.department === 'SPU' ? 'bg-green-100 text-green-800' :
+                                                      comment.department === 'COPS' ? 'bg-purple-100 text-purple-800' :
+                                                      comment.department === 'EAMVU' ? 'bg-orange-100 text-orange-800' :
+                                                      comment.department === 'CIU' ? 'bg-red-100 text-red-800' :
+                                                      comment.department === 'RRU' ? 'bg-indigo-100 text-indigo-800' :
+                                                      'bg-gray-100 text-gray-800'
+                                                    }`}>
+                                                      {comment.department}
+                                                    </span>
+                                                  </div>
+                                                  <p className="text-sm text-gray-700">
+                                                    {comment.comment_text}
+                                                  </p>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : (
+                                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                              <p className="text-sm text-gray-500 italic">
+                                                No comments from any department yet
+                                              </p>
+                                            </div>
+                                          )}
+                                        </div>
+
                                         {/* Raw Data (for debugging) */}
                                         <details className="mt-4">
                                           <summary className="cursor-pointer text-sm font-medium text-gray-600">View Raw Data</summary>
@@ -651,6 +801,50 @@ export default function CIUDashboardPage() {
                                       >
                                         <FolderOpen className="mr-2 h-4 w-4" />
                                         View Documents
+                                      </Button>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+
+                                {/* Notes Section */}
+                                <Card>
+                                  <CardHeader>
+                                    <CardTitle className="text-lg">Notes</CardTitle>
+                                    <CardDescription>
+                                      Add comments and notes about this application
+                                    </CardDescription>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <div className="space-y-4">
+                                      {/* Existing Comments Display */}
+                                      {selectedApplication && existingComments[selectedApplication.los_id.replace('LOS-', '')] && (
+                                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                          <h4 className="font-medium text-blue-800 mb-2">Previous Comments:</h4>
+                                          <p className="text-sm text-blue-700">
+                                            {existingComments[selectedApplication.los_id.replace('LOS-', '')]}
+                                          </p>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Comment Input */}
+                                      <div className="space-y-2">
+                                        <Label htmlFor="comment">Add Comment</Label>
+                                        <Textarea 
+                                          id="comment"
+                                          placeholder="Add any notes or comments about the investigation process..."
+                                          value={commentText}
+                                          onChange={(e) => setCommentText(e.target.value)}
+                                          rows={4}
+                                        />
+                                      </div>
+                                      
+                                      {/* Save Comment Button */}
+                                      <Button 
+                                        onClick={handleUpdateComment}
+                                        disabled={!commentText.trim()}
+                                        className="w-full"
+                                      >
+                                        Save Comment
                                       </Button>
                                     </div>
                                   </CardContent>

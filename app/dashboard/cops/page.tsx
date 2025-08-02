@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
-import { Search, Filter, Clock, CheckCircle, AlertTriangle, FileText, Eye, MoreHorizontal, ArrowRight, Database, CheckSquare, X, User, DollarSign, Activity, FolderOpen } from "lucide-react"
+import { Search, Filter, Clock, CheckCircle, AlertTriangle, FileText, Eye, MoreHorizontal, ArrowRight, Database, CheckSquare, X, User, DollarSign, Activity, FolderOpen, CheckCircle2, XCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import DocumentExplorer from "@/components/document-explorer"
 
@@ -105,7 +105,171 @@ export default function COPSDashboardPage() {
   const [applicationsData, setApplicationsData] = useState<COPSApplication[]>([])
   const [loading, setLoading] = useState(true)
   const [showDocumentExplorer, setShowDocumentExplorer] = useState(false)
+  const [documentVerificationStatus, setDocumentVerificationStatus] = useState<{ [key: string]: { [losId: string]: boolean } }>({})
+  const [commentText, setCommentText] = useState("")
+  const [existingComments, setExistingComments] = useState<{ [key: string]: string }>({})
+  const [allDepartmentComments, setAllDepartmentComments] = useState<{ [key: string]: any[] }>({})
   const { toast } = useToast()
+
+  // Function to get dynamic document checklist based on loan type
+  const getDocumentChecklist = (application: any) => {
+    // If we have form data with documents_checklist, use that
+    if (application.formData && application.formData.documents_checklist && application.formData.documents_checklist.length > 0) {
+      const checklist = application.formData.documents_checklist[0] // Get the first checklist entry
+      
+      // Convert the checklist object to an array of document items
+      const checklistItems: any[] = []
+      
+      // Define the field mappings with their display names and required status
+      const fieldMappings: { [key: string]: { name: string; required: boolean } } = {
+        'cnic': { name: 'CNIC', required: true },
+        'photo_1': { name: 'Photo 1', required: true },
+        'photo_2': { name: 'Photo 2', required: true },
+        'business_ntn': { name: 'Business NTN', required: false },
+        'salary_slip_1': { name: 'Salary Slip 1', required: true },
+        'salary_slip_2': { name: 'Salary Slip 2', required: true },
+        'salary_slip_3': { name: 'Salary Slip 3', required: true },
+        'poa_undertaking': { name: 'POA Undertaking', required: false },
+        'reference1_cnic': { name: 'Reference 1 CNIC', required: true },
+        'reference2_cnic': { name: 'Reference 2 CNIC', required: true },
+        'retrieval_letter': { name: 'Retrieval Letter', required: false },
+        'calculation_sheet': { name: 'Calculation Sheet', required: true },
+        'filer_undertaking': { name: 'Filer Undertaking', required: false },
+        'bank_statement_1yr': { name: 'Bank Statement (1 Year)', required: true },
+        'reference1_contact': { name: 'Reference 1 Contact', required: true },
+        'reference2_contact': { name: 'Reference 2 Contact', required: true },
+        'loan_declaration_form': { name: 'Loan Declaration Form', required: true },
+        'business_bank_statement': { name: 'Business Bank Statement', required: false },
+        'personal_use_undertaking': { name: 'Personal Use Undertaking', required: false },
+        'business_letterhead_request': { name: 'Business Letterhead Request', required: false },
+        'verification_office_residence': { name: 'Verification Office/Residence', required: true },
+        'private_registration_undertaking': { name: 'Private Registration Undertaking', required: false },
+        'kfs': { name: 'Key Fact Statement (KFS)', required: true }
+      }
+      
+      // Process each field in the checklist
+      Object.keys(checklist).forEach(fieldName => {
+        if (fieldName !== 'id' && fieldName !== 'application_id' && fieldName !== 'uploaded_at') {
+          const mapping = fieldMappings[fieldName]
+          if (mapping) {
+            checklistItems.push({
+              id: fieldName, // Use the actual field name as ID for API calls
+              name: mapping.name,
+              required: mapping.required,
+              verified: checklist[fieldName] === true,
+              rejected: checklist[fieldName] === false,
+              uploaded_at: checklist.uploaded_at
+            })
+          }
+        }
+      })
+      
+      return checklistItems
+    }
+    
+    // Fallback to hardcoded list if no checklist data is available
+    const baseDocuments = [
+      { name: "Verification office/residence document", required: true },
+      { name: "CNIC", required: true },
+      { name: "Photo 1", required: true },
+      { name: "Photo 2", required: true },
+      { name: "Reference 1 CNIC", required: true },
+      { name: "Reference 1 Contact", required: true },
+      { name: "Reference 2 CNIC", required: true },
+      { name: "Reference 2 Contact", required: true },
+      { name: "Calculation Sheet", required: true },
+      { name: "Key Fact Statement (KFS)", required: true },
+      { name: "Loan Declaration Form", required: true },
+      { name: "Salary Slip 1", required: true },
+      { name: "Salary Slip 2", required: true },
+      { name: "Salary Slip 3", required: true },
+      { name: "Bank Statement (1 Year)", required: true },
+      { name: "Business Bank Statement", required: true },
+      { name: "Business NTN", required: true },
+      { name: "Business Letterhead Request", required: true }
+    ]
+
+    // Additional documents specific to loan types
+    let additionalDocuments: any[] = []
+    
+    switch (application.loan_type) {
+      case 'CashPlus Loan':
+        additionalDocuments = [
+          { name: "Retrieval Letter", required: true },
+          { name: "Filer Undertaking", required: true },
+          { name: "POA Undertaking", required: true },
+          { name: "Personal Use Undertaking", required: true },
+          { name: "Private Registration Undertaking", required: true }
+        ]
+        break
+      case 'Auto Loan':
+        additionalDocuments = [
+          { name: "Retrieval Letter", required: true },
+          { name: "Filer Undertaking", required: true },
+          { name: "POA Undertaking", required: true },
+          { name: "Personal Use Undertaking", required: true },
+          { name: "Private Registration Undertaking", required: true }
+        ]
+        break
+      case 'Ameen Drive':
+        additionalDocuments = [
+          { name: "Financial Checklist", required: true },
+          { name: "PR Checklist", required: true }
+        ]
+        break
+      case 'SME Asaan':
+        // No additional documents for SME Asaan
+        break
+      case 'Commercial':
+        // No additional documents for Commercial
+        break
+    }
+
+    const allDocuments = [...baseDocuments, ...additionalDocuments]
+    
+    return allDocuments.map((doc, index) => {
+      // Create a mapping from display name to field name for the fallback
+      const nameToFieldMap: { [key: string]: string } = {
+        'Verification office/residence document': 'verification_office_residence',
+        'CNIC': 'cnic',
+        'Photo 1': 'photo_1',
+        'Photo 2': 'photo_2',
+        'Reference 1 CNIC': 'reference1_cnic',
+        'Reference 1 Contact': 'reference1_contact',
+        'Reference 2 CNIC': 'reference2_cnic',
+        'Reference 2 Contact': 'reference2_contact',
+        'Calculation Sheet': 'calculation_sheet',
+        'Key Fact Statement (KFS)': 'kfs',
+        'Loan Declaration Form': 'loan_declaration_form',
+        'Salary Slip 1': 'salary_slip_1',
+        'Salary Slip 2': 'salary_slip_2',
+        'Salary Slip 3': 'salary_slip_3',
+        'Bank Statement (1 Year)': 'bank_statement_1yr',
+        'Business Bank Statement': 'business_bank_statement',
+        'Business NTN': 'business_ntn',
+        'Business Letterhead Request': 'business_letterhead_request',
+        'Retrieval Letter': 'retrieval_letter',
+        'Filer Undertaking': 'filer_undertaking',
+        'POA Undertaking': 'poa_undertaking',
+        'Personal Use Undertaking': 'personal_use_undertaking',
+        'Private Registration Undertaking': 'private_registration_undertaking',
+        'Financial Checklist': 'financial_checklist',
+        'PR Checklist': 'pr_checklist'
+      }
+      
+      const fieldName = nameToFieldMap[doc.name] || `unknown_${index}`
+      const docId = fieldName
+      
+      const currentLosId = application.los_id?.replace('LOS-', '') || application.id?.split('-')[1]
+      return {
+        id: docId,
+        name: doc.name,
+        required: doc.required,
+        verified: documentVerificationStatus[docId]?.[currentLosId] || false,
+        rejected: documentVerificationStatus[`${docId}-rejected`]?.[currentLosId] || false
+      }
+    })
+  }
 
   // Function to handle viewing application form data
   const handleViewApplication = async (application: any) => {
@@ -157,6 +321,10 @@ export default function COPSDashboardPage() {
       console.log('✅ Form data fetched successfully:', data); 
       
       setSelectedApplication({ ...application, formData: data.formData });
+      
+      // Fetch all department comments for this application
+      await fetchAllDepartmentComments(losId);
+      
       toast({ 
         title: "Form Data Loaded", 
         description: `Application form data has been loaded successfully.` 
@@ -170,6 +338,248 @@ export default function COPSDashboardPage() {
       });
     }
   };
+
+  // Document verification functions
+  const handleVerifyDocument = async (docId: string) => {
+    if (!selectedApplication) return
+    
+    try {
+      console.log('🔍 Debug: selectedApplication:', selectedApplication)
+      console.log('🔍 Debug: selectedApplication.los_id:', selectedApplication.los_id)
+      console.log('🔍 Debug: selectedApplication.id:', selectedApplication.id)
+      
+      const losId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
+      
+      console.log('🔍 Debug: extracted losId:', losId)
+      
+      // Validate losId
+      if (!losId || isNaN(parseInt(losId))) {
+        throw new Error(`Invalid LOS ID: ${losId}`)
+      }
+      
+      console.log('🔄 Frontend: Verifying document:', { losId, fieldName: docId, isVerified: true })
+      
+      const requestBody = {
+        losId: losId,
+        fieldName: docId,
+        isVerified: true
+      }
+      
+      console.log('🔍 Debug: Request body:', requestBody)
+      console.log('🔍 Debug: docId (fieldName):', docId)
+      
+      const response = await fetch('/api/applications/update-checklist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      })
+
+      if (!response.ok) {
+        console.log('🔍 Debug: Response status:', response.status)
+        console.log('🔍 Debug: Response statusText:', response.statusText)
+        const errorData = await response.json()
+        console.log('🔍 Debug: Error data:', errorData)
+        throw new Error(errorData.error || 'Failed to verify document')
+      }
+
+      // Update document verification status in frontend
+      const currentLosId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
+      setDocumentVerificationStatus(prev => ({
+        ...prev,
+        [docId]: {
+          ...prev[docId],
+          [currentLosId]: true
+        },
+        [`${docId}-rejected`]: {
+          ...prev[`${docId}-rejected`],
+          [currentLosId]: false // Clear rejection if it was previously rejected
+        }
+      }))
+      
+      toast({
+        title: "Document Verified",
+        description: "Document has been marked as verified in database",
+      })
+    } catch (error) {
+      console.error('❌ Error verifying document:', error)
+      toast({
+        title: "Error",
+        description: "Failed to verify document. Please try again.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const handleRejectDocument = async (docId: string) => {
+    if (!selectedApplication) return
+    
+    try {
+      console.log('🔍 Debug: selectedApplication:', selectedApplication)
+      console.log('🔍 Debug: selectedApplication.los_id:', selectedApplication.los_id)
+      console.log('🔍 Debug: selectedApplication.id:', selectedApplication.id)
+      
+      const losId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
+      
+      console.log('🔍 Debug: extracted losId:', losId)
+      
+      // Validate losId
+      if (!losId || isNaN(parseInt(losId))) {
+        throw new Error(`Invalid LOS ID: ${losId}`)
+      }
+      
+      console.log('🔄 Frontend: Rejecting document:', { losId, fieldName: docId, isVerified: false })
+      
+      const requestBody = {
+        losId: losId,
+        fieldName: docId,
+        isVerified: false
+      }
+      
+      console.log('🔍 Debug: Request body:', requestBody)
+      console.log('🔍 Debug: docId (fieldName):', docId)
+      
+      const response = await fetch('/api/applications/update-checklist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      })
+
+      if (!response.ok) {
+        console.log('🔍 Debug: Response status:', response.status)
+        console.log('🔍 Debug: Response statusText:', response.statusText)
+        const errorData = await response.json()
+        console.log('🔍 Debug: Error data:', errorData)
+        throw new Error(errorData.error || 'Failed to reject document')
+      }
+
+      // Update document verification status in frontend
+      const currentLosId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
+      setDocumentVerificationStatus(prev => ({
+        ...prev,
+        [docId]: {
+          ...prev[docId],
+          [currentLosId]: false
+        },
+        [`${docId}-rejected`]: {
+          ...prev[`${docId}-rejected`],
+          [currentLosId]: true
+        }
+      }))
+      
+      toast({
+        title: "Document Rejected",
+        description: "Document has been marked as rejected in database",
+      })
+    } catch (error) {
+      console.error('❌ Error rejecting document:', error)
+      toast({
+        title: "Error",
+        description: "Failed to reject document. Please try again.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  // Handle comment updates
+  const handleUpdateComment = async () => {
+    if (!selectedApplication || !commentText.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a comment before saving",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      const losId = selectedApplication.los_id.replace('LOS-', '')
+      const fieldName = 'cops_comments' // Department-specific comment field
+      
+      console.log(`🔄 COPS: Updating comment for LOS ID: ${losId}, Field: ${fieldName}`)
+
+      const response = await fetch('/api/applications/update-comment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          losId,
+          fieldName,
+          commentText: commentText.trim()
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ COPS: Failed to update comment:', errorData)
+        toast({
+          title: "Error",
+          description: "Failed to save comment. Please try again.",
+          variant: "destructive"
+        })
+        return
+      }
+
+      const data = await response.json()
+      console.log(`✅ COPS: Comment updated successfully for LOS ID: ${losId}`)
+
+      // Update local state to show the comment
+      setExistingComments(prev => ({
+        ...prev,
+        [losId]: commentText.trim()
+      }))
+
+      toast({
+        title: "Comment Saved",
+        description: "Your comment has been saved successfully",
+      })
+
+      // Clear the input field
+      setCommentText("")
+
+    } catch (error) {
+      console.error('❌ COPS: Error updating comment:', error)
+      toast({
+        title: "Error",
+        description: "Failed to save comment. Please try again.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const fetchAllDepartmentComments = async (losId: string) => {
+    try {
+      const response = await fetch(`/api/applications/comments/${losId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ Error fetching comments:', errorData)
+        return
+      }
+
+      const data = await response.json()
+      console.log('✅ All department comments fetched successfully:', data)
+
+      if (data.success && data.comments) {
+        setAllDepartmentComments(prev => ({
+          ...prev,
+          [losId]: data.comments
+        }))
+      }
+
+    } catch (error) {
+      console.error('❌ Error fetching all department comments:', error)
+    }
+  }
 
   // Fetch COPS applications from API
   useEffect(() => {
@@ -671,6 +1081,52 @@ await fetch('/api/applications/update-status', {
                                             </div>
                                           )}
 
+                                          {/* Comments Section */}
+                                          <div>
+                                            <h4 className="font-semibold mb-3 text-purple-600">All Department Comments</h4>
+                                            {allDepartmentComments[selectedApplication.los_id.replace('LOS-', '')] && 
+                                             allDepartmentComments[selectedApplication.los_id.replace('LOS-', '')].length > 0 ? (
+                                              <div className="space-y-3">
+                                                {allDepartmentComments[selectedApplication.los_id.replace('LOS-', '')].map((comment: any, index: number) => (
+                                                  <div key={index} className={`border rounded-lg p-3 ${
+                                                    comment.department === 'PB' ? 'bg-blue-50 border-blue-200' :
+                                                    comment.department === 'SPU' ? 'bg-green-50 border-green-200' :
+                                                    comment.department === 'COPS' ? 'bg-purple-50 border-purple-200' :
+                                                    comment.department === 'EAMVU' ? 'bg-orange-50 border-orange-200' :
+                                                    comment.department === 'CIU' ? 'bg-red-50 border-red-200' :
+                                                    comment.department === 'RRU' ? 'bg-indigo-50 border-indigo-200' :
+                                                    'bg-gray-50 border-gray-200'
+                                                  }`}>
+                                                    <div className="flex justify-between items-start mb-2">
+                                                      <span className={`text-xs font-medium px-2 py-1 rounded ${
+                                                        comment.department === 'PB' ? 'bg-blue-100 text-blue-800' :
+                                                        comment.department === 'SPU' ? 'bg-green-100 text-green-800' :
+                                                        comment.department === 'COPS' ? 'bg-purple-100 text-purple-800' :
+                                                        comment.department === 'EAMVU' ? 'bg-orange-100 text-orange-800' :
+                                                        comment.department === 'CIU' ? 'bg-red-100 text-red-800' :
+                                                        comment.department === 'RRU' ? 'bg-indigo-100 text-indigo-800' :
+                                                        'bg-gray-100 text-gray-800'
+                                                      }`}>
+                                                        {comment.department}
+                                                      </span>
+                                                    </div>
+                                                    <p className="text-sm text-gray-700">
+                                                      {comment.comment_text}
+                                                    </p>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            ) : (
+                                              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                                <p className="text-sm text-gray-500 italic">
+                                                  No comments from any department yet
+                                                </p>
+                                              </div>
+                                            )}
+                                          </div>
+
+                                        
+
                                           {/* Raw Data (for debugging) */}
                                           <details className="mt-4">
                                             <summary className="cursor-pointer text-sm font-medium text-gray-600">View Raw Data</summary>
@@ -722,6 +1178,8 @@ await fetch('/api/applications/update-status', {
                               )}
                             </DialogContent>
                           </Dialog>
+
+                          </div>
                           
                           {/* Document Explorer Dialog */}
                           <Dialog open={showDocumentExplorer} onOpenChange={setShowDocumentExplorer}>
@@ -748,24 +1206,24 @@ await fetch('/api/applications/update-status', {
                               )}
                             </DialogContent>
                           </Dialog>
-                                                     </div>
-                           
-                           <Dialog>
-                             <DialogTrigger asChild>
-                               <Button onClick={() => setSelectedApplication(app)}>
-                                 Continue
-                               </Button>
-                             </DialogTrigger>
-                          <DialogContent className="max-w-4xl">
-                            <DialogHeader>
-                              <DialogTitle>Data Entry - {selectedApplication?.id}</DialogTitle>
+
+                          {/* Continue Modal */}
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button onClick={() => setSelectedApplication(app)}>
+                                Continue
+                              </Button>
+                            </DialogTrigger>
+                          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+                            <DialogHeader className="sticky top-0 bg-white z-10 pb-4 border-b">
+                              <DialogTitle>Data Entry - {selectedApplication?.los_id}</DialogTitle>
                               <DialogDescription>
-                                Enter application data into core banking systems
+                                Enter application data into core banking systems and verify documents
                               </DialogDescription>
                             </DialogHeader>
 
                             {selectedApplication && (
-                              <div className="space-y-6">
+                              <div className="overflow-y-auto max-h-[calc(90vh-120px)] space-y-6 pr-2">
                                 <Card>
                                   <CardHeader>
                                     <CardTitle className="text-lg">Applicant Information</CardTitle>
@@ -821,14 +1279,133 @@ await fetch('/api/applications/update-status', {
                                   </CardContent>
                                 </Card>
 
+                                {/* Document Verification Checklist */}
+                                <Card>
+                                  <CardHeader>
+                                    <CardTitle className="text-lg">Document Verification Checklist</CardTitle>
+                                    <CardDescription>
+                                      Verify all required documents for this application
+                                    </CardDescription>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <div className="space-y-4">
+                                      {getDocumentChecklist(selectedApplication).map((doc) => (
+                                        <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                          <div className="flex items-center space-x-3">
+                                            <div className="flex items-center space-x-2">
+                                              {doc.verified ? (
+                                                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                                              ) : doc.rejected ? (
+                                                <XCircle className="h-5 w-5 text-red-600" />
+                                              ) : (
+                                                <div className="h-5 w-5 border-2 border-gray-300 rounded-full" />
+                                              )}
+                                            </div>
+                                            <div>
+                                              <Label className="text-sm font-medium">
+                                                {doc.name}
+                                                {doc.required && <span className="text-red-500 ml-1">*</span>}
+                                              </Label>
+                                              {doc.uploaded_at && (
+                                                <p className="text-xs text-gray-500">
+                                                  Uploaded: {new Date(doc.uploaded_at).toLocaleDateString()}
+                                                </p>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <div className="flex space-x-2">
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => handleVerifyDocument(doc.id)}
+                                              disabled={doc.verified}
+                                              className="text-green-600 hover:text-green-700"
+                                            >
+                                              <CheckCircle2 className="h-4 w-4 mr-1" />
+                                              Verify
+                                            </Button>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => handleRejectDocument(doc.id)}
+                                              disabled={doc.rejected}
+                                              className="text-red-600 hover:text-red-700"
+                                            >
+                                              <XCircle className="h-4 w-4 mr-1" />
+                                              Reject
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </CardContent>
+                                </Card>
+
                                 <Card>
                                   <CardHeader>
                                     <CardTitle className="text-lg">Notes</CardTitle>
+                                    <CardDescription>
+                                      Add comments and notes about this application
+                                    </CardDescription>
                                   </CardHeader>
                                   <CardContent>
-                                    <Textarea 
-                                      placeholder="Add any notes or comments about the data entry process..."
-                                    />
+                                    <div className="space-y-4">
+                                      {/* Existing Comments Display */}
+                                      {selectedApplication && existingComments[selectedApplication.los_id.replace('LOS-', '')] && (
+                                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                          <h4 className="font-medium text-blue-800 mb-2">Previous Comments:</h4>
+                                          <p className="text-sm text-blue-700">
+                                            {existingComments[selectedApplication.los_id.replace('LOS-', '')]}
+                                          </p>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Comment Input */}
+                                      <div className="space-y-2">
+                                        <Label htmlFor="comment">Add Comment</Label>
+                                        <Textarea 
+                                          id="comment"
+                                          placeholder="Add any notes or comments about the data entry process..."
+                                          value={commentText}
+                                          onChange={(e) => setCommentText(e.target.value)}
+                                          rows={4}
+                                        />
+                                      </div>
+                                      
+                                      {/* Save Comment Button */}
+                                      <Button 
+                                        onClick={handleUpdateComment}
+                                        disabled={!commentText.trim()}
+                                        className="w-full"
+                                      >
+                                        Save Comment
+                                      </Button>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+
+                                {/* View Documents Button */}
+                                <Card>
+                                  <CardHeader>
+                                    <CardTitle className="text-lg flex items-center gap-2">
+                                      <FolderOpen className="h-5 w-5" />
+                                      Documents
+                                    </CardTitle>
+                                    <CardDescription>
+                                      View uploaded documents for this application
+                                    </CardDescription>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <div className="space-y-4">
+                                      <Button 
+                                        variant="outline" 
+                                        onClick={() => setShowDocumentExplorer(true)}
+                                        className="w-full"
+                                      >
+                                        <FolderOpen className="mr-2 h-4 w-4" />
+                                        View Documents
+                                      </Button>
+                                    </div>
                                   </CardContent>
                                 </Card>
 
@@ -840,6 +1417,32 @@ await fetch('/api/applications/update-status', {
                                     Complete & Move to Compliance
                                   </Button>
                                 </DialogFooter>
+                              </div>
+                            )}
+                          </DialogContent>
+                        </Dialog>
+
+                        {/* Document Explorer Dialog */}
+                        <Dialog open={showDocumentExplorer} onOpenChange={setShowDocumentExplorer}>
+                          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+                            <DialogHeader className="sticky top-0 bg-white z-10 pb-4 border-b">
+                              <DialogTitle>Document Explorer - {selectedApplication?.los_id}</DialogTitle>
+                              <DialogDescription>
+                                View uploaded documents for this application
+                              </DialogDescription>
+                            </DialogHeader>
+                            {selectedApplication && (
+                              <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
+                                <DocumentExplorer 
+                                  losId={selectedApplication.los_id}
+                                  applicationType={selectedApplication.loan_type}
+                                  onFileSelect={(file) => {
+                                    toast({
+                                      title: "File selected",
+                                      description: `Selected: ${file.name}`,
+                                    });
+                                  }} 
+                                />
                               </div>
                             )}
                           </DialogContent>

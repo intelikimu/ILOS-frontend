@@ -165,7 +165,10 @@ export default function SPUDashboardPage() {
   const [showDocumentsModal, setShowDocumentsModal] = useState(false)
   const [showDocumentExplorer, setShowDocumentExplorer] = useState(false)
   const [applicationDocuments, setApplicationDocuments] = useState<any[]>([])
-  const [documentVerificationStatus, setDocumentVerificationStatus] = useState<{[key: string]: boolean}>({})
+  const [documentVerificationStatus, setDocumentVerificationStatus] = useState<{ [key: string]: { [losId: string]: boolean } }>({})
+  const [commentText, setCommentText] = useState("")
+  const [existingComments, setExistingComments] = useState<{ [key: string]: string }>({})
+  const [allDepartmentComments, setAllDepartmentComments] = useState<{ [key: string]: any[] }>({})
   const { toast } = useToast()
 
 
@@ -193,7 +196,61 @@ export default function SPUDashboardPage() {
 
   // Function to get dynamic document checklist based on loan type
   const getDocumentChecklist = (application: any) => {
-    // Base documents common to all loan types
+    // If we have form data with documents_checklist, use that
+    if (application.formData && application.formData.documents_checklist && application.formData.documents_checklist.length > 0) {
+      const checklist = application.formData.documents_checklist[0] // Get the first checklist entry
+      
+      // Convert the checklist object to an array of document items
+      const checklistItems: any[] = []
+      
+      // Define the field mappings with their display names and required status
+      const fieldMappings: { [key: string]: { name: string; required: boolean } } = {
+        'cnic': { name: 'CNIC', required: true },
+        'photo_1': { name: 'Photo 1', required: true },
+        'photo_2': { name: 'Photo 2', required: true },
+        'business_ntn': { name: 'Business NTN', required: false },
+        'salary_slip_1': { name: 'Salary Slip 1', required: true },
+        'salary_slip_2': { name: 'Salary Slip 2', required: true },
+        'salary_slip_3': { name: 'Salary Slip 3', required: true },
+        'poa_undertaking': { name: 'POA Undertaking', required: false },
+        'reference1_cnic': { name: 'Reference 1 CNIC', required: true },
+        'reference2_cnic': { name: 'Reference 2 CNIC', required: true },
+        'retrieval_letter': { name: 'Retrieval Letter', required: false },
+        'calculation_sheet': { name: 'Calculation Sheet', required: true },
+        'filer_undertaking': { name: 'Filer Undertaking', required: false },
+        'bank_statement_1yr': { name: 'Bank Statement (1 Year)', required: true },
+        'reference1_contact': { name: 'Reference 1 Contact', required: true },
+        'reference2_contact': { name: 'Reference 2 Contact', required: true },
+        'loan_declaration_form': { name: 'Loan Declaration Form', required: true },
+        'business_bank_statement': { name: 'Business Bank Statement', required: false },
+        'personal_use_undertaking': { name: 'Personal Use Undertaking', required: false },
+        'business_letterhead_request': { name: 'Business Letterhead Request', required: false },
+        'verification_office_residence': { name: 'Verification Office/Residence', required: true },
+        'private_registration_undertaking': { name: 'Private Registration Undertaking', required: false },
+        'kfs': { name: 'Key Fact Statement (KFS)', required: true }
+      }
+      
+      // Process each field in the checklist
+      Object.keys(checklist).forEach(fieldName => {
+        if (fieldName !== 'id' && fieldName !== 'application_id' && fieldName !== 'uploaded_at') {
+          const mapping = fieldMappings[fieldName]
+          if (mapping) {
+            checklistItems.push({
+              id: fieldName, // Use the actual field name as ID for API calls
+              name: mapping.name,
+              required: mapping.required,
+              verified: checklist[fieldName] === true,
+              rejected: checklist[fieldName] === false,
+              uploaded_at: checklist.uploaded_at
+            })
+          }
+        }
+      })
+      
+      return checklistItems
+    }
+    
+    // Fallback to hardcoded list if no checklist data is available
     const baseDocuments = [
       { name: "Verification office/residence document", required: true },
       { name: "CNIC", required: true },
@@ -254,13 +311,45 @@ export default function SPUDashboardPage() {
     const allDocuments = [...baseDocuments, ...additionalDocuments]
     
     return allDocuments.map((doc, index) => {
-      const docId = `checklist-${application.id}-${index}`
+      // Create a mapping from display name to field name for the fallback
+      const nameToFieldMap: { [key: string]: string } = {
+        'Verification office/residence document': 'verification_office_residence',
+        'CNIC': 'cnic',
+        'Photo 1': 'photo_1',
+        'Photo 2': 'photo_2',
+        'Reference 1 CNIC': 'reference1_cnic',
+        'Reference 1 Contact': 'reference1_contact',
+        'Reference 2 CNIC': 'reference2_cnic',
+        'Reference 2 Contact': 'reference2_contact',
+        'Calculation Sheet': 'calculation_sheet',
+        'Key Fact Statement (KFS)': 'kfs',
+        'Loan Declaration Form': 'loan_declaration_form',
+        'Salary Slip 1': 'salary_slip_1',
+        'Salary Slip 2': 'salary_slip_2',
+        'Salary Slip 3': 'salary_slip_3',
+        'Bank Statement (1 Year)': 'bank_statement_1yr',
+        'Business Bank Statement': 'business_bank_statement',
+        'Business NTN': 'business_ntn',
+        'Business Letterhead Request': 'business_letterhead_request',
+        'Retrieval Letter': 'retrieval_letter',
+        'Filer Undertaking': 'filer_undertaking',
+        'POA Undertaking': 'poa_undertaking',
+        'Personal Use Undertaking': 'personal_use_undertaking',
+        'Private Registration Undertaking': 'private_registration_undertaking',
+        'Financial Checklist': 'financial_checklist',
+        'PR Checklist': 'pr_checklist'
+      }
+      
+      const fieldName = nameToFieldMap[doc.name] || `unknown_${index}`
+      const docId = fieldName
+      
+      const currentLosId = application.los_id?.replace('LOS-', '') || application.id?.split('-')[1]
       return {
         id: docId,
         name: doc.name,
         required: doc.required,
-        verified: documentVerificationStatus[docId] || false,
-        rejected: documentVerificationStatus[`${docId}-rejected`] || false
+        verified: documentVerificationStatus[docId]?.[currentLosId] || false,
+        rejected: documentVerificationStatus[`${docId}-rejected`]?.[currentLosId] || false
       }
     })
   }
@@ -409,36 +498,245 @@ export default function SPUDashboardPage() {
     return matchesSearch && matchesStatus
   })
 
-  const handleVerifyDocument = (docId: string) => {
+  const handleVerifyDocument = async (docId: string) => {
     if (!selectedApplication) return
     
-    // Update document verification status
-    setDocumentVerificationStatus(prev => ({
-      ...prev,
-      [docId]: true,
-      [`${docId}-rejected`]: false // Clear rejection if it was previously rejected
-    }))
-    
-    toast({
-      title: "Document Verified",
-      description: "Document has been marked as verified",
-    })
+    try {
+      console.log('🔍 Debug: selectedApplication:', selectedApplication)
+      console.log('🔍 Debug: selectedApplication.los_id:', selectedApplication.los_id)
+      console.log('🔍 Debug: selectedApplication.id:', selectedApplication.id)
+      
+      const losId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
+      
+      console.log('🔍 Debug: extracted losId:', losId)
+      
+      // Validate losId
+      if (!losId || isNaN(parseInt(losId))) {
+        throw new Error(`Invalid LOS ID: ${losId}`)
+      }
+      
+      console.log('🔄 Frontend: Verifying document:', { losId, fieldName: docId, isVerified: true })
+      
+      const requestBody = {
+        losId: losId,
+        fieldName: docId,
+        isVerified: true
+      }
+      
+      console.log('🔍 Debug: Request body:', requestBody)
+      console.log('🔍 Debug: docId (fieldName):', docId)
+      
+      const response = await fetch('/api/applications/update-checklist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      })
+
+      if (!response.ok) {
+        console.log('🔍 Debug: Response status:', response.status)
+        console.log('🔍 Debug: Response statusText:', response.statusText)
+        const errorData = await response.json()
+        console.log('🔍 Debug: Error data:', errorData)
+        throw new Error(errorData.error || 'Failed to verify document')
+      }
+
+      // Update document verification status in frontend
+      const currentLosId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
+      setDocumentVerificationStatus(prev => ({
+        ...prev,
+        [docId]: {
+          ...prev[docId],
+          [currentLosId]: true
+        },
+        [`${docId}-rejected`]: {
+          ...prev[`${docId}-rejected`],
+          [currentLosId]: false // Clear rejection if it was previously rejected
+        }
+      }))
+      
+      toast({
+        title: "Document Verified",
+        description: "Document has been marked as verified in database",
+      })
+    } catch (error) {
+      console.error('❌ Error verifying document:', error)
+      toast({
+        title: "Error",
+        description: "Failed to verify document. Please try again.",
+        variant: "destructive"
+      })
+    }
   }
 
-  const handleRejectDocument = (docId: string) => {
+  const handleRejectDocument = async (docId: string) => {
     if (!selectedApplication) return
     
-    // Update document verification status
-    setDocumentVerificationStatus(prev => ({
-      ...prev,
-      [docId]: false,
-      [`${docId}-rejected`]: true
-    }))
-    
-    toast({
-      title: "Document Rejected",
-      description: "Document has been marked as rejected",
-    })
+    try {
+      console.log('🔍 Debug: selectedApplication:', selectedApplication)
+      console.log('🔍 Debug: selectedApplication.los_id:', selectedApplication.los_id)
+      console.log('🔍 Debug: selectedApplication.id:', selectedApplication.id)
+      
+      const losId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
+      
+      console.log('🔍 Debug: extracted losId:', losId)
+      
+      // Validate losId
+      if (!losId || isNaN(parseInt(losId))) {
+        throw new Error(`Invalid LOS ID: ${losId}`)
+      }
+      
+      console.log('🔄 Frontend: Rejecting document:', { losId, fieldName: docId, isVerified: false })
+      
+      const requestBody = {
+        losId: losId,
+        fieldName: docId,
+        isVerified: false
+      }
+      
+      console.log('🔍 Debug: Request body:', requestBody)
+      console.log('🔍 Debug: docId (fieldName):', docId)
+      
+      const response = await fetch('/api/applications/update-checklist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      })
+
+      if (!response.ok) {
+        console.log('🔍 Debug: Response status:', response.status)
+        console.log('🔍 Debug: Response statusText:', response.statusText)
+        const errorData = await response.json()
+        console.log('🔍 Debug: Error data:', errorData)
+        throw new Error(errorData.error || 'Failed to reject document')
+      }
+
+      // Update document verification status in frontend
+      const currentLosId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
+      setDocumentVerificationStatus(prev => ({
+        ...prev,
+        [docId]: {
+          ...prev[docId],
+          [currentLosId]: false
+        },
+        [`${docId}-rejected`]: {
+          ...prev[`${docId}-rejected`],
+          [currentLosId]: true
+        }
+      }))
+      
+      toast({
+        title: "Document Rejected",
+        description: "Document has been marked as rejected in database",
+      })
+    } catch (error) {
+      console.error('❌ Error rejecting document:', error)
+      toast({
+        title: "Error",
+        description: "Failed to reject document. Please try again.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  // Handle comment updates
+  const handleUpdateComment = async () => {
+    if (!selectedApplication || !commentText.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a comment before saving",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      const losId = selectedApplication.los_id.replace('LOS-', '')
+      const fieldName = 'spu_comments' // Department-specific comment field
+      
+      console.log(`🔄 SPU: Updating comment for LOS ID: ${losId}, Field: ${fieldName}`)
+
+      const response = await fetch('/api/applications/update-comment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          losId,
+          fieldName,
+          commentText: commentText.trim()
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ SPU: Failed to update comment:', errorData)
+        toast({
+          title: "Error",
+          description: "Failed to save comment. Please try again.",
+          variant: "destructive"
+        })
+        return
+      }
+
+      const data = await response.json()
+      console.log(`✅ SPU: Comment updated successfully for LOS ID: ${losId}`)
+
+      // Update local state to show the comment
+      setExistingComments(prev => ({
+        ...prev,
+        [losId]: commentText.trim()
+      }))
+
+      toast({
+        title: "Comment Saved",
+        description: "Your comment has been saved successfully",
+      })
+
+      // Clear the input field
+      setCommentText("")
+
+    } catch (error) {
+      console.error('❌ SPU: Error updating comment:', error)
+      toast({
+        title: "Error",
+        description: "Failed to save comment. Please try again.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const fetchAllDepartmentComments = async (losId: string) => {
+    try {
+      const response = await fetch(`/api/applications/comments/${losId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('❌ Error fetching comments:', errorData)
+        return
+      }
+
+      const data = await response.json()
+      console.log('✅ All department comments fetched successfully:', data)
+
+      if (data.success && data.comments) {
+        setAllDepartmentComments(prev => ({
+          ...prev,
+          [losId]: data.comments
+        }))
+      }
+
+    } catch (error) {
+      console.error('❌ Error fetching all department comments:', error)
+    }
   }
 
   const handleViewDocument = (document: any) => {
@@ -516,7 +814,7 @@ export default function SPUDashboardPage() {
       setSelectedApplication(null)
       setVerificationStep(1)
       setVerificationComments("")
-      setDocumentVerificationStatus({})
+      // State is now scoped per application, no need to clear
       setFieldVerification({
         nameVerified: false,
         cnicVerified: false,
@@ -574,7 +872,7 @@ export default function SPUDashboardPage() {
       setSelectedApplication(null)
       setVerificationStep(1)
       setVerificationComments("")
-      setDocumentVerificationStatus({})
+      // State is now scoped per application, no need to clear
       setFieldVerification({
         nameVerified: false,
         cnicVerified: false,
@@ -650,6 +948,9 @@ export default function SPUDashboardPage() {
         ...application,
         formData: data.formData
       });
+      
+      // Fetch all department comments for this application
+      await fetchAllDepartmentComments(losIdstr);
       
       toast({
         title: "Form Data Loaded",
@@ -1106,6 +1407,50 @@ export default function SPUDashboardPage() {
                                              </div>
                                            )}
 
+                                           {/* Comments Section */}
+                                           <div>
+                                             <h4 className="font-semibold mb-3 text-purple-600">All Department Comments</h4>
+                                             {allDepartmentComments[selectedApplication.los_id.replace('LOS-', '')] && 
+                                              allDepartmentComments[selectedApplication.los_id.replace('LOS-', '')].length > 0 ? (
+                                               <div className="space-y-3">
+                                                 {allDepartmentComments[selectedApplication.los_id.replace('LOS-', '')].map((comment: any, index: number) => (
+                                                   <div key={index} className={`border rounded-lg p-3 ${
+                                                     comment.department === 'PB' ? 'bg-blue-50 border-blue-200' :
+                                                     comment.department === 'SPU' ? 'bg-green-50 border-green-200' :
+                                                     comment.department === 'COPS' ? 'bg-purple-50 border-purple-200' :
+                                                     comment.department === 'EAMVU' ? 'bg-orange-50 border-orange-200' :
+                                                     comment.department === 'CIU' ? 'bg-red-50 border-red-200' :
+                                                     comment.department === 'RRU' ? 'bg-indigo-50 border-indigo-200' :
+                                                     'bg-gray-50 border-gray-200'
+                                                   }`}>
+                                                     <div className="flex justify-between items-start mb-2">
+                                                       <span className={`text-xs font-medium px-2 py-1 rounded ${
+                                                         comment.department === 'PB' ? 'bg-blue-100 text-blue-800' :
+                                                         comment.department === 'SPU' ? 'bg-green-100 text-green-800' :
+                                                         comment.department === 'COPS' ? 'bg-purple-100 text-purple-800' :
+                                                         comment.department === 'EAMVU' ? 'bg-orange-100 text-orange-800' :
+                                                         comment.department === 'CIU' ? 'bg-red-100 text-red-800' :
+                                                         comment.department === 'RRU' ? 'bg-indigo-100 text-indigo-800' :
+                                                         'bg-gray-100 text-gray-800'
+                                                       }`}>
+                                                         {comment.department}
+                                                       </span>
+                                                     </div>
+                                                     <p className="text-sm text-gray-700">
+                                                       {comment.comment_text}
+                                                     </p>
+                                                   </div>
+                                                 ))}
+                                               </div>
+                                             ) : (
+                                               <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                                 <p className="text-sm text-gray-500 italic">
+                                                   No comments from any department yet
+                                                 </p>
+                                               </div>
+                                             )}
+                                           </div>
+
                                            {/* Raw Data (for debugging) */}
                                            <details className="mt-4">
                                              <summary className="cursor-pointer text-sm font-medium text-gray-600">View Raw Data</summary>
@@ -1280,6 +1625,50 @@ export default function SPUDashboardPage() {
                                           ))}
                                         </TableBody>
                                       </Table>
+                                    </CardContent>
+                                  </Card>
+
+                                  {/* Notes Section */}
+                                  <Card>
+                                    <CardHeader>
+                                      <CardTitle className="text-lg">Notes</CardTitle>
+                                      <CardDescription>
+                                        Add comments and notes about this application
+                                      </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                      <div className="space-y-4">
+                                        {/* Existing Comments Display */}
+                                        {selectedApplication && existingComments[selectedApplication.los_id.replace('LOS-', '')] && (
+                                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                            <h4 className="font-medium text-blue-800 mb-2">Previous Comments:</h4>
+                                            <p className="text-sm text-blue-700">
+                                              {existingComments[selectedApplication.los_id.replace('LOS-', '')]}
+                                            </p>
+                                          </div>
+                                        )}
+                                        
+                                        {/* Comment Input */}
+                                        <div className="space-y-2">
+                                          <Label htmlFor="comment">Add Comment</Label>
+                                          <Textarea 
+                                            id="comment"
+                                            placeholder="Add any notes or comments about the verification process..."
+                                            value={commentText}
+                                            onChange={(e) => setCommentText(e.target.value)}
+                                            rows={4}
+                                          />
+                                        </div>
+                                        
+                                        {/* Save Comment Button */}
+                                        <Button 
+                                          onClick={handleUpdateComment}
+                                          disabled={!commentText.trim()}
+                                          className="w-full"
+                                        >
+                                          Save Comment
+                                        </Button>
+                                      </div>
                                     </CardContent>
                                   </Card>
 

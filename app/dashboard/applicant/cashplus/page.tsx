@@ -410,7 +410,7 @@ export default function CashplusPage() {
   
       if (response.ok) {
         toast({ title: "Success!", description: "Your application has been submitted successfully." });
-        router.push('/dashboard/cases');
+        router.push('/dashboard/pb/applications');
       } else {
         throw new Error(data.error || 'Failed to submit application');
       }

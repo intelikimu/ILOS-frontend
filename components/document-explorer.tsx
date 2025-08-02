@@ -15,10 +15,12 @@ interface FileItem {
 }
 
 interface DocumentExplorerProps {
+  losId?: string;
+  applicationType?: string;
   onFileSelect?: (file: FileItem) => void;
 }
 
-const DocumentExplorer: React.FC<DocumentExplorerProps> = ({ onFileSelect }) => {
+const DocumentExplorer: React.FC<DocumentExplorerProps> = ({ losId, applicationType, onFileSelect }) => {
   const [currentPath, setCurrentPath] = useState<string>('/');
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -26,58 +28,93 @@ const DocumentExplorer: React.FC<DocumentExplorerProps> = ({ onFileSelect }) => 
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
-  // Load files for current path
+  // Load files for current path or specific LOS ID
   const loadFiles = async (path: string) => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8081/explorer${encodeURI(path)}`);
+      let response;
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+      if (losId && applicationType) {
+        // Use the new filtered API for specific LOS ID
+        const numericLosId = losId.replace('LOS-', '');
+        const apiUrl = `/api/documents/${numericLosId}?applicationType=${applicationType}`;
+        console.log('🔄 DocumentExplorer: Using filtered API:', apiUrl);
+        
+        response = await fetch(apiUrl);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
 
-      const html = await response.text();
-      
-      // Parse the HTML to extract file information
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      
-      const fileItems: FileItem[] = [];
-      
-      // Extract files and folders from the table
-      const rows = doc.querySelectorAll('table tr');
-      
-      rows.forEach((row) => {
-        const cells = row.querySelectorAll('td');
-        if (cells.length >= 3) {
-          const nameCell = cells[0];
-          const typeCell = cells[1];
-          const actionCell = cells[2];
-          
-          const link = nameCell.querySelector('a');
-          const icon = nameCell.querySelector('.icon');
-          const name = link ? link.textContent?.trim() : nameCell.textContent?.trim();
-          const type = typeCell.textContent?.trim();
-          
-          if (name && type) {
-            const isFolder = type === 'Folder' || icon?.textContent?.includes('📁');
-            const isFile = type === 'File' || icon?.textContent?.includes('📄');
+        const data = await response.json();
+        console.log('✅ DocumentExplorer: Received data:', data);
+        
+        if (data.exists && data.documents) {
+          const fileItems: FileItem[] = data.documents.map((doc: any) => ({
+            name: doc.name,
+            type: doc.type,
+            path: doc.path,
+            size: doc.size
+          }));
+          setFiles(fileItems);
+        } else {
+          setFiles([]);
+          toast({
+            title: "No documents found",
+            description: `No documents found for ${losId}`,
+          });
+        }
+      } else {
+        // Use the old explorer API for general browsing
+        response = await fetch(`http://localhost:8081/explorer${encodeURI(path)}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const html = await response.text();
+        
+        // Parse the HTML to extract file information
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        const fileItems: FileItem[] = [];
+        
+        // Extract files and folders from the table
+        const rows = doc.querySelectorAll('table tr');
+        
+        rows.forEach((row) => {
+          const cells = row.querySelectorAll('td');
+          if (cells.length >= 3) {
+            const nameCell = cells[0];
+            const typeCell = cells[1];
+            const actionCell = cells[2];
             
-            if (isFolder || isFile) {
-              const itemPath = link ? link.getAttribute('href')?.replace('/explorer', '') || path : path;
+            const link = nameCell.querySelector('a');
+            const icon = nameCell.querySelector('.icon');
+            const name = link ? link.textContent?.trim() : nameCell.textContent?.trim();
+            const type = typeCell.textContent?.trim();
+            
+            if (name && type) {
+              const isFolder = type === 'Folder' || icon?.textContent?.includes('📁');
+              const isFile = type === 'File' || icon?.textContent?.includes('📄');
               
-              fileItems.push({
-                name: name,
-                type: isFolder ? 'folder' : 'file',
-                path: itemPath,
-                size: isFile ? 0 : undefined // We could extract size if needed
-              });
+              if (isFolder || isFile) {
+                const itemPath = link ? link.getAttribute('href')?.replace('/explorer', '') || path : path;
+                
+                fileItems.push({
+                  name: name,
+                  type: isFolder ? 'folder' : 'file',
+                  path: itemPath,
+                  size: isFile ? 0 : undefined // We could extract size if needed
+                });
+              }
             }
           }
-        }
-      });
-      
-      setFiles(fileItems);
+        });
+        
+        setFiles(fileItems);
+      }
     } catch (error) {
       console.error('Error loading files:', error);
       toast({
@@ -91,8 +128,14 @@ const DocumentExplorer: React.FC<DocumentExplorerProps> = ({ onFileSelect }) => 
   };
 
   useEffect(() => {
-    loadFiles(currentPath);
-  }, [currentPath]);
+    if (losId && applicationType) {
+      // Load files for specific LOS ID
+      loadFiles('/');
+    } else {
+      // Load files for current path (general browsing)
+      loadFiles(currentPath);
+    }
+  }, [currentPath, losId, applicationType]);
 
   const handleFolderClick = (folder: FileItem) => {
     const newPath = folder.path;
@@ -116,7 +159,17 @@ const DocumentExplorer: React.FC<DocumentExplorerProps> = ({ onFileSelect }) => 
 
   const handleDownload = async (file: FileItem) => {
     try {
-      const downloadUrl = `http://localhost:8081/explorer${encodeURI(file.path)}`;
+      let downloadUrl;
+      
+      if (losId && applicationType) {
+        // Use the direct file URL for filtered documents
+        downloadUrl = `http://localhost:8081${file.path}`;
+      } else {
+        // Use the explorer URL for general browsing
+        downloadUrl = `http://localhost:8081/explorer${encodeURI(file.path)}`;
+      }
+      
+      console.log('Downloading file:', downloadUrl);
       
       // Create a direct download link
       const link = document.createElement('a');

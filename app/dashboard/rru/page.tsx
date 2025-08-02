@@ -12,8 +12,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
-import { Search, Filter, CheckCircle, AlertTriangle, FileText, Eye, Shield, X, CheckSquare } from "lucide-react"
+import { Search, Filter, CheckCircle, AlertTriangle, FileText, Eye, Shield, X, CheckSquare, FolderOpen } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import DocumentExplorer from "@/components/document-explorer"
 
 // Real data interface for RRU applications
 interface RRUApplication {
@@ -108,6 +109,7 @@ export default function RRUDashboardPage() {
   const [applicationsData, setApplicationsData] = useState<RRUApplication[]>([])
   const [loading, setLoading] = useState(true)
   const [reviewNotes, setReviewNotes] = useState("")
+  const [showDocumentExplorer, setShowDocumentExplorer] = useState(false)
   const { toast } = useToast()
 
   // Fetch RRU applications from API
@@ -414,16 +416,16 @@ export default function RRUDashboardPage() {
                               Review
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="max-w-4xl">
-                            <DialogHeader>
-                              <DialogTitle>Risk Review - {selectedApplication?.los_id}</DialogTitle>
-                              <DialogDescription>
-                                Perform final risk assessment and make decision
-                              </DialogDescription>
-                            </DialogHeader>
+                                                     <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+                             <DialogHeader className="sticky top-0 bg-white z-10 pb-4 border-b">
+                               <DialogTitle>Risk Review - {selectedApplication?.los_id}</DialogTitle>
+                               <DialogDescription>
+                                 Perform final risk assessment and make decision
+                               </DialogDescription>
+                             </DialogHeader>
 
-                            {selectedApplication && (
-                              <div className="space-y-6">
+                             {selectedApplication && (
+                               <div className="overflow-y-auto max-h-[calc(90vh-120px)] space-y-6 pr-2">
                                 <Card>
                                   <CardHeader>
                                     <CardTitle className="text-lg">Applicant Information</CardTitle>
@@ -497,6 +499,31 @@ export default function RRUDashboardPage() {
                                   </CardContent>
                                 </Card>
 
+                                {/* View Documents Button */}
+                                <Card>
+                                  <CardHeader>
+                                    <CardTitle className="text-lg flex items-center gap-2">
+                                      <FolderOpen className="h-5 w-5" />
+                                      Documents
+                                    </CardTitle>
+                                    <CardDescription>
+                                      View uploaded documents for this application
+                                    </CardDescription>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <div className="space-y-4">
+                                      <Button 
+                                        variant="outline" 
+                                        onClick={() => setShowDocumentExplorer(true)}
+                                        className="w-full"
+                                      >
+                                        <FolderOpen className="mr-2 h-4 w-4" />
+                                        View Documents
+                                      </Button>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+
                                 <DialogFooter>
                                   <Button variant="outline" onClick={() => setSelectedApplication(null)}>
                                     Save Progress
@@ -520,6 +547,32 @@ export default function RRUDashboardPage() {
                                     Approve Application
                                   </Button>
                                 </DialogFooter>
+                              </div>
+                            )}
+                          </DialogContent>
+                        </Dialog>
+
+                        {/* Document Explorer Dialog */}
+                        <Dialog open={showDocumentExplorer} onOpenChange={setShowDocumentExplorer}>
+                          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+                            <DialogHeader className="sticky top-0 bg-white z-10 pb-4 border-b">
+                              <DialogTitle>Document Explorer - {selectedApplication?.los_id}</DialogTitle>
+                              <DialogDescription>
+                                View uploaded documents for this application
+                              </DialogDescription>
+                            </DialogHeader>
+                            {selectedApplication && (
+                              <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
+                                <DocumentExplorer 
+                                  losId={selectedApplication.los_id}
+                                  applicationType={selectedApplication.loan_type}
+                                  onFileSelect={(file) => {
+                                    toast({
+                                      title: "File selected",
+                                      description: `Selected: ${file.name}`,
+                                    });
+                                  }} 
+                                />
                               </div>
                             )}
                           </DialogContent>

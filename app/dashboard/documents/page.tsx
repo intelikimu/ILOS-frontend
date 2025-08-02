@@ -13,20 +13,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import DocumentExplorer from '@/components/document-explorer';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface Application {
   id: string;
-  applicantName: string;
-  loanType: string;
-  amount: string;
+  los_id: string;
+  applicant_name: string;
+  loan_type: string;
+  loan_amount: string;
   status: string;
-  submittedDate: string;
+  created_at: string;
   lastUpdate: string;
 }
 
 const DocumentManagement: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [loanType, setLoanType] = useState<string>('');
+  const [loan_type, setloan_type] = useState<string>('');
   const [losId, setLosId] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
   const [serverStatus, setServerStatus] = useState<'checking' | 'online' | 'offline'>('checking');
@@ -36,6 +38,7 @@ const DocumentManagement: React.FC = () => {
   const [loadingApplications, setLoadingApplications] = useState(false);
   const [showCustomerSelector, setShowCustomerSelector] = useState(false);
   const [searchCustomer, setSearchCustomer] = useState('');
+  const [selectedApplicationForDocs, setSelectedApplicationForDocs] = useState<Application | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -60,7 +63,7 @@ const DocumentManagement: React.FC = () => {
   const fetchApplications = async () => {
     setLoadingApplications(true);
     try {
-      const response = await fetch('/api/applications/recent/pb');
+      const response = await fetch('http://localhost:5000/api/applications/department/pb');
       if (response.ok) {
         const data = await response.json();
         setApplications(data);
@@ -114,7 +117,7 @@ const DocumentManagement: React.FC = () => {
   };
 
   const handleUpload = async () => {
-    if (!selectedFile || !loanType || !losId) {
+    if (!selectedFile || !loan_type || !losId) {
       toast({
         title: "Missing information",
         description: "Please select a file, loan type, and LOS ID.",
@@ -138,14 +141,17 @@ const DocumentManagement: React.FC = () => {
     try {
       const formData = new FormData();
       formData.append('file', selectedFile);
-      formData.append('loanType', loanType);
-      formData.append('losId', losId);
+      formData.append('loan_type', loan_type);
+      
+      // Extract numeric ID from LOS ID format (e.g., "LOS-19" -> 19)
+      const numericLosId = losId.replace(/^LOS-/, '');
+      formData.append('los_id', numericLosId);
 
       console.log('🔄 Frontend: Starting upload...', {
         fileName: selectedFile.name,
         fileSize: selectedFile.size,
-        loanType,
-        losId
+        loan_type,
+        losId: numericLosId // Log the numeric ID being sent
       });
 
       // Simulate upload progress
@@ -156,8 +162,11 @@ const DocumentManagement: React.FC = () => {
         });
       }, 200);
 
-      const response = await fetch('/api/upload-document', {
+      const response = await fetch('http://localhost:8081/upload', {
         method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+        },
         body: formData,
       });
 
@@ -172,12 +181,12 @@ const DocumentManagement: React.FC = () => {
         
         toast({
           title: "Upload successful!",
-          description: `File ${selectedFile.name} uploaded to ${loanType}/${losId}/`,
+          description: `File ${selectedFile.name} uploaded to ${loan_type}/los-${numericLosId}/`,
         });
 
         // Reset form
         setSelectedFile(null);
-        setLoanType('');
+        setloan_type('');
         setLosId('');
         setUploadProgress(0);
         if (fileInputRef.current) {
@@ -237,7 +246,7 @@ const DocumentManagement: React.FC = () => {
 
   const handleCustomerSelect = (application: Application) => {
     // Extract loan type from the application
-    const loanTypeMap: { [key: string]: string } = {
+    const loan_typeMap: { [key: string]: string } = {
       'CashPlus Loan': 'cashplus',
       'Auto Loan': 'autoloan',
       'SME Loan': 'smeasaan',
@@ -247,21 +256,22 @@ const DocumentManagement: React.FC = () => {
       'Classic Credit Card': 'creditcard'
     };
 
-    const mappedLoanType = loanTypeMap[application.loanType] || 'cashplus';
+    const mappedloan_type = loan_typeMap[application.loan_type] || 'cashplus';
     
-    setLosId(application.id);
-    setLoanType(mappedLoanType);
+    setLosId(application.los_id); // Keep the full LOS ID format for display
+    setloan_type(mappedloan_type);
+    setSelectedApplicationForDocs(application); // Set the selected application for document viewing
     setShowCustomerSelector(false);
     
     toast({
-      title: "Customer selected",
-      description: `${application.applicantName} (${application.id})`,
+      title: "Application selected",
+      description: `${application.applicant_name} (${application.los_id})`,
     });
   };
 
   const filteredApplications = applications.filter(app => 
-    app.applicantName.toLowerCase().includes(searchCustomer.toLowerCase()) ||
-    app.id.toLowerCase().includes(searchCustomer.toLowerCase())
+    app.applicant_name.toLowerCase().includes(searchCustomer.toLowerCase()) ||
+    app.los_id.toLowerCase().includes(searchCustomer.toLowerCase())
   );
 
   return (
@@ -320,7 +330,7 @@ const DocumentManagement: React.FC = () => {
                   <Input
                     id="customer"
                     placeholder="Selected customer..."
-                    value={losId ? `${losId} - ${applications.find(app => app.id === losId)?.applicantName || 'Unknown'}` : ''}
+                    value={losId ? `${losId} - ${applications.find(app => app.los_id === losId)?.applicant_name || 'Unknown'}` : ''}
                     readOnly
                     className="flex-1"
                   />
@@ -339,8 +349,8 @@ const DocumentManagement: React.FC = () => {
 
               {/* Loan Type Selection */}
               <div className="mb-4">
-                <Label htmlFor="loanType">Loan Type</Label>
-                <Select value={loanType} onValueChange={setLoanType}>
+                <Label htmlFor="loan_type">Loan Type</Label>
+                <Select value={loan_type} onValueChange={setloan_type}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select loan type..." />
                   </SelectTrigger>
@@ -431,7 +441,7 @@ const DocumentManagement: React.FC = () => {
               {/* Upload Button */}
               <Button
                 onClick={handleUpload}
-                disabled={!selectedFile || !loanType || !losId || isUploading || serverStatus === 'offline'}
+                disabled={!selectedFile || !loan_type || !losId || isUploading || serverStatus === 'offline'}
                 className="w-full"
               >
                 {isUploading ? (
@@ -492,7 +502,7 @@ const DocumentManagement: React.FC = () => {
                     Files are automatically organized in folders based on loan type and LOS ID:
                     <br />
                     <code className="bg-gray-100 px-1 rounded text-xs">
-                      {loanType || 'loan-type'}/{losId || 'los-id'}/filename.pdf
+                      {loan_type || 'loan-type'}/{losId ? losId.replace(/^LOS-/, '') : 'los-id'}/filename.pdf
                     </code>
                   </p>
                 </div>
@@ -512,7 +522,84 @@ const DocumentManagement: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="explorer" className="mt-6">
-          <DocumentExplorer onFileSelect={handleFileSelectFromExplorer} />
+          <div className="space-y-4">
+            {/* Application Selector for Document Explorer */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Select Application for Document Viewing</CardTitle>
+                <CardDescription>
+                  Choose an application to view its specific documents
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Input
+                      placeholder="Search by customer name or LOS ID..."
+                      value={searchCustomer}
+                      onChange={(e) => setSearchCustomer(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      fetchApplications();
+                      setShowCustomerSelector(true);
+                    }}
+                  >
+                    <User className="h-4 w-4 mr-2" />
+                    Select Application
+                  </Button>
+                </div>
+                
+                {selectedApplicationForDocs && (
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{selectedApplicationForDocs.applicant_name}</p>
+                        <p className="text-sm text-blue-700">{selectedApplicationForDocs.los_id} - {selectedApplicationForDocs.loan_type}</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedApplicationForDocs(null)}
+                      >
+                        Clear
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Document Explorer */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Document Explorer</CardTitle>
+                <CardDescription>
+                  {selectedApplicationForDocs 
+                    ? `Viewing documents for ${selectedApplicationForDocs.applicant_name} (${selectedApplicationForDocs.los_id})`
+                    : 'Select an application above to view its documents'
+                  }
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {selectedApplicationForDocs ? (
+                  <DocumentExplorer 
+                    losId={selectedApplicationForDocs.los_id}
+                    applicationType={selectedApplicationForDocs.loan_type}
+                    onFileSelect={handleFileSelectFromExplorer} 
+                  />
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Please select an application to view its documents</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
 
@@ -552,7 +639,7 @@ const DocumentManagement: React.FC = () => {
                     <TableHead>Customer Name</TableHead>
                     <TableHead>LOS ID</TableHead>
                     <TableHead>Loan Type</TableHead>
-                    <TableHead>Amount</TableHead>
+                    <TableHead>loan_amount</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Action</TableHead>
                   </TableRow>
@@ -573,12 +660,12 @@ const DocumentManagement: React.FC = () => {
                   ) : (
                     filteredApplications.map((app) => (
                       <TableRow key={app.id}>
-                        <TableCell className="font-medium">{app.applicantName}</TableCell>
-                        <TableCell className="font-mono text-sm">{app.id}</TableCell>
+                        <TableCell className="font-medium">{app.applicant_name}</TableCell>
+                        <TableCell className="font-mono text-sm">{app.los_id}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{app.loanType}</Badge>
+                          <Badge variant="outline">{app.loan_type}</Badge>
                         </TableCell>
-                        <TableCell>{app.amount}</TableCell>
+                        <TableCell>{app.loan_amount}</TableCell>
                         <TableCell>
                           <Badge variant={app.status === 'submitted_to_spu' ? 'default' : 'secondary'}>
                             {app.status === 'submitted_to_spu' ? 'Submitted' : 'Draft'}
@@ -606,7 +693,3 @@ const DocumentManagement: React.FC = () => {
 };
 
 export default DocumentManagement;
-
-
-
-

@@ -341,6 +341,55 @@ export default function EAMVUDashboardPage() {
     }
   }
 
+  // Handle submitting application to COPS
+  const handleSubmitToCOPS = async () => {
+    if (!selectedApplication) return
+    
+    try {
+      // Update status in backend
+      const losId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
+      console.log('EAMVU Frontend sending losId:', losId, 'applicationType:', selectedApplication.application_type)
+      const response = await fetch('/api/applications/update-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          losId: losId,
+          status: 'SUBMITTED_TO_COPS',
+          applicationType: selectedApplication.application_type
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.text()
+        console.error('Backend error response:', errorData)
+        throw new Error(`Failed to update status: ${errorData}`)
+      }
+      
+      // Update application status in frontend
+      const updatedApplications = applicationsData.map(app => 
+        app.id === selectedApplication.id 
+          ? { ...app, status: "submitted_to_cops" }
+          : app
+      )
+      setApplicationsData(updatedApplications)
+      
+      toast({
+        title: "Application Submitted",
+        description: "Application has been submitted to COPS successfully",
+      })
+      setSelectedApplication(null)
+    } catch (error) {
+      console.error('Error updating status:', error)
+      toast({
+        title: "Error",
+        description: "Failed to submit application to COPS",
+        variant: "destructive"
+      })
+    }
+  }
+
   // Load applications on component mount
   useEffect(() => {
     fetchApplications()
@@ -912,6 +961,14 @@ export default function EAMVUDashboardPage() {
                                     onClick={() => setSelectedApplication(null)}
                                   >
                                     Close
+                                  </Button>
+                                  <Button
+                                    variant="default"
+                                    onClick={handleSubmitToCOPS}
+                                    className="bg-green-600 hover:bg-green-700"
+                                  >
+                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                    Submit to COPS
                                   </Button>
                                 </div>
                               </div>

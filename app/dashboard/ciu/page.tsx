@@ -78,6 +78,14 @@ function getStatusBadge(status: string) {
       return <Badge className="bg-purple-100 text-purple-800">Verified</Badge>
     case "Flagged":
       return <Badge variant="destructive">Flagged</Badge>
+    case "APPLICATION_ACCEPTED":
+    case "application_accepted":
+    case "Accepted by CIU":
+      return <Badge className="bg-green-100 text-green-800">Accepted by CIU</Badge>
+    case "APPLICATION_REJECTED":
+    case "application_rejected":
+    case "Rejected by CIU":
+      return <Badge variant="destructive">Rejected by CIU</Badge>
     default:
       return <Badge variant="secondary">{status}</Badge>
   }
@@ -306,6 +314,105 @@ export default function CIUDashboardPage() {
 
     } catch (error) {
       console.error('❌ Error fetching all department comments:', error)
+    }
+  }
+
+  // Handle accepting application
+  const handleAcceptApplication = async () => {
+    if (!selectedApplication) return
+    
+    try {
+      // Update status in backend
+      const losId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
+      console.log('CIU Frontend accepting losId:', losId, 'applicationType:', selectedApplication.application_type)
+      const response = await fetch('/api/applications/update-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          losId: losId,
+          status: 'Accepted by CIU',
+          applicationType: selectedApplication.application_type
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.text()
+        console.error('Backend error response:', errorData)
+        throw new Error(`Failed to update status: ${errorData}`)
+      }
+      
+      // Update application status in frontend
+      const updatedApplications = applicationsData.map(app => 
+        app.id === selectedApplication.id 
+          ? { ...app, status: "Accepted by CIU" }
+          : app
+      )
+      setApplicationsData(updatedApplications)
+      
+      toast({
+        title: "Application Accepted",
+        description: "Application has been accepted by CIU and status updated in database",
+      })
+      setSelectedApplication(null)
+    } catch (error) {
+      console.error('Error updating status:', error)
+      toast({
+        title: "Error",
+        description: "Failed to accept application",
+        variant: "destructive"
+      })
+    }
+  }
+
+  // Handle rejecting application
+  const handleRejectApplication = async () => {
+    if (!selectedApplication) return
+    
+    try {
+      // Update status in backend
+      const losId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
+      console.log('CIU Frontend rejecting losId:', losId, 'applicationType:', selectedApplication.application_type)
+      const response = await fetch('/api/applications/update-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          losId: losId,
+          status: 'Rejected by CIU',
+          applicationType: selectedApplication.application_type
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.text()
+        console.error('Backend error response:', errorData)
+        throw new Error(`Failed to update status: ${errorData}`)
+      }
+      
+      // Update application status in frontend
+      const updatedApplications = applicationsData.map(app => 
+        app.id === selectedApplication.id 
+          ? { ...app, status: "Rejected by CIU" }
+          : app
+      )
+      setApplicationsData(updatedApplications)
+      
+      toast({
+        title: "Application Rejected",
+        description: "Application has been rejected by CIU and status updated in database",
+        variant: "destructive"
+      })
+      setSelectedApplication(null)
+    } catch (error) {
+      console.error('Error updating status:', error)
+      toast({
+        title: "Error",
+        description: "Failed to reject application",
+        variant: "destructive"
+      })
     }
   }
 
@@ -856,6 +963,21 @@ export default function CIUDashboardPage() {
                                     onClick={() => setSelectedApplication(null)}
                                   >
                                     Close
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    onClick={handleRejectApplication}
+                                  >
+                                    <AlertTriangle className="mr-2 h-4 w-4" />
+                                    Reject
+                                  </Button>
+                                  <Button
+                                    variant="default"
+                                    onClick={handleAcceptApplication}
+                                    className="bg-green-600 hover:bg-green-700"
+                                  >
+                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                    Accept
                                   </Button>
                                 </div>
                               </div>

@@ -41,7 +41,7 @@ const DocumentManagement: React.FC = () => {
   const [selectedApplicationForDocs, setSelectedApplicationForDocs] = useState<Application | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-
+  const [documentType, setDocumentType] = useState('');
   // Check server status on component mount
   useEffect(() => {
     checkServerStatus();
@@ -375,6 +375,25 @@ const DocumentManagement: React.FC = () => {
                   onChange={(e) => setLosId(e.target.value)}
                 />
               </div>
+              <div className="mb-4">
+  <label htmlFor="documentType" className="block text-sm font-medium text-gray-700">
+    Document Type
+  </label>
+  <select
+    id="documentType"
+    name="documentType"
+    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+    value={documentType}
+    onChange={e => setDocumentType(e.target.value)}
+    required
+  >
+    <option value="">Select document type...</option>
+    <option value="CNIC">CNIC</option>
+    <option value="Salary Slip">Salary Slip</option>
+    <option value="NTN">NTN</option>
+    <option value="Other">Other</option>
+  </select>
+</div>
 
               {/* File Upload Area */}
               <div

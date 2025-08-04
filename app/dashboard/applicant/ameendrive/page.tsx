@@ -15,8 +15,9 @@ import { AmeenDriveVehicleDetailsForm } from "@/components/forms/ameendrive/Amee
 import { AmeenDriveVehicleFacilityDetailsForm } from "@/components/forms/ameendrive/AmeenDriveVehicleFacilityDetailsForm";
 import { useCustomer } from '@/contexts/CustomerContext';
 import { Card, CardContent } from '@/components/ui/card';
-import { User, CreditCard, ArrowLeft, CheckCircle2, ChevronUp } from 'lucide-react';
+import { User, CreditCard, ArrowLeft, CheckCircle2, ChevronUp, Settings, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -74,10 +75,13 @@ const useSectionFilled = (customerData: any): Record<SectionKey, boolean> => ({
 });
 
 export default function AmeenDrivePage() {
-  const { customerData } = useCustomer();
+  const { customerData, updateCustomerData } = useCustomer();
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationEnabled, setValidationEnabled] = useState(true);
+  const [showTestOptions, setShowTestOptions] = useState(false);
+  const [validationStatus, setValidationStatus] = useState<{isValid: boolean; missingFields: string[]}>({isValid: true, missingFields: []});
 
   // Function to get base URL for API calls
   const getBaseUrl = () => {
@@ -86,6 +90,121 @@ export default function AmeenDrivePage() {
     }
     return 'http://localhost:5000';
   };
+
+  // Function to check current validation status
+  const checkValidationStatus = () => {
+    if (!validationEnabled) {
+      setValidationStatus({isValid: true, missingFields: []});
+      return;
+    }
+    
+    const errors = validateMandatoryFields();
+    setValidationStatus({
+      isValid: errors.length === 0,
+      missingFields: errors
+    });
+  };
+
+  // Validation function to check mandatory fields
+  const validateMandatoryFields = () => {
+    const errors: string[] = [];
+    
+    // Product Program validation
+    if (!customerData?.ameenDrive?.productProgram?.productType) {
+      errors.push("Product Type is required");
+    }
+    if (!customerData?.ameenDrive?.productProgram?.programType) {
+      errors.push("Program Type is required");
+    }
+    if (!customerData?.ameenDrive?.productProgram?.paymentMode) {
+      errors.push("Payment Mode is required");
+    }
+    if (!customerData?.ameenDrive?.productProgram?.facilityAmount) {
+      errors.push("Facility Amount is required");
+    }
+    if (!customerData?.ameenDrive?.productProgram?.tenure) {
+      errors.push("Tenure is required");
+    }
+
+    // Vehicle Details validation
+    if (!customerData?.ameenDrive?.vehicleDetails?.manufacturer) {
+      errors.push("Vehicle Manufacturer is required");
+    }
+    if (!customerData?.ameenDrive?.vehicleDetails?.model) {
+      errors.push("Vehicle Model is required");
+    }
+    if (!customerData?.ameenDrive?.vehicleDetails?.year) {
+      errors.push("Vehicle Year is required");
+    }
+    if (!customerData?.ameenDrive?.vehicleDetails?.price) {
+      errors.push("Vehicle Price is required");
+    }
+
+    // Personal Details validation
+    if (!customerData?.personalDetails?.firstName) {
+      errors.push("First Name is required");
+    }
+    if (!customerData?.personalDetails?.lastName) {
+      errors.push("Last Name is required");
+    }
+    if (!customerData?.personalDetails?.cnic) {
+      errors.push("CNIC is required");
+    }
+    if (!customerData?.personalDetails?.dateOfBirth) {
+      errors.push("Date of Birth is required");
+    }
+    if (!customerData?.personalDetails?.mobileNumber) {
+      errors.push("Mobile Number is required");
+    }
+
+    // Occupation validation
+    if (!customerData?.ameenDrive?.occupation?.type) {
+      errors.push("Occupation Type is required");
+    }
+    if (!customerData?.ameenDrive?.occupation?.status) {
+      errors.push("Employment Status is required");
+    }
+    if (!customerData?.ameenDrive?.occupation?.employerName) {
+      errors.push("Employer Name is required");
+    }
+    if (!customerData?.ameenDrive?.occupation?.designation) {
+      errors.push("Designation is required");
+    }
+
+    // Income Bank validation
+    if (!customerData?.ameenDrive?.incomeBank?.monthlyIncome) {
+      errors.push("Monthly Income is required");
+    }
+    if (!customerData?.ameenDrive?.incomeBank?.bankName) {
+      errors.push("Bank Name is required");
+    }
+    if (!customerData?.ameenDrive?.incomeBank?.accountNumber) {
+      errors.push("Account Number is required");
+    }
+
+    // Signature validation
+    if (!customerData?.ameenDrive?.signatureSection?.signature) {
+      errors.push("Applicant Signature is required");
+    }
+    if (!customerData?.ameenDrive?.signatureSection?.date) {
+      errors.push("Signature Date is required");
+    }
+
+    // Bank Use Only validation
+    if (!customerData?.ameenDrive?.bankUseOnly?.branchCode) {
+      errors.push("Branch Code is required");
+    }
+    if (!customerData?.ameenDrive?.bankUseOnly?.accountOfficer) {
+      errors.push("Account Officer is required");
+    }
+    if (!customerData?.ameenDrive?.bankUseOnly?.applicationDate) {
+      errors.push("Application Date is required");
+    }
+
+    return errors;
+  };
+
+
 
   // 3. Section refs for scroll with correct typing
   const refs: Record<SectionKey, React.RefObject<HTMLDivElement | null>> = {
@@ -140,6 +259,11 @@ export default function AmeenDrivePage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Check validation status when customerData changes
+  useEffect(() => {
+    checkValidationStatus();
+  }, [customerData, validationEnabled]);
+
   // Scroll to top handler
   const handleScrollTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -168,27 +292,59 @@ export default function AmeenDrivePage() {
 
   // Submit the form data to the backend
   const handleSubmit = async () => {
-    if (!customerData) {
-      toast({
-        title: "Error",
-        description: "No customer data found. Please fill the form first.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!customerData.customerId) {
-      toast({
-        title: "Error",
-        description: "Customer ID is required. Please try again.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     setIsSubmitting(true);
-
     try {
+      // Validate mandatory fields first (only if validation is enabled)
+      if (validationEnabled) {
+        const validationErrors = validateMandatoryFields();
+        if (validationErrors.length > 0) {
+          // Create a more user-friendly error message
+          const errorCount = validationErrors.length;
+          const errorMessage = errorCount === 1 
+            ? `1 field is missing: ${validationErrors[0]}`
+            : `${errorCount} fields are missing. Please fill in all required fields marked with (*).`;
+          
+          // Show detailed errors in console for debugging
+          console.log('Validation Errors:', validationErrors);
+          
+          toast({ 
+            title: "Validation Error", 
+            description: errorMessage, 
+            variant: "destructive",
+            duration: 5000 // Show for 5 seconds
+          });
+          
+          // Also show a more detailed alert for better visibility
+          if (errorCount > 1) {
+            const detailedMessage = `Missing ${errorCount} required fields:\n\n${validationErrors.slice(0, 10).join('\n')}${validationErrors.length > 10 ? `\n... and ${validationErrors.length - 10} more fields` : ''}`;
+            alert(`Form Validation Failed!\n\n${detailedMessage}\n\nPlease fill in all required fields marked with (*) before submitting.`);
+          }
+          
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      if (!customerData) {
+        toast({
+          title: "Error",
+          description: "No customer data found. Please fill the form first.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!customerData.customerId) {
+        toast({
+          title: "Error",
+          description: "Customer ID is required. Please try again.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+            }
+
       // Extract data from context and format for submission
       const ameenDrive = customerData.ameenDrive || {};
       const personalDetails = customerData.personalDetails || {};
@@ -399,7 +555,7 @@ export default function AmeenDrivePage() {
           description: "Your Ameen Drive application has been submitted successfully.",
         });
         // Redirect to cases/dashboard after successful submission
-        router.push('/dashboard/cases');
+        router.push('/dashboard/pb/applications');
       } else {
         throw new Error(data.error || 'Failed to submit Ameen Drive application');
       }
@@ -419,6 +575,88 @@ export default function AmeenDrivePage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
       <h2 className="text-3xl text-center  font-bold text-blue-500">  UBL Ameen Drive Application</h2>
+
+      {/* Mandatory Fields Note */}
+      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="text-sm text-blue-800">
+          <strong>Note:</strong> Fields marked with an asterisk (*) are mandatory and must be filled before submission.
+        </div>
+      </div>
+
+      {/* Test Options Panel */}
+      <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Settings className="w-4 h-4 text-yellow-600" />
+            <span className="text-sm font-medium text-yellow-800">Testing Options</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowTestOptions(!showTestOptions)}
+            className="text-yellow-700 border-yellow-300 hover:bg-yellow-100"
+          >
+            {showTestOptions ? 'Hide' : 'Show'} Options
+          </Button>
+        </div>
+        
+        {showTestOptions && (
+          <div className="mt-4 space-y-4">
+            {/* Validation Toggle */}
+            <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-yellow-200">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div>
+                  <div className="text-sm font-medium text-gray-900">Field Validation</div>
+                  <div className="text-xs text-gray-600">
+                    {validationEnabled ? 'Validation is enabled' : 'Validation is disabled'}
+                  </div>
+                </div>
+              </div>
+              <Switch
+                checked={validationEnabled}
+                onCheckedChange={setValidationEnabled}
+                className="data-[state=checked]:bg-blue-600"
+              />
+            </div>
+
+
+
+            {/* Status Indicator */}
+            <div className="text-xs text-gray-600 bg-white p-2 rounded border border-yellow-200">
+              <strong>Current Status:</strong> 
+              {validationEnabled ? (
+                validationStatus.isValid ? (
+                  <span className="text-green-600"> ✅ All required fields are filled - Form is ready to submit.</span>
+                ) : (
+                  <span className="text-red-600"> ❌ {validationStatus.missingFields.length} required field(s) missing - Cannot submit form.</span>
+                )
+              ) : (
+                <span className="text-yellow-600"> ⚠️ Validation disabled - Form will submit without checking mandatory fields.</span>
+              )}
+            </div>
+
+            {/* Missing Fields List (only show when validation is enabled and there are errors) */}
+            {validationEnabled && !validationStatus.isValid && validationStatus.missingFields.length > 0 && (
+              <div className="text-xs bg-red-50 border border-red-200 p-3 rounded">
+                <div className="font-medium text-red-800 mb-2">
+                  Missing Required Fields ({validationStatus.missingFields.length}):
+                </div>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {validationStatus.missingFields.slice(0, 8).map((field, index) => (
+                    <div key={index} className="text-red-700">• {field}</div>
+                  ))}
+                  {validationStatus.missingFields.length > 8 && (
+                    <div className="text-red-600 italic">
+                      ... and {validationStatus.missingFields.length - 8} more fields
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Customer Info Header */}
       <Card className="bg-gradient-to-r from-green-50 to-green-50 border-green-200">
@@ -529,10 +767,19 @@ export default function AmeenDrivePage() {
          <div className="flex justify-end">
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 shadow transition"
+            disabled={isSubmitting || (validationEnabled && !validationStatus.isValid)}
+            className={`rounded-xl font-semibold px-8 py-3 shadow transition ${
+              isSubmitting 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : validationEnabled && !validationStatus.isValid
+                ? 'bg-red-500 hover:bg-red-600 text-white cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
+            }`}
           >
-            {isSubmitting ? 'Submitting...' : 'Submit Application'}
+            {isSubmitting ? 'Submitting...' : 
+             validationEnabled && !validationStatus.isValid 
+             ? `Submit Application (${validationStatus.missingFields.length} fields missing)` 
+             : 'Submit Application'}
           </Button>
         </div>
       </div>

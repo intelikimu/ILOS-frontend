@@ -23,7 +23,7 @@ export const CashplusLoanPreferenceForm = () => {
       <h3 className="text-2xl rounded-lg text-white font-semibold mb-4 p-4 bg-blue-500">1. Loan Preference Details</h3>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
         <div>
-          <label className="block mb-2">Loan Type</label>
+          <label className="block mb-2">Loan Type *</label>
           <div className="flex gap-4">
             <label className="flex items-center gap-2">
               <input 
@@ -48,7 +48,7 @@ export const CashplusLoanPreferenceForm = () => {
           </div>
         </div>
         <div>
-          <label className="block mb-2">Amount Requested</label>
+          <label className="block mb-2">Amount Requested *</label>
           <input 
             type="number" 
             name="amount_requested"
@@ -59,7 +59,7 @@ export const CashplusLoanPreferenceForm = () => {
           />
         </div>
         <div>
-          <label className="block mb-2">Minimum Amount Acceptable</label>
+          <label className="block mb-2">Minimum Amount Acceptable *</label>
           <input 
             type="number" 
             name="min_amount_acceptable"
@@ -70,7 +70,7 @@ export const CashplusLoanPreferenceForm = () => {
           />
         </div>
         <div>
-          <label className="block mb-2">Max Affordable Installment</label>
+          <label className="block mb-2">Max Affordable Installment *</label>
           <input 
             type="number" 
             name="max_affordable_installment"
@@ -81,7 +81,7 @@ export const CashplusLoanPreferenceForm = () => {
           />
         </div>
         <div>
-          <label className="block mb-2">Tenure</label>
+          <label className="block mb-2">Tenure *</label>
           <div className="flex flex-wrap gap-3">
             {[1,2,3,4,5].map(y => (
               <label key={y} className="flex items-center gap-2">

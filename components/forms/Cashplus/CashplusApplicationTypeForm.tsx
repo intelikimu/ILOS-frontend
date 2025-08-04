@@ -96,7 +96,7 @@ export const CashplusApplicationTypeForm = () => {
         </div>
         {/* Purpose of Loan */}
         <div className="md:col-span-3">
-          <label className="block mb-2">Purpose of Loan</label>
+          <label className="block mb-2">Purpose of Loan *</label>
           <div className="flex flex-wrap gap-3 mb-2">
             {["Education", "Travel", "Wedding", "Other"].map((purpose) => (
               <label key={purpose} className="flex items-center gap-2">

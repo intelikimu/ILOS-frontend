@@ -12,8 +12,9 @@ import { CashplusApplicantDeclarationForm } from '@/components/forms/Cashplus/Ca
 import { CashplusBankUseOnlyForm } from '@/components/forms/Cashplus/CashplusBankUseOnlyForm';
 import { useCustomer } from '@/contexts/CustomerContext';
 import { Card, CardContent } from '@/components/ui/card';
-import { User, CreditCard, ArrowLeft, CheckCircle2, ChevronUp } from 'lucide-react';
+import { User, CreditCard, ArrowLeft, CheckCircle2, ChevronUp, Settings, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -58,10 +59,13 @@ const useSectionFilled = (customerData: any): Record<SectionKey, boolean> => ({
 });
 
 export default function CashplusPage() {
-  const { customerData } = useCustomer();
+  const { customerData, updateCustomerData } = useCustomer();
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationEnabled, setValidationEnabled] = useState(true);
+  const [showTestOptions, setShowTestOptions] = useState(false);
+  const [validationStatus, setValidationStatus] = useState<{isValid: boolean; missingFields: string[]}>({isValid: true, missingFields: []});
 
   // Function to get base URL for API calls
   const getBaseUrl = () => {
@@ -69,6 +73,232 @@ export default function CashplusPage() {
       return process.env.NEXT_PUBLIC_API_URL || 'https://ilos-backend.vercel.app';
     }
     return 'http://localhost:5000';
+  };
+
+  // Function to check current validation status
+  const checkValidationStatus = () => {
+    if (!validationEnabled) {
+      setValidationStatus({isValid: true, missingFields: []});
+      return;
+    }
+    
+    const errors = validateMandatoryFields();
+    setValidationStatus({
+      isValid: errors.length === 0,
+      missingFields: errors
+    });
+  };
+
+  // Validation function to check mandatory fields
+  const validateMandatoryFields = () => {
+    const errors: string[] = [];
+    
+    // Application Type validation
+    if (!customerData?.applicationDetails?.loanPurpose) {
+      errors.push("Loan Purpose is required");
+    }
+    if (customerData?.applicationDetails?.loanPurpose === 'Other' && !customerData?.applicationDetails?.loanPurposeOther) {
+      errors.push("Please specify the loan purpose");
+    }
+    if (customerData?.applicationDetails?.ublExistingCustomer === 'Yes' && !customerData?.applicationDetails?.branch) {
+      errors.push("Branch is required for existing UBL customers");
+    }
+    if (customerData?.applicationDetails?.ublExistingCustomer === 'Yes' && !customerData?.applicationDetails?.account) {
+      errors.push("Account number is required for existing UBL customers");
+    }
+
+    // Personal Information validation
+    if (!customerData?.personalDetails?.title) {
+      errors.push("Title is required");
+    }
+    if (!customerData?.personalDetails?.firstName) {
+      errors.push("First Name is required");
+    }
+    if (!customerData?.personalDetails?.lastName) {
+      errors.push("Last Name is required");
+    }
+    if (!customerData?.personalDetails?.cnic) {
+      errors.push("CNIC is required");
+    }
+    if (!customerData?.personalDetails?.dateOfBirth) {
+      errors.push("Date of Birth is required");
+    }
+    if (!customerData?.personalDetails?.gender) {
+      errors.push("Gender is required");
+    }
+    if (!customerData?.personalDetails?.maritalStatus) {
+      errors.push("Marital Status is required");
+    }
+    if (!customerData?.personalDetails?.numberOfDependents) {
+      errors.push("Number of Dependants is required");
+    }
+    if (!customerData?.personalDetails?.education) {
+      errors.push("Educational Qualification is required");
+    }
+    if (customerData?.personalDetails?.education === 'Other' && !customerData?.personalDetails?.educationOther) {
+      errors.push("Please specify your education qualification");
+    }
+    if (!customerData?.personalDetails?.fatherName) {
+      errors.push("Father's/Husband's Name is required");
+    }
+    if (!customerData?.personalDetails?.motherName) {
+      errors.push("Mother's Maiden Name is required");
+    }
+    if (!customerData?.personalDetails?.mobileNumber) {
+      errors.push("Mobile Number is required");
+    }
+
+    // Address validation
+    if (!customerData?.addressDetails?.currentAddress?.fullAddress) {
+      errors.push("Current Address is required");
+    }
+    if (!customerData?.addressDetails?.currentAddress?.city) {
+      errors.push("City is required");
+    }
+    if (!customerData?.addressDetails?.currentAddress?.postalCode) {
+      errors.push("Postal Code is required");
+    }
+    if (!customerData?.addressDetails?.currentAddress?.yearsAtAddress) {
+      errors.push("Residing Since is required");
+    }
+    if (!customerData?.addressDetails?.currentAddress?.residentialStatus) {
+      errors.push("Type of Accommodation is required");
+    }
+    if (customerData?.addressDetails?.currentAddress?.residentialStatus === 'Other' && !customerData?.addressDetails?.currentAddress?.residentialStatusOther) {
+      errors.push("Please specify accommodation type");
+    }
+    if (!customerData?.addressDetails?.currentAddress?.telephone) {
+      errors.push("Telephone (Current) is required");
+    }
+
+    // Contact details validation
+    if (!customerData?.contactDetails?.preferredMailingAddress) {
+      errors.push("Preferred Mailing Address is required");
+    }
+    if (!customerData?.contactDetails?.mobileType) {
+      errors.push("Mobile Type is required");
+    }
+
+    // Employment validation
+    if (!customerData?.employmentDetails?.employmentStatus) {
+      errors.push("Employment Status is required");
+    }
+    if (!customerData?.employmentDetails?.companyName) {
+      errors.push("Company Name is required");
+    }
+    if (!customerData?.employmentDetails?.companyType) {
+      errors.push("Company Type is required");
+    }
+    if (customerData?.employmentDetails?.companyType === 'Other' && !customerData?.employmentDetails?.companyTypeOther) {
+      errors.push("Please specify company type");
+    }
+    if (!customerData?.employmentDetails?.department) {
+      errors.push("Department is required");
+    }
+    if (!customerData?.employmentDetails?.designation) {
+      errors.push("Designation is required");
+    }
+    if (!customerData?.employmentDetails?.grade) {
+      errors.push("Grade Level is required");
+    }
+    if (!customerData?.employmentDetails?.currentExperience) {
+      errors.push("Current Experience (Years) is required");
+    }
+
+    // Office address validation (excluding non-mandatory fields)
+    if (!customerData?.employmentDetails?.officeAddress?.houseNo) {
+      errors.push("Office House No. is required");
+    }
+    if (!customerData?.employmentDetails?.officeAddress?.street) {
+      errors.push("Office Street is required");
+    }
+    if (!customerData?.employmentDetails?.officeAddress?.nearestLandmark) {
+      errors.push("Office Nearest Landmark is required");
+    }
+    if (!customerData?.employmentDetails?.officeAddress?.city) {
+      errors.push("Office City is required");
+    }
+    if (!customerData?.employmentDetails?.officeAddress?.postalCode) {
+      errors.push("Office Postal Code is required");
+    }
+    if (!customerData?.employmentDetails?.officeAddress?.telephone1) {
+      errors.push("Office Telephone 1 is required");
+    }
+
+    // Income validation (excluding OtherMonthlyIncome as it's non-mandatory)
+    if (!customerData?.incomeDetails?.grossMonthlySalary) {
+      errors.push("Gross Monthly Salary is required");
+    }
+    if (!customerData?.incomeDetails?.netMonthlyIncome) {
+      errors.push("Net Monthly Income is required");
+    }
+    if (!customerData?.incomeDetails?.otherIncomeSource) {
+      errors.push("Other Income Sources is required");
+    }
+    if (customerData?.incomeDetails?.otherIncomeSource === 'Other' && !customerData?.incomeDetails?.otherIncomeSourceSpecify) {
+      errors.push("Please specify other income source");
+    }
+
+    // Banking validation
+    if (!customerData?.bankingDetails?.isUblCustomer) {
+      errors.push("UBL Customer status is required");
+    }
+    if (customerData?.bankingDetails?.isUblCustomer === 'Yes' && !customerData?.bankingDetails?.ublAccountNumber) {
+      errors.push("UBL Account Number is required for UBL customers");
+    }
+
+    // Loan preference validation
+    if (!customerData?.loanPreference?.loanType) {
+      errors.push("Loan Type is required");
+    }
+    if (!customerData?.loanPreference?.amountRequested) {
+      errors.push("Amount Requested is required");
+    }
+    if (!customerData?.loanPreference?.minAmountAcceptable) {
+      errors.push("Minimum Amount Acceptable is required");
+    }
+    if (!customerData?.loanPreference?.maxAffordableInstallment) {
+      errors.push("Maximum Affordable Installment is required");
+    }
+    if (!customerData?.loanPreference?.tenure) {
+      errors.push("Tenure is required");
+    }
+
+    // Declaration validation
+    if (!customerData?.declaration?.signature) {
+      errors.push("Applicant Signature is required");
+    }
+    if (!customerData?.declaration?.date) {
+      errors.push("Signature Date is required");
+    }
+
+    // Bank use only validation
+    if (!customerData?.bankUseOnly?.applicationSource) {
+      errors.push("Application Source is required");
+    }
+    if (!customerData?.bankUseOnly?.channelCode) {
+      errors.push("Channel Code is required");
+    }
+    if (!customerData?.bankUseOnly?.soEmployeeNo) {
+      errors.push("SO Employee No. is required");
+    }
+    if (!customerData?.bankUseOnly?.programCode) {
+      errors.push("Program Code is required");
+    }
+    if (!customerData?.bankUseOnly?.pbEmployeeNo) {
+      errors.push("PB BM Employee No. is required");
+    }
+    if (!customerData?.bankUseOnly?.branchCode) {
+      errors.push("Branch Code is required");
+    }
+    if (!customerData?.bankUseOnly?.smEmployeeNo) {
+      errors.push("SM Employee No. is required");
+    }
+    if (!customerData?.bankUseOnly?.bmSignature) {
+      errors.push("BM Signature/Stamp is required");
+    }
+
+    return errors;
   };
 
   // 2. Section refs for scroll with correct typing
@@ -189,10 +419,156 @@ export default function CashplusPage() {
     return formData;
   };
 
+  // Autofill function for testing
+  const handleAutofill = () => {
+    const testData = {
+      applicationDetails: {
+        loanPurpose: 'Personal Loan',
+        ublExistingCustomer: 'No',
+        branch: '',
+        account: ''
+      },
+      personalDetails: {
+        title: 'Mr.',
+        firstName: 'John',
+        lastName: 'Doe',
+        middleName: '',
+        cnic: '12345-1234567-1',
+        dateOfBirth: '1990-01-01',
+        gender: 'Male',
+        maritalStatus: 'Single',
+        numberOfDependents: '0',
+        education: 'Bachelor',
+        educationOther: '',
+        fatherName: 'Father Doe',
+        motherName: 'Mother Doe',
+        mobileNumber: '0300-1234567',
+        ntn: ''
+      },
+      addressDetails: {
+        currentAddress: {
+          fullAddress: '123 Test Street',
+          nearestLandmark: 'Test Landmark',
+          city: 'Karachi',
+          postalCode: '75000',
+          yearsAtAddress: '2',
+          residentialStatus: 'Rented',
+          residentialStatusOther: '',
+          monthlyRent: '50000',
+          telephone: '021-1234567'
+        },
+        permanentAddress: {
+          houseNo: '123',
+          street: 'Test Street',
+          city: 'Karachi',
+          postalCode: '75000',
+          telephone: '021-1234567'
+        }
+      },
+      contactDetails: {
+        preferredMailingAddress: 'Current',
+        mobileType: 'Personal',
+        otherContact: ''
+      },
+      employmentDetails: {
+        employmentStatus: 'Permanent',
+        companyName: 'Test Company Ltd',
+        companyType: 'Private Limited',
+        companyTypeOther: '',
+        department: 'IT',
+        designation: 'Software Engineer',
+        grade: 'Grade 5',
+        currentExperience: '5',
+        previousEmployer: '',
+        previousExperience: '',
+        officeAddress: {
+          houseNo: '456',
+          street: 'Office Street',
+          nearestLandmark: 'Office Landmark',
+          city: 'Karachi',
+          postalCode: '75000',
+          telephone1: '021-9876543',
+          telephone2: '',
+          ext: ''
+        }
+      },
+      incomeDetails: {
+        grossMonthlySalary: '150000',
+        netMonthlyIncome: '120000',
+        otherIncomeSource: 'None',
+        otherIncomeSourceSpecify: '',
+        otherMonthlyIncome: ''
+      },
+      bankingDetails: {
+        isUblCustomer: 'No',
+        ublAccountNumber: ''
+      },
+      loanPreference: {
+        loanType: 'Personal Loan',
+        amountRequested: '500000',
+        minAmountAcceptable: '400000',
+        maxAffordableInstallment: '25000',
+        tenure: '24'
+      },
+      declaration: {
+        signature: 'John Doe',
+        date: new Date().toISOString().split('T')[0]
+      },
+      bankUseOnly: {
+        applicationSource: 'Branch',
+        channelCode: 'BR001',
+        soEmployeeNo: 'SO123',
+        programCode: 'CP001',
+        pbEmployeeNo: 'PB123',
+        branchCode: 'BR001',
+        smEmployeeNo: 'SM123',
+        bmSignature: 'BM Signature'
+      }
+    };
+
+    updateCustomerData(testData);
+    toast({
+      title: "Form Autofilled",
+      description: "Test data has been populated in the form.",
+      variant: "default"
+    });
+  };
+
   // Submit form data to the API
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
+      // Validate mandatory fields first (only if validation is enabled)
+      if (validationEnabled) {
+        const validationErrors = validateMandatoryFields();
+        if (validationErrors.length > 0) {
+          // Create a more user-friendly error message
+          const errorCount = validationErrors.length;
+          const errorMessage = errorCount === 1 
+            ? `1 field is missing: ${validationErrors[0]}`
+            : `${errorCount} fields are missing. Please fill in all required fields marked with (*).`;
+          
+          // Show detailed errors in console for debugging
+          console.log('Validation Errors:', validationErrors);
+          
+          toast({ 
+            title: "Validation Error", 
+            description: errorMessage, 
+            variant: "destructive",
+            duration: 5000 // Show for 5 seconds
+          });
+          
+          // Also show a more detailed alert for better visibility
+          if (errorCount > 1) {
+            const detailedMessage = `Missing ${errorCount} required fields:\n\n${validationErrors.slice(0, 10).join('\n')}${validationErrors.length > 10 ? `\n... and ${validationErrors.length - 10} more fields` : ''}`;
+            alert(`Form Validation Failed!\n\n${detailedMessage}\n\nPlease fill in all required fields marked with (*) before submitting.`);
+          }
+          
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       // Format data from our context properly
       if (!customerData) throw new Error("No customer data found");
       if (!customerData.customerId) throw new Error("No customer ID found - please try again");
@@ -455,6 +831,11 @@ export default function CashplusPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Check validation status when customerData changes
+  useEffect(() => {
+    checkValidationStatus();
+  }, [customerData, validationEnabled]);
+
   // Scroll to top handler
   const handleScrollTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -463,6 +844,105 @@ export default function CashplusPage() {
   return (
     <div className="max-w-5xl rounded-lg mx-auto px-4 py-8 space-y-6">
       <h2 className="text-3xl text-center text-blue-500 font-bold "> UBL Cashplus Application</h2>
+
+      {/* Mandatory Fields Note */}
+      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="text-sm text-blue-800">
+          <strong>Note:</strong> Fields marked with an asterisk (*) are mandatory and must be filled before submission.
+        </div>
+      </div>
+
+      {/* Test Options Panel */}
+      <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Settings className="w-4 h-4 text-yellow-600" />
+            <span className="text-sm font-medium text-yellow-800">Testing Options</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowTestOptions(!showTestOptions)}
+            className="text-yellow-700 border-yellow-300 hover:bg-yellow-100"
+          >
+            {showTestOptions ? 'Hide' : 'Show'} Options
+          </Button>
+        </div>
+        
+        {showTestOptions && (
+          <div className="mt-4 space-y-4">
+            {/* Validation Toggle */}
+            <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-yellow-200">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div>
+                  <div className="text-sm font-medium text-gray-900">Field Validation</div>
+                  <div className="text-xs text-gray-600">
+                    {validationEnabled ? 'Validation is enabled' : 'Validation is disabled'}
+                  </div>
+                </div>
+              </div>
+              <Switch
+                checked={validationEnabled}
+                onCheckedChange={setValidationEnabled}
+                className="data-[state=checked]:bg-blue-600"
+              />
+            </div>
+
+            {/* Autofill Button */}
+            <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-yellow-200">
+              <div className="flex items-center gap-3">
+                <Zap className="w-4 h-4 text-green-600" />
+                <div>
+                  <div className="text-sm font-medium text-gray-900">Autofill Form</div>
+                  <div className="text-xs text-gray-600">Populate form with test data</div>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAutofill}
+                className="text-green-700 border-green-300 hover:bg-green-50"
+              >
+                Autofill
+              </Button>
+            </div>
+
+            {/* Status Indicator */}
+            <div className="text-xs text-gray-600 bg-white p-2 rounded border border-yellow-200">
+              <strong>Current Status:</strong> 
+              {validationEnabled ? (
+                validationStatus.isValid ? (
+                  <span className="text-green-600"> ✅ All required fields are filled - Form is ready to submit.</span>
+                ) : (
+                  <span className="text-red-600"> ❌ {validationStatus.missingFields.length} required field(s) missing - Cannot submit form.</span>
+                )
+              ) : (
+                <span className="text-yellow-600"> ⚠️ Validation disabled - Form will submit without checking mandatory fields.</span>
+              )}
+            </div>
+
+            {/* Missing Fields List (only show when validation is enabled and there are errors) */}
+            {validationEnabled && !validationStatus.isValid && validationStatus.missingFields.length > 0 && (
+              <div className="text-xs bg-red-50 border border-red-200 p-3 rounded">
+                <div className="font-medium text-red-800 mb-2">
+                  Missing Required Fields ({validationStatus.missingFields.length}):
+                </div>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {validationStatus.missingFields.slice(0, 8).map((field, index) => (
+                    <div key={index} className="text-red-700">• {field}</div>
+                  ))}
+                  {validationStatus.missingFields.length > 8 && (
+                    <div className="text-red-600 italic">
+                      ... and {validationStatus.missingFields.length - 8} more fields
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Customer Info Header */}
     <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
@@ -604,10 +1084,19 @@ export default function CashplusPage() {
           <Button
             type="button"
             onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 shadow transition"
+            disabled={isSubmitting || (validationEnabled && !validationStatus.isValid)}
+            className={`rounded-xl font-semibold px-8 py-3 shadow transition ${
+              isSubmitting 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : validationEnabled && !validationStatus.isValid
+                ? 'bg-red-500 hover:bg-red-600 text-white cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
+            }`}
           >
-            {isSubmitting ? 'Submitting...' : 'Submit Application'}
+            {isSubmitting ? 'Submitting...' : 
+             validationEnabled && !validationStatus.isValid 
+             ? `Submit Application (${validationStatus.missingFields.length} fields missing)` 
+             : 'Submit Application'}
           </Button>
         </div>
       </form>

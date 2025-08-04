@@ -69,7 +69,11 @@ export const AmeenDriveReferenceDetailsForm = () => {
     if (!ameenDrive.referenceDetails || !ameenDrive.referenceDetails[refIndex]) {
       return false;
     }
-    return !!ameenDrive.referenceDetails[refIndex][fieldName as keyof typeof ameenDrive.referenceDetails[0]];
+    const reference = ameenDrive.referenceDetails[refIndex];
+    if (!reference || typeof reference !== 'object') {
+      return false;
+    }
+    return !!(reference as any)[fieldName];
   };
 
   const getFieldClasses = (refIndex: number, fieldName: string) => {

@@ -90,7 +90,7 @@ export const CashplusPersonalInfoForm = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
         {/* Title */}
         <div>
-          <label className="block mb-2 font-medium">Title</label>
+          <label className="block mb-2 font-medium">Title *</label>
           <div className="flex gap-4">
             <label className="flex items-center gap-2">
               <input 
@@ -127,7 +127,7 @@ export const CashplusPersonalInfoForm = () => {
         
         {/* First, Middle, Last Name */}
         <div>
-          <label className="block mb-2 font-medium">First Name</label>
+          <label className="block mb-2 font-medium">First Name *</label>
           <input 
             type="text" 
             className={getFieldClasses('firstName')}
@@ -147,7 +147,7 @@ export const CashplusPersonalInfoForm = () => {
           />
         </div>
         <div>
-          <label className="block mb-2 font-medium">Last Name</label>
+          <label className="block mb-2 font-medium">Last Name *</label>
           <input 
             type="text" 
             className={getFieldClasses('lastName')}
@@ -159,7 +159,7 @@ export const CashplusPersonalInfoForm = () => {
         
         {/* CNIC */}
         <div>
-          <label className="block mb-2 font-medium">CNIC</label>
+          <label className="block mb-2 font-medium">CNIC *</label>
           <input 
             type="text" 
             maxLength={15} 
@@ -184,7 +184,7 @@ export const CashplusPersonalInfoForm = () => {
         
         {/* Date of Birth */}
         <div>
-          <label className="block mb-2 font-medium">Date of Birth</label>
+          <label className="block mb-2 font-medium">Date of Birth *</label>
           <input 
             type="date" 
             className={getFieldClasses('dateOfBirth')}
@@ -195,7 +195,7 @@ export const CashplusPersonalInfoForm = () => {
         
         {/* Gender */}
         <div>
-          <label className="block mb-2 font-medium">Gender</label>
+          <label className="block mb-2 font-medium">Gender *</label>
           <div className="flex gap-3">
             <label className="flex items-center gap-2">
               <input 
@@ -222,7 +222,7 @@ export const CashplusPersonalInfoForm = () => {
         
         {/* Marital Status */}
         <div>
-          <label className="block mb-2 font-medium">Marital Status</label>
+          <label className="block mb-2 font-medium">Marital Status *</label>
           <div className="flex flex-wrap gap-2">
             <label className="flex items-center gap-2">
               <input 
@@ -269,7 +269,7 @@ export const CashplusPersonalInfoForm = () => {
         
         {/* Dependants */}
         <div>
-          <label className="block mb-2 font-medium">Dependants</label>
+          <label className="block mb-2 font-medium">Dependants *</label>
           <input 
             type="number" 
             className={getFieldClasses('numberOfDependents')}
@@ -281,7 +281,7 @@ export const CashplusPersonalInfoForm = () => {
         
         {/* Education */}
         <div className="md:col-span-3">
-          <label className="block mb-2 font-medium">Educational Qualification</label>
+          <label className="block mb-2 font-medium">Educational Qualification *</label>
           <div className="flex flex-wrap gap-3 mb-2">
             {['Below Matric', 'Matric/O\'Levels', 'Inter/A\'Levels', 'Graduate', 'Post Graduate', 'Other'].map((edu) => (
               <label key={edu} className="flex items-center gap-2">
@@ -309,7 +309,7 @@ export const CashplusPersonalInfoForm = () => {
         
         {/* Father's/Husband's Name */}
         <div>
-          <label className="block mb-2 font-medium">Father's / Husband's Name</label>
+          <label className="block mb-2 font-medium">Father's / Husband's Name *</label>
           <input 
             type="text" 
             className={getFieldClasses('fatherName')}
@@ -321,7 +321,7 @@ export const CashplusPersonalInfoForm = () => {
         
         {/* Mother's Maiden Name */}
         <div>
-          <label className="block mb-2 font-medium">Mother's Maiden Name</label>
+          <label className="block mb-2 font-medium">Mother's Maiden Name *</label>
           <input 
             type="text" 
             className={getFieldClasses('motherName')}
@@ -333,7 +333,7 @@ export const CashplusPersonalInfoForm = () => {
         
         {/* Employment Status */}
         <div className="md:col-span-3">
-          <label className="block mb-2 font-medium">Employment Status</label>
+          <label className="block mb-2 font-medium">Employment Status *</label>
           <div className="flex flex-wrap gap-3">
             {['Salaried', 'Govt. servant', 'Armed forces', 'Staff'].map((status) => (
               <label key={status} className="flex items-center gap-2">
@@ -357,7 +357,7 @@ export const CashplusPersonalInfoForm = () => {
         
         {/* Address Group */}
         <div className="md:col-span-3">
-          <label className="block mb-2 font-medium">Address</label>
+          <label className="block mb-2 font-medium">Address *</label>
           <textarea 
             rows={2} 
             className={getFieldClasses('fullAddress')}
@@ -379,7 +379,7 @@ export const CashplusPersonalInfoForm = () => {
         </div>
         
         <div>
-          <label className="block mb-2 font-medium">City</label>
+          <label className="block mb-2 font-medium">City *</label>
           <input 
             type="text" 
             className={getFieldClasses('city')}
@@ -390,7 +390,7 @@ export const CashplusPersonalInfoForm = () => {
         </div>
         
         <div>
-          <label className="block mb-2 font-medium">Postal Code</label>
+          <label className="block mb-2 font-medium">Postal Code *</label>
           <input 
             type="text" 
             className={getFieldClasses('postalCode')}
@@ -401,7 +401,7 @@ export const CashplusPersonalInfoForm = () => {
         </div>
         
         <div>
-          <label className="block mb-2 font-medium">Residing Since</label>
+          <label className="block mb-2 font-medium">Residing Since *</label>
           <input 
             type="text" 
             className={getFieldClasses('yearsAtAddress')}
@@ -413,7 +413,7 @@ export const CashplusPersonalInfoForm = () => {
         
         {/* Type of Accommodation */}
         <div className="md:col-span-3">
-          <label className="block mb-2 font-medium">Type of Accommodation</label>
+          <label className="block mb-2 font-medium">Type of Accommodation *</label>
           <div className="flex flex-wrap gap-3 mb-2">
             {[
               'Your own house', 
@@ -460,7 +460,7 @@ export const CashplusPersonalInfoForm = () => {
         
         {/* Preferred Mailing Address */}
         <div>
-          <label className="block mb-2 font-medium">Preferred Mailing Address</label>
+          <label className="block mb-2 font-medium">Preferred Mailing Address *</label>
           <div className="flex gap-4">
             <label className="flex items-center gap-2">
               <input 
@@ -522,7 +522,7 @@ export const CashplusPersonalInfoForm = () => {
         
         {/* Residence Contact Details */}
         <div>
-          <label className="block mb-2 font-medium">Telephone (Current)</label>
+          <label className="block mb-2 font-medium">Telephone (Current) *</label>
           <input 
             type="text" 
             className={getFieldClasses('telephone')}
@@ -544,7 +544,7 @@ export const CashplusPersonalInfoForm = () => {
         </div>
         
         <div>
-          <label className="block mb-2 font-medium">Mobile</label>
+          <label className="block mb-2 font-medium">Mobile *</label>
           <input 
             type="text" 
             className={getFieldClasses('mobileNumber')}
@@ -556,7 +556,7 @@ export const CashplusPersonalInfoForm = () => {
         
         {/* Mobile Type */}
         <div>
-          <label className="block mb-2 font-medium">Mobile Type</label>
+          <label className="block mb-2 font-medium">Mobile Type *</label>
           <div className="flex gap-4">
             <label className="flex items-center gap-2">
               <input 

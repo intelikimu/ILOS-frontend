@@ -61,7 +61,7 @@ export const CashplusEmploymentInfoForm = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
         {/* Company's Name */}
         <div>
-          <label className="block mb-2 font-medium">Company's Name</label>
+          <label className="block mb-2 font-medium">Company's Name *</label>
           <input
             type="text"
             className={getFieldClasses("companyName")}
@@ -73,7 +73,7 @@ export const CashplusEmploymentInfoForm = () => {
 
         {/* Company Type */}
         <div>
-          <label className="block mb-2 font-medium">Company Type</label>
+          <label className="block mb-2 font-medium">Company Type *</label>
           <div className="flex flex-wrap gap-3 mb-2">
             {["Private Limited", "Public Limited", "Government", "Other"].map((type) => (
               <label key={type} className="flex items-center gap-2">
@@ -101,7 +101,7 @@ export const CashplusEmploymentInfoForm = () => {
 
         {/* Department */}
         <div>
-          <label className="block mb-2 font-medium">Department</label>
+          <label className="block mb-2 font-medium">Department *</label>
           <input
             type="text"
             className={getFieldClasses("department")}
@@ -113,7 +113,7 @@ export const CashplusEmploymentInfoForm = () => {
 
         {/* Designation */}
         <div>
-          <label className="block mb-2 font-medium">Designation</label>
+          <label className="block mb-2 font-medium">Designation *</label>
           <input
             type="text"
             className={getFieldClasses("designation")}
@@ -125,7 +125,7 @@ export const CashplusEmploymentInfoForm = () => {
 
         {/* Grade / Level */}
         <div>
-          <label className="block mb-2 font-medium">Grade / Level</label>
+          <label className="block mb-2 font-medium">Grade / Level *</label>
           <input
             type="text"
             className={getFieldClasses("grade")}
@@ -137,7 +137,7 @@ export const CashplusEmploymentInfoForm = () => {
 
         {/* Experience (Current) */}
         <div>
-          <label className="block mb-2 font-medium">Experience (Current) (Years)</label>
+          <label className="block mb-2 font-medium">Experience (Current) (Years) *</label>
           <input
             type="number"
             className={getFieldClasses("currentExperience")}
@@ -173,7 +173,7 @@ export const CashplusEmploymentInfoForm = () => {
 
         {/* Office Address fields */}
         <div>
-          <label className="block mb-2 font-medium">Office Address: House / Apt. No.</label>
+          <label className="block mb-2 font-medium">Office Address: House / Apt. No. *</label>
           <input
             type="text"
             className={getFieldClasses("officeHouseNo")}
@@ -184,7 +184,7 @@ export const CashplusEmploymentInfoForm = () => {
         </div>
 
         <div>
-          <label className="block mb-2 font-medium">Office Address: Street</label>
+          <label className="block mb-2 font-medium">Office Address: Street *</label>
           <input
             type="text"
             className={getFieldClasses("officeStreet")}
@@ -206,7 +206,7 @@ export const CashplusEmploymentInfoForm = () => {
         </div>
 
         <div>
-          <label className="block mb-2 font-medium">Nearest Landmark</label>
+          <label className="block mb-2 font-medium">Nearest Landmark *</label>
           <input
             type="text"
             className={getFieldClasses("nearestLandmark")}
@@ -217,7 +217,7 @@ export const CashplusEmploymentInfoForm = () => {
         </div>
 
         <div>
-          <label className="block mb-2 font-medium">City</label>
+          <label className="block mb-2 font-medium">City *</label>
           <input
             type="text"
             className={getFieldClasses("city")}
@@ -228,7 +228,7 @@ export const CashplusEmploymentInfoForm = () => {
         </div>
 
         <div>
-          <label className="block mb-2 font-medium">Postal Code</label>
+          <label className="block mb-2 font-medium">Postal Code *</label>
           <input
             type="text"
             className={getFieldClasses("postalCode")}
@@ -250,7 +250,7 @@ export const CashplusEmploymentInfoForm = () => {
         </div>
 
         <div>
-          <label className="block mb-2 font-medium">Telephone 1</label>
+          <label className="block mb-2 font-medium">Telephone 1 *</label>
           <input
             type="text"
             className={getFieldClasses("telephone1")}

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Folder, File, Download, ChevronRight, ChevronDown, Home, ArrowUp } from 'lucide-react';
+import { Folder, File, Download, ChevronRight, ChevronDown, Home, ArrowUp, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -196,6 +196,108 @@ const DocumentExplorer: React.FC<DocumentExplorerProps> = ({ losId, applicationT
     }
   };
 
+  const handleView = async (file: FileItem) => {
+    try {
+      // Check file type first
+      const fileName = file.name.toLowerCase();
+      const isHtmlFile = fileName.endsWith('.html') || fileName.endsWith('.htm');
+      const isImageFile = fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || 
+                         fileName.endsWith('.png') || fileName.endsWith('.gif') || 
+                         fileName.endsWith('.bmp') || fileName.endsWith('.webp');
+      const isPdfFile = fileName.endsWith('.pdf');
+      const isTextFile = fileName.endsWith('.txt') || fileName.endsWith('.md') || 
+                        fileName.endsWith('.json') || fileName.endsWith('.xml');
+      
+      if (!isHtmlFile && !isImageFile && !isPdfFile && !isTextFile) {
+        toast({
+          title: "Preview not available",
+          description: `This file type (${file.name.split('.').pop()}) cannot be previewed. Please download it instead.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      let fileUrl;
+      
+      if (losId && applicationType) {
+        // For LOS-specific documents, construct the direct file URL
+        fileUrl = `http://localhost:8081${file.path}`;
+      } else {
+        // For general browsing, use the explorer URL
+        fileUrl = `http://localhost:8081/explorer${encodeURI(file.path)}`;
+      }
+      
+      console.log('Fetching file for preview:', fileUrl);
+      
+      // Try to fetch the file content first
+      const response = await fetch(fileUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': '*/*',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      // Get the file content
+      const fileContent = await response.blob();
+      
+      // Create a blob URL for the file
+      const blobUrl = URL.createObjectURL(fileContent);
+      
+      // Open the blob URL in a new tab
+      const newWindow = window.open(blobUrl, '_blank');
+      
+      if (!newWindow) {
+        toast({
+          title: "Popup blocked",
+          description: "Please allow popups for this site to view files.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Clean up the blob URL after a delay
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+      }, 1000);
+      
+      toast({
+        title: "Opening preview",
+        description: `Opening ${file.name} in a new tab...`,
+      });
+    } catch (error) {
+      console.error('Error opening file preview:', error);
+      
+      // Fallback: try opening directly
+      try {
+        let fallbackUrl;
+        
+        if (losId && applicationType) {
+          fallbackUrl = `http://localhost:8081${file.path}`;
+        } else {
+          fallbackUrl = `http://localhost:8081/explorer${encodeURI(file.path)}`;
+        }
+        
+        window.open(fallbackUrl, '_blank');
+        
+        toast({
+          title: "Opening file",
+          description: `Opening ${file.name} in a new tab...`,
+        });
+      } catch (fallbackError) {
+        console.error('Fallback error:', fallbackError);
+        toast({
+          title: "Error opening preview",
+          description: "Could not open the file preview. Please try downloading it instead.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   const navigateToParent = () => {
     const pathParts = currentPath.split('/').filter(Boolean);
     if (pathParts.length > 0) {
@@ -305,18 +407,32 @@ const DocumentExplorer: React.FC<DocumentExplorerProps> = ({ losId, applicationT
                 </div>
                 
                 {file.type === 'file' && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDownload(file);
-                    }}
-                    className="p-1 h-auto"
-                    title="Download file"
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownload(file);
+                      }}
+                      className="p-1 h-auto"
+                      title="Download file"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleView(file);
+                      }}
+                      className="p-1 h-auto"
+                      title="View file"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </div>
                 )}
               </div>
             ))}

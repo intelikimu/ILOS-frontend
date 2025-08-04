@@ -785,8 +785,19 @@ export default function CashplusPage() {
       const data = await response.json();
   
       if (response.ok) {
-        toast({ title: "Success!", description: "Your application has been submitted successfully." });
-        router.push('/dashboard/pb/applications');
+        toast({ title: "Success!", description: "Your Cashplus application has been submitted successfully. Redirecting to document upload..." });
+        
+        // Store minimal info for documents page to fetch proper customer data
+        const submissionInfo = {
+          applicationId: data.application_id,
+          applicationType: 'CashPlus'
+        };
+        
+        // Store in localStorage for documents page to pick up
+        localStorage.setItem('lastApplicationSubmission', JSON.stringify(submissionInfo));
+        
+        // Redirect to documents page
+        router.push('/dashboard/documents');
       } else {
         throw new Error(data.error || 'Failed to submit application');
       }
@@ -1090,13 +1101,13 @@ export default function CashplusPage() {
                 ? 'bg-gray-400 cursor-not-allowed' 
                 : validationEnabled && !validationStatus.isValid
                 ? 'bg-red-500 hover:bg-red-600 text-white cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                : 'bg-green-600 hover:bg-green-700 text-white'
             }`}
           >
-            {isSubmitting ? 'Submitting...' : 
+            {isSubmitting ? 'Saving & Redirecting...' : 
              validationEnabled && !validationStatus.isValid 
-             ? `Submit Application (${validationStatus.missingFields.length} fields missing)` 
-             : 'Submit Application'}
+             ? `Upload Documents (${validationStatus.missingFields.length} fields missing)` 
+             : 'Upload Documents'}
           </Button>
         </div>
       </form>

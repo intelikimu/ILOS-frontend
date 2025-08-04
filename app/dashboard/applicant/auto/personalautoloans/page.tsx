@@ -489,8 +489,19 @@ const AutoLoanPage = () => {
       const errorMessage = result.error || result.errorDetails || 'Unknown error';
       alert(`Submission failed: ${errorMessage}`);
     } else {
-      alert("Application submitted successfully!");
-      router.push('/dashboard/pb/applications');
+      alert("Application submitted successfully! Redirecting to document upload...");
+      
+      // Store minimal info for documents page to fetch proper customer data
+      const submissionInfo = {
+        applicationId: result.application_id,
+        applicationType: 'AutoLoan'
+      };
+      
+      // Store in localStorage for documents page to pick up
+      localStorage.setItem('lastApplicationSubmission', JSON.stringify(submissionInfo));
+      
+      // Redirect to documents page
+      router.push('/dashboard/documents');
     }
   } catch (err) {
     console.error("❌ Submission Error:", err);
@@ -745,12 +756,12 @@ const AutoLoanPage = () => {
           className={`rounded-xl font-semibold px-8 py-3 shadow transition ${
             validationEnabled && !validationStatus.isValid
               ? 'bg-red-500 hover:bg-red-600 text-white cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700 text-white'
+              : 'bg-green-600 hover:bg-green-700 text-white'
           }`}
         >
           {validationEnabled && !validationStatus.isValid 
-            ? `Submit Application (${validationStatus.missingFields.length} fields missing)` 
-            : 'Submit Application'}
+            ? `Upload Documents (${validationStatus.missingFields.length} fields missing)` 
+            : 'Upload Documents'}
         </button>
       </div>
 

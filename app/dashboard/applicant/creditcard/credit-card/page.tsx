@@ -604,10 +604,20 @@ const refs: Record<string, React.RefObject<HTMLDivElement | null>> = {
       if (response.ok) {
         toast({
           title: "Success!",
-          description: "Your credit card application has been submitted successfully.",
+          description: "Your credit card application has been submitted successfully. Redirecting to document upload...",
         });
-        // Redirect to cases/dashboard after successful submission
-        router.push('/dashboard/pb/applications');
+        
+        // Store minimal info for documents page to fetch proper customer data
+        const submissionInfo = {
+          applicationId: data.application_id,
+          applicationType: 'ClassicCreditCard'
+        };
+        
+        // Store in localStorage for documents page to pick up
+        localStorage.setItem('lastApplicationSubmission', JSON.stringify(submissionInfo));
+        
+        // Redirect to documents page
+        router.push('/dashboard/documents');
       } else {
         throw new Error(data.error || 'Failed to submit credit card application');
       }
@@ -822,18 +832,18 @@ const refs: Record<string, React.RefObject<HTMLDivElement | null>> = {
                 ? 'bg-gray-400 cursor-not-allowed' 
                 : validationEnabled && !validationStatus.isValid
                 ? 'bg-red-500 hover:bg-red-600 text-white cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                : 'bg-green-600 hover:bg-green-700 text-white'
             }`}
           >
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
+                Saving & Redirecting...
               </>
             ) : validationEnabled && !validationStatus.isValid ? (
-              `Submit Application (${validationStatus.missingFields.length} fields missing)`
+              `Upload Documents (${validationStatus.missingFields.length} fields missing)`
             ) : (
-              "Submit Application"
+              "Upload Documents"
             )}
           </Button>
         </div>

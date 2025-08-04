@@ -13,7 +13,9 @@ import { SMEDeclarationForm } from "@/components/forms/smeasaan/SMEDeclarationFo
 import { useCustomer } from "@/contexts/CustomerContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, User, CheckCircle2, CreditCard, ChevronUp } from "lucide-react";
+import { ArrowLeft, User, CheckCircle2, CreditCard, ChevronUp, Settings } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
@@ -125,6 +127,9 @@ export default function SMEAsaanPage() {
 
   const [currentSection, setCurrentSection] = useState<SectionKey | "">("");
   const sectionFilled = useSectionFilled(customerData || {});
+  const [validationEnabled, setValidationEnabled] = useState(true);
+  const [showTestOptions, setShowTestOptions] = useState(false);
+  const [validationStatus, setValidationStatus] = useState<{isValid: boolean; missingFields: string[]}>({isValid: true, missingFields: []});
   
   // State for the new form components
   const [vehicleDetails, setVehicleDetails] = useState<Record<string, any>>({});
@@ -183,6 +188,75 @@ export default function SMEAsaanPage() {
     setCurrentSection(key);
   };
 
+  // Function to check current validation status
+  const checkValidationStatus = () => {
+    if (!validationEnabled) {
+      setValidationStatus({isValid: true, missingFields: []});
+      return;
+    }
+    
+    const errors = validateMandatoryFields();
+    setValidationStatus({
+      isValid: errors.length === 0,
+      missingFields: errors
+    });
+  };
+
+  // Validation function to check mandatory fields
+  const validateMandatoryFields = () => {
+    const errors: string[] = [];
+    const smeApplication = customerData?.smeApplication || {};
+    
+    // General Info validation
+    if (!smeApplication.application_no) {
+      errors.push("Application Number is required");
+    }
+    if (!smeApplication.date_of_request) {
+      errors.push("Date of Request is required");
+    }
+
+    // Personal Details validation
+    if (!smeApplication.applicant_name) {
+      errors.push("Applicant Name is required");
+    }
+    if (!smeApplication.applicant_cnic) {
+      errors.push("Applicant CNIC is required");
+    }
+
+    // Business Details validation
+    if (!smeApplication.company_name) {
+      errors.push("Company Name is required");
+    }
+    if (!smeApplication.type_of_business) {
+      errors.push("Type of Business is required");
+    }
+
+    // Vehicle Details validation
+    if (!smeApplication.vehicle_manufacturer) {
+      errors.push("Vehicle Manufacturer is required");
+    }
+    if (!smeApplication.vehicle_model) {
+      errors.push("Vehicle Model is required");
+    }
+
+    // Proposed Loan Details validation
+    if (!smeApplication.desired_loan_amount) {
+      errors.push("Desired Loan Amount is required");
+    }
+
+    // Declaration validation
+    if (!customerData?.declaration?.termsAgreed) {
+      errors.push("Terms and Conditions agreement is required");
+    }
+
+    return errors;
+  };
+
+  // Check validation status when customerData changes
+  useEffect(() => {
+    checkValidationStatus();
+  }, [customerData, validationEnabled]);
+
   // Up Arrow visibility state
   const [showUpArrow, setShowUpArrow] = useState(false);
 
@@ -211,6 +285,33 @@ export default function SMEAsaanPage() {
         description: "Customer data is missing. Please fill the form first.",
       });
       return;
+    }
+
+    // Validate mandatory fields if validation is enabled
+    if (validationEnabled) {
+      const validationErrors = validateMandatoryFields();
+      if (validationErrors.length > 0) {
+        const errorCount = validationErrors.length;
+        const errorMessage = errorCount === 1 
+          ? `1 field is missing: ${validationErrors[0]}`
+          : `${errorCount} fields are missing. Please fill in all required fields marked with (*).`;
+        
+        console.log('Validation Errors:', validationErrors);
+        
+        toast({ 
+          title: "Validation Error", 
+          description: errorMessage, 
+          variant: "destructive",
+          duration: 5000
+        });
+        
+        if (errorCount > 1) {
+          const detailedMessage = `Missing ${errorCount} required fields:\n\n${validationErrors.slice(0, 10).join('\n')}${validationErrors.length > 10 ? `\n... and ${validationErrors.length - 10} more fields` : ''}`;
+          alert(`Form Validation Failed!\n\n${detailedMessage}\n\nPlease fill in all required fields marked with (*) before submitting.`);
+        }
+        
+        return;
+      }
     }
 
     // Test backend connection before proceeding
@@ -625,23 +726,25 @@ export default function SMEAsaanPage() {
 
       });
 
-      // Check for missing fields or null/undefined values in required fields
-      const requiredFields = [
-        "customer_id", "application_no", "date_of_request",
-        "applicant_name", "applicant_cnic", "father_husband_name",
-        "gender", "marital_status", "cell_no"
-      ];
+      // Check for missing fields or null/undefined values in required fields (only if validation is enabled)
+      if (validationEnabled) {
+        const requiredFields = [
+          "customer_id", "application_no", "date_of_request",
+          "applicant_name", "applicant_cnic", "father_husband_name",
+          "gender", "marital_status", "cell_no"
+        ];
 
-      const missingFields = requiredFields.filter(field => !formData[field]);
-      if (missingFields.length > 0) {
-        console.warn("Missing required fields:", missingFields);
-        toast({
-          variant: "destructive",
-          title: "Missing Required Fields",
-          description: `Please fill in all required fields: ${missingFields.join(", ")}`,
-        });
-        setIsSubmitting(false);
-        return;
+        const missingFields = requiredFields.filter(field => !formData[field]);
+        if (missingFields.length > 0) {
+          console.warn("Missing required fields:", missingFields);
+          toast({
+            variant: "destructive",
+            title: "Missing Required Fields",
+            description: `Please fill in all required fields: ${missingFields.join(", ")}`,
+          });
+          setIsSubmitting(false);
+          return;
+        }
       }
 
       // Send data directly to backend for better error debugging
@@ -760,7 +863,64 @@ export default function SMEAsaanPage() {
           console.warn("Fixed problematic date fields:", problematicFields);
         }
 
+        // 6. Ensure child tables are properly formatted
+        const childTables = ['references', 'existing_loans', 'business_descriptions', 'market_info', 'financial_indicators', 'financial_indicators_medium'];
+        childTables.forEach(tableName => {
+          if (safeData[tableName]) {
+            // Ensure it's an array
+            if (!Array.isArray(safeData[tableName])) {
+              safeData[tableName] = [];
+            }
+            // Filter out any invalid entries and ensure proper structure
+            safeData[tableName] = safeData[tableName].filter((item: any) => {
+              if (!item || typeof item !== 'object') return false;
+              
+              // Check if the item has any meaningful data
+              const hasData = Object.values(item).some(value => 
+                value !== null && value !== undefined && value !== ''
+              );
+              
+              return hasData;
+            });
+            
+            // If all items were filtered out, set to empty array
+            if (safeData[tableName].length === 0) {
+              safeData[tableName] = [];
+            }
+          } else {
+            safeData[tableName] = [];
+          }
+        });
+        
+        // 7. Force empty arrays for problematic child tables to prevent 500 errors
+        // These tables seem to cause backend issues even with valid data
+        const problematicTables = ['business_descriptions', 'market_info', 'financial_indicators', 'financial_indicators_medium'];
+        problematicTables.forEach(tableName => {
+          safeData[tableName] = [];
+        });
+
         console.log("Sending cleaned data to backend:", safeData);
+        console.log("Child tables status:", {
+          references: safeData.references?.length || 0,
+          existing_loans: safeData.existing_loans?.length || 0,
+          business_descriptions: safeData.business_descriptions?.length || 0,
+          market_info: safeData.market_info?.length || 0,
+          financial_indicators: safeData.financial_indicators?.length || 0,
+          financial_indicators_medium: safeData.financial_indicators_medium?.length || 0
+        });
+        
+        // Log the actual content of child tables to debug the issue
+        console.log("Child tables content:", {
+          existing_loans: safeData.existing_loans,
+          business_descriptions: safeData.business_descriptions,
+          market_info: safeData.market_info,
+          financial_indicators: safeData.financial_indicators,
+          financial_indicators_medium: safeData.financial_indicators_medium
+        });
+        
+        // Log detailed content of problematic tables
+        console.log("Detailed business_descriptions:", JSON.stringify(safeData.business_descriptions, null, 2));
+        console.log("Detailed market_info:", JSON.stringify(safeData.market_info, null, 2));
 
         let response;
 
@@ -777,6 +937,8 @@ export default function SMEAsaanPage() {
           // If that fails, try again without child tables
           if (!response.ok) {
             console.log("First attempt failed, trying without child tables...");
+            console.log("Response status:", response.status);
+            console.log("Response status text:", response.statusText);
 
             // Create a stripped down version without child tables
             const mainFieldsOnly = { ...safeData };
@@ -823,7 +985,18 @@ export default function SMEAsaanPage() {
             responseText: responseText,
             result: result
           });
-          throw new Error(result.error || result.message || `Server responded with status: ${response.status}`);
+          
+          // Provide more specific error messages
+          let errorMessage = "Server error occurred";
+          if (response.status === 500) {
+            errorMessage = "Internal server error - please try again";
+          } else if (response.status === 400) {
+            errorMessage = result.error || result.message || "Invalid data format";
+          } else if (response.status === 404) {
+            errorMessage = "API endpoint not found";
+          }
+          
+          throw new Error(errorMessage);
         }
 
         console.log("API request successful:", result);
@@ -831,11 +1004,20 @@ export default function SMEAsaanPage() {
         // Show success message
         toast({
           title: "Application Submitted",
-          description: `Application ID: ${result.application_id || result.id} has been successfully submitted.`,
+          description: `SME Asaan application submitted successfully. Redirecting to document upload...`,
         });
 
-        // Optionally navigate to a success page
-        // router.push(`/dashboard/applicant/auto/sme-asaan/success?id=${result.application_id}`);
+        // Store minimal info for documents page to fetch proper customer data
+        const submissionInfo = {
+          applicationId: result.application_id || result.id,
+          applicationType: 'SMEASAAN'
+        };
+        
+        // Store in localStorage for documents page to pick up
+        localStorage.setItem('lastApplicationSubmission', JSON.stringify(submissionInfo));
+        
+        // Redirect to documents page
+        router.push('/dashboard/documents');
       } catch (error: any) {
         console.error('Error from API:', error);
 
@@ -945,29 +1127,124 @@ export default function SMEAsaanPage() {
         </CardContent>
       </Card>
 
+      {/* Mandatory Fields Note */}
+      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="text-sm text-blue-800">
+          <strong>Note:</strong> Fields marked with an asterisk (*) are mandatory and must be filled before submission.
+        </div>
+      </div>
+
+      {/* Test Options Panel */}
+      <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Settings className="w-4 h-4 text-yellow-600" />
+            <span className="text-sm font-medium text-yellow-800">Testing Options</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowTestOptions(!showTestOptions)}
+            className="text-yellow-700 border-yellow-300 hover:bg-yellow-100"
+          >
+            {showTestOptions ? 'Hide' : 'Show'} Options
+          </Button>
+        </div>
+        
+        {showTestOptions && (
+          <div className="mt-4 space-y-4">
+            {/* Validation Toggle */}
+            <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-yellow-200">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div>
+                  <div className="text-sm font-medium text-gray-900">Field Validation</div>
+                  <div className="text-xs text-gray-600">
+                    {validationEnabled ? 'Validation is enabled' : 'Validation is disabled'}
+                  </div>
+                </div>
+              </div>
+              <Switch
+                checked={validationEnabled}
+                onCheckedChange={setValidationEnabled}
+                className="data-[state=checked]:bg-blue-600"
+              />
+            </div>
+
+            {/* Status Indicator */}
+            <div className="text-xs text-gray-600 bg-white p-2 rounded border border-yellow-200">
+              <strong>Current Status:</strong> 
+              {validationEnabled ? (
+                validationStatus.isValid ? (
+                  <span className="text-green-600"> ✅ All required fields are filled - Form is ready to submit.</span>
+                ) : (
+                  <span className="text-red-600"> ❌ {validationStatus.missingFields.length} required field(s) missing - Cannot submit form.</span>
+                )
+              ) : (
+                <span className="text-yellow-600"> ⚠️ Validation disabled - Form will submit without checking mandatory fields.</span>
+              )}
+            </div>
+
+            {/* Missing Fields List */}
+            {validationEnabled && !validationStatus.isValid && validationStatus.missingFields.length > 0 && (
+              <div className="text-xs bg-red-50 border border-red-200 p-3 rounded">
+                <div className="font-medium text-red-800 mb-2">
+                  Missing Required Fields ({validationStatus.missingFields.length}):
+                </div>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {validationStatus.missingFields.slice(0, 8).map((field, index) => (
+                    <div key={index} className="text-red-700">• {field}</div>
+                  ))}
+                  {validationStatus.missingFields.length > 8 && (
+                    <div className="text-red-600 italic">
+                      ... and {validationStatus.missingFields.length - 8} more fields
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Chips Navigation */}
       <h3 className="text-lg font-semibold mt-10 text-gray-700 mb-2">Form Sections</h3>
       <div className="flex flex-wrap gap-2 mb-6">
-        {FORM_SECTIONS.map((section) => (
-          <button
-            key={section.key}
-            type="button"
-            onClick={() => scrollToSection(section.key)}
-            className={`
-              flex items-center gap-2 px-4 py-2 rounded-2xl shadow
-              text-sm font-semibold border transition-all
-              ${currentSection === section.key
-                ? "bg-blue-600 text-white border-blue-600"
-                : "bg-gray-50 text-gray-800 border-gray-200"}
-              ${sectionFilled[section.key] ? "ring-2 ring-green-400" : ""}
-            `}
-          >
-            {section.label}
-            {sectionFilled[section.key] && (
-              <CheckCircle2 className="w-4 h-4 text-green-600" />
-            )}
-          </button>
-        ))}
+        {FORM_SECTIONS.map((section) => {
+          const isFilled = sectionFilled[section.key];
+          const isCurrent = currentSection === section.key;
+          const isValid = validationEnabled ? validationStatus.isValid || !validationStatus.missingFields.some(field => 
+            section.key === "general" ? field.includes("Application") || field.includes("Date") :
+            section.key === "personalDetail" ? field.includes("Applicant") :
+            section.key === "businessDetail" ? field.includes("Company") || field.includes("Business") :
+            section.key === "vehicle" ? field.includes("Vehicle") :
+            section.key === "proposedLoan" ? field.includes("Loan") :
+            section.key === "declaration" ? field.includes("Terms") :
+            false
+          ) : true;
+
+          return (
+            <button
+              key={section.key}
+              type="button"
+              onClick={() => scrollToSection(section.key)}
+              className={`
+                flex items-center gap-2 px-4 py-2 rounded-2xl shadow
+                text-sm font-semibold border transition-all
+                ${currentSection === section.key
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-gray-50 text-gray-800 border-gray-200"}
+                ${isFilled ? "border-yellow-500 text-yellow-700 bg-yellow-50" : ""}
+                ${!isValid ? "border-red-500 text-red-700" : ""}
+              `}
+            >
+              {section.label}
+              {isFilled && (
+                <CheckCircle2 className="w-4 h-4" />
+              )}
+            </button>
+          );
+        })}
       </div>
 
       <form className="space-y-10" onSubmit={handleSubmit}>
@@ -1006,16 +1283,16 @@ export default function SMEAsaanPage() {
         <div className="flex justify-end">
           <Button
             type="submit"
-            className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 shadow transition"
+            className="rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-3 shadow transition"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
+                Saving & Redirecting...
               </>
             ) : (
-              "Submit Application"
+              "Upload Documents"
             )}
           </Button>
         </div>

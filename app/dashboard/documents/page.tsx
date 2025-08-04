@@ -24,6 +24,7 @@ interface Application {
   status: string;
   created_at: string;
   lastUpdate: string;
+  application_type?: string; // Added for auto-selection logic
 }
 
 const DocumentManagement: React.FC = () => {
@@ -42,10 +43,73 @@ const DocumentManagement: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const [documentType, setDocumentType] = useState('');
-  // Check server status on component mount
+  // Check server status on component mount and load last application submission
   useEffect(() => {
     checkServerStatus();
+    
+    // Check for last application submission
+    const lastSubmission = localStorage.getItem('lastApplicationSubmission');
+    if (lastSubmission) {
+      try {
+        const submissionInfo = JSON.parse(lastSubmission);
+        // Fetch applications from backend to find the matching one
+        fetchApplicationsAndAutoSelect(submissionInfo);
+        
+        // Clear the localStorage after using it
+        localStorage.removeItem('lastApplicationSubmission');
+      } catch (error) {
+        console.error('Error parsing last application submission:', error);
+      }
+    }
   }, []);
+
+  // Function to fetch applications and auto-select the last submitted one
+  const fetchApplicationsAndAutoSelect = async (submissionInfo: {applicationId: number, applicationType: string}) => {
+    setLoadingApplications(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/applications/department/pb');
+      if (response.ok) {
+        const data = await response.json();
+        setApplications(data);
+        
+        // Find the matching application by ID and type
+        const matchingApp = data.find((app: Application) => {
+          // Extract the numeric ID from the composite ID (e.g., "AmeenDrive-123" -> 123)
+          const appId = app.id.split('-').pop();
+          return appId === submissionInfo.applicationId.toString() && 
+                 app.application_type === submissionInfo.applicationType;
+        });
+        
+        if (matchingApp) {
+          // Auto-select the matching application
+          handleCustomerSelect(matchingApp);
+          setDocumentType('Application Form Physical Copy'); // Auto-select mandatory document type
+          
+          toast({
+            title: "Customer Auto-Selected",
+            description: `Selected ${matchingApp.applicant_name} (${matchingApp.los_id}). Please upload the Application Form Physical Copy first.`,
+          });
+        } else {
+          toast({
+            title: "Application Not Found",
+            description: "Could not find the submitted application. Please select manually.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        throw new Error('Failed to fetch applications');
+      }
+    } catch (error) {
+      console.error('Error fetching applications for auto-select:', error);
+      toast({
+        title: "Error loading applications",
+        description: "Could not load customer applications. Please select manually.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingApplications(false);
+    }
+  };
 
   const checkServerStatus = async () => {
     try {
@@ -117,10 +181,10 @@ const DocumentManagement: React.FC = () => {
   };
 
   const handleUpload = async () => {
-    if (!selectedFile || !loan_type || !losId) {
+    if (!selectedFile || !loan_type || !losId || !documentType) {
       toast({
         title: "Missing information",
-        description: "Please select a file, loan type, and LOS ID.",
+        description: "Please select a file, loan type, LOS ID, and document type.",
         variant: "destructive",
       });
       return;
@@ -142,6 +206,7 @@ const DocumentManagement: React.FC = () => {
       const formData = new FormData();
       formData.append('file', selectedFile);
       formData.append('loan_type', loan_type);
+      formData.append('document_type', documentType);
       
       // Extract numeric ID from LOS ID format (e.g., "LOS-19" -> 19)
       const numericLosId = losId.replace(/^LOS-/, '');
@@ -388,6 +453,7 @@ const DocumentManagement: React.FC = () => {
     required
   >
     <option value="">Select document type...</option>
+    <option value="Application Form Physical Copy">Application Form Physical Copy (Required)</option>
     <option value="CNIC">CNIC</option>
     <option value="Salary Slip">Salary Slip</option>
     <option value="NTN">NTN</option>
@@ -460,7 +526,7 @@ const DocumentManagement: React.FC = () => {
               {/* Upload Button */}
               <Button
                 onClick={handleUpload}
-                disabled={!selectedFile || !loan_type || !losId || isUploading || serverStatus === 'offline'}
+                disabled={!selectedFile || !loan_type || !losId || !documentType || isUploading || serverStatus === 'offline'}
                 className="w-full"
               >
                 {isUploading ? (

@@ -15,8 +15,10 @@ import { FinancialIndicatorsForm } from "@/components/forms/smevehicle/SmeVehicl
 import { UndertakingForm } from "@/components/forms/smevehicle/SmeVehicleUndertakingForm";
 import { useCustomer } from "@/contexts/CustomerContext";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Car, User, CheckCircle2, CreditCard, ChevronUp } from "lucide-react";
+import { ArrowLeft, Car, User, CheckCircle2, CreditCard, ChevronUp, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
@@ -141,6 +143,9 @@ export default function CommercialVehicleFinancingPage() {
   };
 
   const [currentSection, setCurrentSection] = useState<SectionKey | "">("");
+  const [validationEnabled, setValidationEnabled] = useState(true);
+  const [showTestOptions, setShowTestOptions] = useState(false);
+  const [validationStatus, setValidationStatus] = useState<{isValid: boolean; missingFields: string[]}>({isValid: true, missingFields: []});
 
   // 6. Determine which sections are filled (autofilled or user)
   const sectionFilled = useSectionFilled(customerData || {});
@@ -150,6 +155,75 @@ export default function CommercialVehicleFinancingPage() {
     refs[key]?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     setCurrentSection(key);
   };
+
+  // Function to check current validation status
+  const checkValidationStatus = () => {
+    if (!validationEnabled) {
+      setValidationStatus({isValid: true, missingFields: []});
+      return;
+    }
+    
+    const errors = validateMandatoryFields();
+    setValidationStatus({
+      isValid: errors.length === 0,
+      missingFields: errors
+    });
+  };
+
+  // Validation function to check mandatory fields
+  const validateMandatoryFields = () => {
+    const errors: string[] = [];
+    const commercialVehicle = customerData?.commercialVehicle || {};
+    
+    // General Info validation
+    if (!commercialVehicle.application_no) {
+      errors.push("Application Number is required");
+    }
+    if (!commercialVehicle.date_of_request) {
+      errors.push("Date of Request is required");
+    }
+
+    // Personal Details validation
+    if (!commercialVehicle.applicant_name) {
+      errors.push("Applicant Name is required");
+    }
+    if (!commercialVehicle.applicant_cnic) {
+      errors.push("Applicant CNIC is required");
+    }
+
+    // Business Details validation
+    if (!commercialVehicle.company_name) {
+      errors.push("Company Name is required");
+    }
+    if (!commercialVehicle.type_of_business) {
+      errors.push("Type of Business is required");
+    }
+
+    // Vehicle Details validation
+    if (!commercialVehicle.vehicle_manufacturer) {
+      errors.push("Vehicle Manufacturer is required");
+    }
+    if (!commercialVehicle.vehicle_model) {
+      errors.push("Vehicle Model is required");
+    }
+
+    // Proposed Loan Details validation
+    if (!commercialVehicle.desired_loan_amount) {
+      errors.push("Desired Loan Amount is required");
+    }
+
+    // Undertaking validation
+    if (!commercialVehicle.undertaking_agreed) {
+      errors.push("Undertaking agreement is required");
+    }
+
+    return errors;
+  };
+
+  // Check validation status when customerData changes
+  useEffect(() => {
+    checkValidationStatus();
+  }, [customerData, validationEnabled]);
 
   // Form submission handler
   const handleSubmit = async (e: React.FormEvent) => {
@@ -162,6 +236,33 @@ export default function CommercialVehicleFinancingPage() {
         description: "Customer data is missing. Please fill the form first.",
       });
       return;
+    }
+
+    // Validate mandatory fields if validation is enabled
+    if (validationEnabled) {
+      const validationErrors = validateMandatoryFields();
+      if (validationErrors.length > 0) {
+        const errorCount = validationErrors.length;
+        const errorMessage = errorCount === 1 
+          ? `1 field is missing: ${validationErrors[0]}`
+          : `${errorCount} fields are missing. Please fill in all required fields marked with (*).`;
+        
+        console.log('Validation Errors:', validationErrors);
+        
+        toast({ 
+          title: "Validation Error", 
+          description: errorMessage, 
+          variant: "destructive",
+          duration: 5000
+        });
+        
+        if (errorCount > 1) {
+          const detailedMessage = `Missing ${errorCount} required fields:\n\n${validationErrors.slice(0, 10).join('\n')}${validationErrors.length > 10 ? `\n... and ${validationErrors.length - 10} more fields` : ''}`;
+          alert(`Form Validation Failed!\n\n${detailedMessage}\n\nPlease fill in all required fields marked with (*) before submitting.`);
+        }
+        
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -343,7 +444,30 @@ export default function CommercialVehicleFinancingPage() {
       // Remove any undefined or circular reference values
       const safeData = JSON.parse(JSON.stringify(cleanedData));
 
+      // Ensure child tables are properly formatted
+      const childTables = ['references', 'existing_loans', 'business_descriptions', 'market_info'];
+      childTables.forEach(tableName => {
+        if (safeData[tableName]) {
+          // Ensure it's an array
+          if (!Array.isArray(safeData[tableName])) {
+            safeData[tableName] = [];
+          }
+          // Filter out any invalid entries
+          safeData[tableName] = safeData[tableName].filter((item: any) => 
+            item && typeof item === 'object' && Object.keys(item).length > 0
+          );
+        } else {
+          safeData[tableName] = [];
+        }
+      });
+
       console.log("Sending commercial vehicle data to backend:", safeData);
+      console.log("Child tables status:", {
+        references: safeData.references?.length || 0,
+        existing_loans: safeData.existing_loans?.length || 0,
+        business_descriptions: safeData.business_descriptions?.length || 0,
+        market_info: safeData.market_info?.length || 0
+      });
 
       // Submit to backend
       const result = await submitCommercialVehicleApplication(safeData);
@@ -353,11 +477,20 @@ export default function CommercialVehicleFinancingPage() {
       // Show success message
       toast({
         title: "Application Submitted",
-        description: `Commercial Vehicle application ID: ${result.application_id || result.id} has been successfully submitted.`,
+        description: `Commercial Vehicle application submitted successfully. Redirecting to document upload...`,
       });
 
-      // Optionally navigate to a success page
-      // router.push(`/dashboard/applicant/auto/sme-vehicles/success?id=${result.application_id}`);
+      // Store minimal info for documents page to fetch proper customer data
+      const submissionInfo = {
+        applicationId: result.application_id || result.id,
+        applicationType: 'CommercialVehicle'
+      };
+      
+      // Store in localStorage for documents page to pick up
+      localStorage.setItem('lastApplicationSubmission', JSON.stringify(submissionInfo));
+      
+      // Redirect to documents page
+      router.push('/dashboard/documents');
 
     } catch (error: any) {
       console.error('Error submitting commercial vehicle form:', error);
@@ -474,30 +607,125 @@ export default function CommercialVehicleFinancingPage() {
         </CardContent>
       </Card>
 
+      {/* Mandatory Fields Note */}
+      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="text-sm text-blue-800">
+          <strong>Note:</strong> Fields marked with an asterisk (*) are mandatory and must be filled before submission.
+        </div>
+      </div>
+
+      {/* Test Options Panel */}
+      <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Settings className="w-4 h-4 text-yellow-600" />
+            <span className="text-sm font-medium text-yellow-800">Testing Options</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowTestOptions(!showTestOptions)}
+            className="text-yellow-700 border-yellow-300 hover:bg-yellow-100"
+          >
+            {showTestOptions ? 'Hide' : 'Show'} Options
+          </Button>
+        </div>
+        
+        {showTestOptions && (
+          <div className="mt-4 space-y-4">
+            {/* Validation Toggle */}
+            <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-yellow-200">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div>
+                  <div className="text-sm font-medium text-gray-900">Field Validation</div>
+                  <div className="text-xs text-gray-600">
+                    {validationEnabled ? 'Validation is enabled' : 'Validation is disabled'}
+                  </div>
+                </div>
+              </div>
+              <Switch
+                checked={validationEnabled}
+                onCheckedChange={setValidationEnabled}
+                className="data-[state=checked]:bg-blue-600"
+              />
+            </div>
+
+            {/* Status Indicator */}
+            <div className="text-xs text-gray-600 bg-white p-2 rounded border border-yellow-200">
+              <strong>Current Status:</strong> 
+              {validationEnabled ? (
+                validationStatus.isValid ? (
+                  <span className="text-green-600"> ✅ All required fields are filled - Form is ready to submit.</span>
+                ) : (
+                  <span className="text-red-600"> ❌ {validationStatus.missingFields.length} required field(s) missing - Cannot submit form.</span>
+                )
+              ) : (
+                <span className="text-yellow-600"> ⚠️ Validation disabled - Form will submit without checking mandatory fields.</span>
+              )}
+            </div>
+
+            {/* Missing Fields List */}
+            {validationEnabled && !validationStatus.isValid && validationStatus.missingFields.length > 0 && (
+              <div className="text-xs bg-red-50 border border-red-200 p-3 rounded">
+                <div className="font-medium text-red-800 mb-2">
+                  Missing Required Fields ({validationStatus.missingFields.length}):
+                </div>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {validationStatus.missingFields.slice(0, 8).map((field, index) => (
+                    <div key={index} className="text-red-700">• {field}</div>
+                  ))}
+                  {validationStatus.missingFields.length > 8 && (
+                    <div className="text-red-600 italic">
+                      ... and {validationStatus.missingFields.length - 8} more fields
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Chips/Tabs Navigation */}
       <div className="border mt-8 rounded-lg px-8 border-gray-200 mb-6">
         <h3 className="text-lg font-semibold text-gray-700 mt-8 mb-2">Form Sections</h3>
         <div className="flex flex-wrap gap-2 mb-6 justify-between">
-          {FORM_SECTIONS.map((section) => (
-            <button
-              key={section.key}
-              type="button"
-              onClick={() => scrollToSection(section.key)}
-              className={`
-                flex items-center gap-2 px-4 py-2 rounded-2xl shadow
-                text-sm font-semibold border transition-all
-                ${currentSection === section.key
-                  ? "bg-blue-600 text-white border-blue-600"
-                  : "bg-gray-50 text-gray-800 border-gray-200"}
-                ${sectionFilled[section.key] ? "ring-2 ring-green-400" : ""}
-              `}
-            >
-              {section.label}
-              {sectionFilled[section.key] && (
-                <CheckCircle2 className="w-4 h-4 text-green-600" />
-              )}
-            </button>
-          ))}
+          {FORM_SECTIONS.map((section) => {
+            const isFilled = sectionFilled[section.key];
+            const isCurrent = currentSection === section.key;
+            const isValid = validationEnabled ? validationStatus.isValid || !validationStatus.missingFields.some(field => 
+              section.key === "generalInfo" ? field.includes("Application") || field.includes("Date") :
+              section.key === "personalDetails" ? field.includes("Applicant") :
+              section.key === "businessDetails" ? field.includes("Company") || field.includes("Business") :
+              section.key === "vehicleDetails" ? field.includes("Vehicle") :
+              section.key === "proposedLoanDetails" ? field.includes("Loan") :
+              section.key === "undertaking" ? field.includes("Undertaking") :
+              false
+            ) : true;
+
+            return (
+              <button
+                key={section.key}
+                type="button"
+                onClick={() => scrollToSection(section.key)}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-2xl shadow
+                  text-sm font-semibold border transition-all
+                  ${currentSection === section.key
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-gray-50 text-gray-800 border-gray-200"}
+                  ${isFilled ? "border-yellow-500 text-yellow-700 bg-yellow-50" : ""}
+                  ${!isValid ? "border-red-500 text-red-700" : ""}
+                `}
+              >
+                {section.label}
+                {isFilled && (
+                  <CheckCircle2 className="w-4 h-4" />
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -517,16 +745,16 @@ export default function CommercialVehicleFinancingPage() {
         <div className="flex justify-end">
           <Button
             type="submit"
-            className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 shadow transition"
+            className="rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-3 shadow transition"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
+                Saving & Redirecting...
               </>
             ) : (
-              "Submit Application"
+              "Upload Documents"
             )}
           </Button>
         </div>

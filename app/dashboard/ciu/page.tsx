@@ -322,18 +322,20 @@ export default function CIUDashboardPage() {
     if (!selectedApplication) return
     
     try {
-      // Update status in backend
+      // Update status in backend using workflow
       const losId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
       console.log('CIU Frontend accepting losId:', losId, 'applicationType:', selectedApplication.application_type)
-      const response = await fetch('/api/applications/update-status', {
+      const response = await fetch('/api/applications/update-status-workflow', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           losId: losId,
-          status: 'Accepted by CIU',
-          applicationType: selectedApplication.application_type
+          status: selectedApplication.status, // Send current status, not target status
+          applicationType: selectedApplication.application_type,
+          department: 'CIU',
+          action: 'approve'
         })
       })
 
@@ -371,18 +373,20 @@ export default function CIUDashboardPage() {
     if (!selectedApplication) return
     
     try {
-      // Update status in backend
+      // Update status in backend using workflow
       const losId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
       console.log('CIU Frontend rejecting losId:', losId, 'applicationType:', selectedApplication.application_type)
-      const response = await fetch('/api/applications/update-status', {
+      const response = await fetch('/api/applications/update-status-workflow', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           losId: losId,
-          status: 'Rejected by CIU',
-          applicationType: selectedApplication.application_type
+          status: selectedApplication.status, // Send current status, not target status
+          applicationType: selectedApplication.application_type,
+          department: 'CIU',
+          action: 'reject'
         })
       })
 

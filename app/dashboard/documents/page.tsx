@@ -27,13 +27,21 @@ interface Application {
   application_type?: string; // Added for auto-selection logic
 }
 
+interface UploadFile {
+  file: File;
+  documentType: string;
+  customName?: string;
+  status: 'pending' | 'uploading' | 'success' | 'error';
+  progress: number;
+  error?: string;
+}
+
 const DocumentManagement: React.FC = () => {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<UploadFile[]>([]);
   const [loan_type, setloan_type] = useState<string>('');
   const [losId, setLosId] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
   const [serverStatus, setServerStatus] = useState<'checking' | 'online' | 'offline'>('checking');
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<string>('upload');
   const [applications, setApplications] = useState<Application[]>([]);
   const [loadingApplications, setLoadingApplications] = useState(false);
@@ -147,8 +155,10 @@ const DocumentManagement: React.FC = () => {
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
+    const files = Array.from(event.target.files || []);
+    const newUploadFiles: UploadFile[] = [];
+
+    files.forEach(file => {
       // Validate file type
       const allowedTypes = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'];
       const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
@@ -156,7 +166,7 @@ const DocumentManagement: React.FC = () => {
       if (!allowedTypes.includes(fileExtension)) {
         toast({
           title: "Invalid file type",
-          description: "Please select a PDF, DOC, DOCX, JPG, or PNG file.",
+          description: `${file.name} is not a supported file type. Please select PDF, DOC, DOCX, JPG, or PNG files.`,
           variant: "destructive",
         });
         return;
@@ -166,25 +176,39 @@ const DocumentManagement: React.FC = () => {
       if (file.size > 10 * 1024 * 1024) {
         toast({
           title: "File too large",
-          description: "Please select a file smaller than 10MB.",
+          description: `${file.name} is too large. Please select files smaller than 10MB.`,
           variant: "destructive",
         });
         return;
       }
 
-      setSelectedFile(file);
+      // Generate automatic filename based on LOS ID and document type
+      const numericLosId = losId.replace(/^LOS-/, '');
+      const autoFileName = `${numericLosId}-${documentType || 'DOCUMENT'}.${fileExtension}`;
+
+      newUploadFiles.push({
+        file,
+        documentType: documentType || 'Other',
+        customName: autoFileName,
+        status: 'pending',
+        progress: 0
+      });
+    });
+
+    if (newUploadFiles.length > 0) {
+      setSelectedFiles(prev => [...prev, ...newUploadFiles]);
       toast({
-        title: "File selected",
-        description: `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`,
+        title: "Files selected",
+        description: `${newUploadFiles.length} file(s) added for upload`,
       });
     }
   };
 
   const handleUpload = async () => {
-    if (!selectedFile || !loan_type || !losId || !documentType) {
+    if (selectedFiles.length === 0 || !loan_type || !losId) {
       toast({
         title: "Missing information",
-        description: "Please select a file, loan type, LOS ID, and document type.",
+        description: "Please select files, loan type, and LOS ID.",
         variant: "destructive",
       });
       return;
@@ -200,81 +224,104 @@ const DocumentManagement: React.FC = () => {
     }
 
     setIsUploading(true);
-    setUploadProgress(0);
     
     try {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('loan_type', loan_type);
-      formData.append('document_type', documentType);
-      
       // Extract numeric ID from LOS ID format (e.g., "LOS-19" -> 19)
       const numericLosId = losId.replace(/^LOS-/, '');
-      formData.append('los_id', numericLosId);
-
-      console.log('🔄 Frontend: Starting upload...', {
-        fileName: selectedFile.name,
-        fileSize: selectedFile.size,
-        loan_type,
-        losId: numericLosId // Log the numeric ID being sent
-      });
-
-      // Simulate upload progress
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) return prev;
-          return prev + Math.random() * 10;
-        });
-      }, 200);
-
-      const response = await fetch('http://localhost:8081/upload', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-        },
-        body: formData,
-      });
-
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-
-      console.log('🔄 Frontend: Response status:', response.status);
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log('✅ Frontend: Upload successful:', result);
+      
+      // Upload files sequentially
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const uploadFile = selectedFiles[i];
         
-        toast({
-          title: "Upload successful!",
-          description: `File ${selectedFile.name} uploaded to ${loan_type}/los-${numericLosId}/`,
-        });
+        // Update status to uploading
+        setSelectedFiles(prev => prev.map((file, index) => 
+          index === i ? { ...file, status: 'uploading' } : file
+        ));
 
-        // Reset form
-        setSelectedFile(null);
-        setloan_type('');
-        setLosId('');
-        setUploadProgress(0);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
+        try {
+          const formData = new FormData();
+          formData.append('file', uploadFile.file);
+          formData.append('loan_type', loan_type);
+          formData.append('document_type', uploadFile.documentType);
+          formData.append('los_id', numericLosId);
+          formData.append('custom_name', uploadFile.customName || uploadFile.file.name);
+
+          console.log('🔄 Frontend: Starting upload...', {
+            fileName: uploadFile.customName || uploadFile.file.name,
+            fileSize: uploadFile.file.size,
+            loan_type,
+            losId: numericLosId
+          });
+
+          // Simulate upload progress for this file
+          const progressInterval = setInterval(() => {
+            setSelectedFiles(prev => prev.map((file, index) => 
+              index === i ? { ...file, progress: Math.min(file.progress + Math.random() * 10, 90) } : file
+            ));
+          }, 200);
+
+          const response = await fetch('http://localhost:8081/upload', {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+            },
+            body: formData,
+          });
+
+          clearInterval(progressInterval);
+
+          if (response.ok) {
+            const result = await response.json();
+            console.log('✅ Frontend: Upload successful:', result);
+            
+            // Update status to success
+            setSelectedFiles(prev => prev.map((file, index) => 
+              index === i ? { ...file, status: 'success', progress: 100 } : file
+            ));
+
+            toast({
+              title: "Upload successful!",
+              description: `File ${uploadFile.customName || uploadFile.file.name} uploaded to ${loan_type}/los-${numericLosId}/`,
+            });
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('❌ Frontend: Upload failed:', errorData);
+            
+            // Update status to error
+            setSelectedFiles(prev => prev.map((file, index) => 
+              index === i ? { 
+                ...file, 
+                status: 'error', 
+                error: errorData.error || `Upload failed with status: ${response.status}` 
+              } : file
+            ));
+
+            throw new Error(errorData.error || `Upload failed with status: ${response.status}`);
+          }
+        } catch (error) {
+          console.error('❌ Frontend: Upload error:', error);
+          
+          // Update status to error
+          setSelectedFiles(prev => prev.map((file, index) => 
+            index === i ? { 
+              ...file, 
+              status: 'error', 
+              error: error instanceof Error ? error.message : "Failed to upload file" 
+            } : file
+          ));
+
+          toast({
+            title: "Upload failed",
+            description: `Failed to upload ${uploadFile.customName || uploadFile.file.name}: ${error instanceof Error ? error.message : "Unknown error"}`,
+            variant: "destructive",
+          });
         }
-
-        // Switch to explorer tab to show the uploaded file
-        setActiveTab('explorer');
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('❌ Frontend: Upload failed:', errorData);
-        throw new Error(errorData.error || `Upload failed with status: ${response.status}`);
       }
-    } catch (error) {
-      console.error('❌ Frontend: Upload error:', error);
-      toast({
-        title: "Upload failed",
-        description: error instanceof Error ? error.message : "Failed to upload file",
-        variant: "destructive",
-      });
+
+      // Switch to explorer tab to show the uploaded files
+      setActiveTab('explorer');
     } finally {
       setIsUploading(false);
-      setUploadProgress(0);
     }
   };
 
@@ -288,11 +335,11 @@ const DocumentManagement: React.FC = () => {
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file) {
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
       // Create a synthetic event for file selection
       const syntheticEvent = {
-        target: { files: [file] }
+        target: { files }
       } as unknown as React.ChangeEvent<HTMLInputElement>;
       handleFileSelect(syntheticEvent);
     }
@@ -332,6 +379,95 @@ const DocumentManagement: React.FC = () => {
       title: "Application selected",
       description: `${application.applicant_name} (${application.los_id})`,
     });
+  };
+
+  const handleViewFile = (file: File) => {
+    try {
+      // Check file type first
+      const fileName = file.name.toLowerCase();
+      const isHtmlFile = fileName.endsWith('.html') || fileName.endsWith('.htm');
+      const isImageFile = fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || 
+                         fileName.endsWith('.png') || fileName.endsWith('.gif') || 
+                         fileName.endsWith('.bmp') || fileName.endsWith('.webp');
+      const isPdfFile = fileName.endsWith('.pdf');
+      const isTextFile = fileName.endsWith('.txt') || fileName.endsWith('.md') || 
+                        fileName.endsWith('.json') || fileName.endsWith('.xml');
+      
+      if (!isHtmlFile && !isImageFile && !isPdfFile && !isTextFile) {
+        toast({
+          title: "Preview not available",
+          description: `This file type (${file.name.split('.').pop()}) cannot be previewed. Please download it instead.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create a blob URL for the file
+      const blobUrl = URL.createObjectURL(file);
+      
+      // Open the blob URL in a new tab
+      const newWindow = window.open(blobUrl, '_blank');
+      
+      if (!newWindow) {
+        toast({
+          title: "Popup blocked",
+          description: "Please allow popups for this site to view files.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Clean up the blob URL after a delay
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+      }, 1000);
+      
+      toast({
+        title: "Opening preview",
+        description: `Opening ${file.name} in a new tab...`,
+      });
+    } catch (error) {
+      console.error('Error opening file preview:', error);
+      toast({
+        title: "Error opening preview",
+        description: "Could not open the file preview. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownloadFile = (file: File) => {
+    try {
+      // Create a blob URL for the file
+      const blobUrl = URL.createObjectURL(file);
+      
+      // Create a temporary link element
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = file.name;
+      
+      // Append to body, click, and remove
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up the blob URL after a delay
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+      }, 1000);
+      
+      toast({
+        title: "Download started",
+        description: `Downloading ${file.name}...`,
+      });
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      toast({
+        title: "Error downloading file",
+        description: "Could not download the file. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredApplications = applications.filter(app => 
@@ -464,7 +600,7 @@ const DocumentManagement: React.FC = () => {
               {/* File Upload Area */}
               <div
                 className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                  selectedFile 
+                  selectedFiles.length > 0 
                     ? 'border-green-300 bg-green-50' 
                     : 'border-gray-300 hover:border-gray-400'
                 }`}
@@ -479,6 +615,7 @@ const DocumentManagement: React.FC = () => {
                 <input
                   ref={fileInputRef}
                   type="file"
+                  multiple
                   onChange={handleFileSelect}
                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                   className="hidden"
@@ -493,32 +630,79 @@ const DocumentManagement: React.FC = () => {
                   Choose Files
                 </Button>
 
-                {selectedFile && (
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-blue-900">{selectedFile.name}</p>
-                        <p className="text-xs text-blue-700">
-                          {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                        </p>
+                {/* Selected Files List */}
+                {selectedFiles.length > 0 && (
+                  <div className="mt-4 space-y-3">
+                    <h4 className="text-sm font-medium text-gray-900">Selected Files:</h4>
+                    {selectedFiles.map((uploadFile, index) => (
+                      <div key={index} className="p-3 bg-blue-50 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-blue-900">
+                              {uploadFile.customName || uploadFile.file.name}
+                            </p>
+                            <p className="text-xs text-blue-700">
+                              {(uploadFile.file.size / 1024 / 1024).toFixed(2)} MB • {uploadFile.documentType}
+                            </p>
+                            {uploadFile.status === 'uploading' && (
+                              <div className="mt-2">
+                                <div className="w-full bg-gray-200 rounded-full h-1">
+                                  <div 
+                                    className="bg-blue-600 h-1 rounded-full transition-all duration-300"
+                                    style={{ width: `${uploadFile.progress}%` }}
+                                  ></div>
+                                </div>
+                                <p className="text-xs text-gray-600 mt-1">
+                                  Uploading... {Math.round(uploadFile.progress)}%
+                                </p>
+                              </div>
+                            )}
+                            {uploadFile.status === 'success' && (
+                              <p className="text-xs text-green-600 mt-1">✓ Uploaded successfully</p>
+                            )}
+                            {uploadFile.status === 'error' && (
+                              <p className="text-xs text-red-600 mt-1">✗ {uploadFile.error}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewFile(uploadFile.file)}
+                              className="h-8 px-2"
+                              disabled={uploadFile.status === 'uploading'}
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              View
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDownloadFile(uploadFile.file)}
+                              className="h-8 px-2"
+                              disabled={uploadFile.status === 'uploading'}
+                            >
+                              <Download className="h-3 w-3 mr-1" />
+                              Download
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+                              }}
+                              className="h-8 px-2 text-red-600 hover:text-red-700"
+                              disabled={uploadFile.status === 'uploading'}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                            {uploadFile.status === 'success' && (
+                              <Check className="h-4 w-4 text-green-600" />
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <Check className="h-4 w-4 text-green-600" />
-                    </div>
-                  </div>
-                )}
-
-                {/* Upload Progress */}
-                {isUploading && (
-                  <div className="mt-4">
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${uploadProgress}%` }}
-                      ></div>
-                    </div>
-                    <p className="text-xs text-gray-600 mt-1">
-                      Uploading... {Math.round(uploadProgress)}%
-                    </p>
+                    ))}
                   </div>
                 )}
               </div>
@@ -526,35 +710,47 @@ const DocumentManagement: React.FC = () => {
               {/* Upload Button */}
               <Button
                 onClick={handleUpload}
-                disabled={!selectedFile || !loan_type || !losId || !documentType || isUploading || serverStatus === 'offline'}
+                disabled={selectedFiles.length === 0 || !loan_type || !losId || isUploading || serverStatus === 'offline'}
                 className="w-full"
               >
                 {isUploading ? (
                   <>
                     <Upload className="mr-2 h-4 w-4 animate-spin" />
-                    Uploading...
+                    Uploading {selectedFiles.filter(f => f.status === 'uploading').length} files...
                   </>
                 ) : (
                   <>
                     <Upload className="mr-2 h-4 w-4" />
-                    Upload Document
+                    Upload {selectedFiles.length} Document{selectedFiles.length !== 1 ? 's' : ''}
                   </>
                 )}
               </Button>
 
-              {/* Quick Actions */}
-              <div className="mt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={openUploadForm}
-                  className="w-full"
-                  disabled={serverStatus === 'offline'}
-                >
-                  <FileText className="mr-2 h-4 w-4" />
-                  Open Upload Form
-                </Button>
-              </div>
+                              {/* Quick Actions */}
+                <div className="mt-4 space-y-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={openUploadForm}
+                    className="w-full"
+                    disabled={serverStatus === 'offline'}
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Open Upload Form
+                  </Button>
+                  {selectedFiles.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedFiles([])}
+                      className="w-full text-red-600 hover:text-red-700"
+                      disabled={isUploading}
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      Clear All Files
+                    </Button>
+                  )}
+                </div>
             </div>
 
             {/* Instructions */}
@@ -572,12 +768,22 @@ const DocumentManagement: React.FC = () => {
                 </div>
 
                 <div>
+                  <h4 className="font-medium text-gray-900 mb-2">Multiple File Upload</h4>
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    <li>• Select multiple files at once using Ctrl+Click or drag & drop</li>
+                    <li>• Each file will be automatically named: LOS-ID-DOCUMENT-TYPE.ext</li>
+                    <li>• View and download files before uploading</li>
+                    <li>• Remove individual files or clear all at once</li>
+                  </ul>
+                </div>
+
+                <div>
                   <h4 className="font-medium text-gray-900 mb-2">Supported File Types</h4>
                   <ul className="text-sm text-gray-600 space-y-1">
                     <li>• PDF documents (.pdf)</li>
                     <li>• Word documents (.doc, .docx)</li>
                     <li>• Images (.jpg, .jpeg, .png)</li>
-                    <li>• Maximum file size: 10MB</li>
+                    <li>• Maximum file size: 10MB per file</li>
                   </ul>
                 </div>
 
@@ -587,7 +793,7 @@ const DocumentManagement: React.FC = () => {
                     Files are automatically organized in folders based on loan type and LOS ID:
                     <br />
                     <code className="bg-gray-100 px-1 rounded text-xs">
-                      {loan_type || 'loan-type'}/{losId ? losId.replace(/^LOS-/, '') : 'los-id'}/filename.pdf
+                      {loan_type || 'loan-type'}/{losId ? losId.replace(/^LOS-/, '') : 'los-id'}/LOS-ID-DOCUMENT-TYPE.ext
                     </code>
                   </p>
                 </div>
@@ -673,7 +879,7 @@ const DocumentManagement: React.FC = () => {
                 {selectedApplicationForDocs ? (
                   <DocumentExplorer 
                     losId={selectedApplicationForDocs.los_id}
-                    applicationType={selectedApplicationForDocs.loan_type}
+                    applicationType={selectedApplicationForDocs.application_type}
                     onFileSelect={handleFileSelectFromExplorer} 
                   />
                 ) : (

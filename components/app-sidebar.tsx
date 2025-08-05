@@ -55,20 +55,20 @@ const navigationByRole: Record<UserRole, any[]> = {
     {
       title: "Main",
       items: [
+        // {
+        //   title: "Dashboard",
+        //   url: "/dashboard/pb",
+        //   icon: LayoutDashboard,
+        // },
         {
           title: "Dashboard",
-          url: "/dashboard/pb",
+          url: "/dashboard/pb/applications",
           icon: LayoutDashboard,
         },
         {
           title: "New Application",
           url: "/dashboard/applicant",
           icon: UserPlus,
-        },
-        {
-          title: "My Applications",
-          url: "/dashboard/pb/applications",
-          icon: FileText,
         },
         // {
         //   title: "Disbursed Loans",

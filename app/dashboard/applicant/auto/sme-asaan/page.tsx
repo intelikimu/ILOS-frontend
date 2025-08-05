@@ -851,7 +851,7 @@ export default function SMEAsaanPage() {
         const safeData = JSON.parse(JSON.stringify(cleanedData));
 
         // 5. Additional validation - check for problematic values
-        const problematicFields = [];
+        const problematicFields: string[] = [];
         Object.entries(safeData).forEach(([key, value]) => {
           if (value === "1970-01-01" || value === "1970-01-01T00:00:00.000Z") {
             safeData[key] = null;

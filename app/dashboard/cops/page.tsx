@@ -641,16 +641,18 @@ export default function COPSDashboardPage() {
 
   const handleCompleteDataEntry = async () => {
 
-//  update the status of the application to cops_compliance_check
-await fetch('/api/applications/update-status', {
+//  update the status of the application using workflow
+await fetch('/api/applications/update-status-workflow', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
   },
   body: JSON.stringify({
     losId: selectedApplication?.los_id.replace('LOS-', ''), // Extract just the number
-    status: 'SUBMITTED_TO_CIU',
-    applicationType: selectedApplication?.application_type
+    status: selectedApplication?.status, // Send current status, not target status
+    applicationType: selectedApplication?.application_type,
+    department: 'COPS',
+    action: 'approve'
   })
 })
 

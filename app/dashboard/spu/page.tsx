@@ -778,18 +778,20 @@ export default function SPUDashboardPage() {
     }
     
     try {
-      // Update status in backend
+      // Update status in backend using workflow
       const losId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
       console.log('Frontend sending losId:', losId, 'applicationType:', selectedApplication.application_type)
-      const response = await fetch('/api/applications/update-status', {
+      const response = await fetch('/api/applications/update-status-workflow', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           losId: losId,
-          status: 'SUBMITTED_TO_COPS',
-          applicationType: selectedApplication.application_type
+          status: selectedApplication.status, // Send current status, not target status
+          applicationType: selectedApplication.application_type,
+          department: 'SPU',
+          action: 'verify'
         })
       })
 

@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Clock, CheckCircle, AlertTriangle, FileText, Eye, MoreHorizontal } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import Link from "next/link"
+
 
 const statsData = [
   {
@@ -107,7 +109,8 @@ export default function PBDashboardPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Personal Banking Dashboard</h1>
-        <Button>New Application</Button>
+        <Link className="bg-blue-500 text-white px-4 py-2 rounded-md"
+        href="/dashboard/applicant">New Application</Link>
       </div>
       
       {/* Stats Cards */}

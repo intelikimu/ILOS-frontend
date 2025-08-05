@@ -40,6 +40,7 @@ import {
   Flag,
   FolderOpen
 } from "lucide-react"
+import Link from "next/link";
 
 // Application statistics
 const applicationStats = {
@@ -383,12 +384,12 @@ export default function MyApplicationsPage() {
     return matchesSearch && matchesStatus && matchesLoanType;
   });
 
-  const handleCreateApplication = () => {
-    toast({
-      title: "New Application",
-      description: "Redirecting to application creation wizard...",
-    });
-  };
+  // const handleCreateApplication = () => {
+  //   toast({
+  //     title: "New Application",
+  //     description: "Redirecting to application creation wizard...",
+  //   });
+  // };
 
   const handleEditApplication = (appId: string) => {
     toast({
@@ -564,10 +565,11 @@ export default function MyApplicationsPage() {
             <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
-          <Button onClick={handleCreateApplication}>
+          <Link href="/dashboard/applicant"
+          className="bg-blue-500 flex items-center gap-2 text-white px-4 py-2 rounded-md">
             <Plus className="mr-2 h-4 w-4" />
             New Application
-          </Button>
+          </Link>
         </div>
       </div>
 

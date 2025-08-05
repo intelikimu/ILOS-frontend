@@ -89,7 +89,7 @@ export default function LoginPage() {
                   <SelectValue placeholder="Select your role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pb">Personal Banking (PB)</SelectItem>
+                  <SelectItem value="pb/applications">Personal Banking (PB)</SelectItem>
                   <SelectItem value="spu">Sales Processing Unit (SPU)</SelectItem>
                   <SelectItem value="spu_officer">Sales Processing Unit Officer (SPU Officer)</SelectItem>
                   <SelectItem value="cops">Consumer Operations (COPS)</SelectItem>

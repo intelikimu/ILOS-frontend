@@ -93,7 +93,8 @@ export default function LoginPage() {
                   <SelectItem value="spu">Sales Processing Unit (SPU)</SelectItem>
                   <SelectItem value="spu_officer">Sales Processing Unit Officer (SPU Officer)</SelectItem>
                   <SelectItem value="cops">Consumer Operations (COPS)</SelectItem>
-                  <SelectItem value="eamvu">External Asset Management (EAMVU)</SelectItem>
+                  <SelectItem value="eamvu">External Asset Management Head (EAMVU Head)</SelectItem>
+                  <SelectItem value="eamvu_officer">External Asset Management Officer (EAMVU Officer)</SelectItem>
                   <SelectItem value="ciu">Central Investigation Unit (CIU)</SelectItem>
                   <SelectItem value="rru">Rejection Review Unit (RRU)</SelectItem>
                 </SelectContent>

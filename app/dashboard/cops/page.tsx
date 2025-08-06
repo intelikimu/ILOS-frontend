@@ -586,7 +586,7 @@ export default function COPSDashboardPage() {
     const fetchApplications = async () => {
       try {
         setLoading(true)
-        const response = await fetch('/api/applications/cops')
+        const response = await fetch('/api/applications/department/COPS')
         const data = await response.json()
         
         if (response.ok) {

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Search, Users, MapPin, Phone } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 
 // Mock data for EAMVU applications
 const applicationsData = [
@@ -115,7 +115,46 @@ const NewApplications = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
   const [selectedAgent, setSelectedAgent] = useState<any>(null);
+  const [applicationsData, setApplicationsData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Fetch applications from backend
+  const fetchApplications = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/applications/department/EAMVU')
+      if (!response.ok) throw new Error('Failed to fetch applications')
+      const data = await response.json()
+      
+      // Transform data for new applications view - show only new/recent applications
+      const newApps = data.filter((app: any) => 
+        app.status === 'SUBMITTED_BY_SPU' || 
+        app.status === 'PB_SUBMITTED'
+      ).map((app: any) => ({
+        ...app,
+        id: app.los_id || `APP-${app.id}`,
+        applicantName: app.applicant_name,
+        loanType: app.loan_type,
+        amount: `PKR ${app.loan_amount ? app.loan_amount.toLocaleString() : '0'}`,
+        priority: app.priority || "Medium",
+        submittedDate: new Date(app.created_at).toISOString().split('T')[0],
+        lastUpdate: new Date(app.created_at).toISOString().split('T')[0]
+      }))
+      
+      setApplicationsData(newApps)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch applications')
+      toast({ title: "Error", description: "Failed to fetch applications", variant: "destructive" })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchApplications()
+  }, [])
 
   const filteredApplications = applicationsData.filter((app) =>
     (app.applicantName.toLowerCase().includes(searchTerm.toLowerCase()) ||

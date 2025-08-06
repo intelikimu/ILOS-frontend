@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const { losId, status, applicationType, department, action } = await request.json()
+    const requestData = await request.json()
+    const { losId, status, applicationType, department, action } = requestData
 
     if (!losId || !status || !applicationType || !department || !action) {
       return NextResponse.json(
@@ -12,21 +13,15 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`🔄 Frontend API: Workflow update request for ${department} - ${action}`)
-    console.log(`📋 Request data:`, { losId, status, applicationType, department, action })
+    console.log(`📋 Request data:`, requestData)
 
-    // Call the backend API to update status using workflow
+    // Call the backend API to update status using workflow - pass all data
     const backendResponse = await fetch('http://localhost:5000/api/applications/update-status-workflow', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        losId: losId,
-        status: status,
-        applicationType: applicationType,
-        department: department,
-        action: action
-      })
+      body: JSON.stringify(requestData)
     })
 
     if (!backendResponse.ok) {

@@ -240,7 +240,7 @@ export type ApplicationStatus =
   | 'rejected'
   | 'disbursed';
 
-export type UserRole = 'pb' | 'spu' | 'cops' | 'eamvu' | 'ciu' | 'rru';
+export type UserRole = 'pb' | 'spu' | 'spu_officer' | 'cops' | 'eamvu' | 'eamvu_officer' | 'ciu' | 'rru';
 
 export interface User {
   id: string;
@@ -249,6 +249,18 @@ export interface User {
   role: UserRole;
   branch?: string;
   department?: string;
+}
+
+export interface Agent {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  department: 'EAMVU' | 'SPU';
+  status: 'active' | 'inactive' | 'on_leave';
+  assignedApplications?: number;
+  location?: string;
+  expertise?: string[];
 }
 
 // CIF Data Types

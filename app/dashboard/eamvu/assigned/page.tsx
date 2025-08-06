@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -88,6 +89,51 @@ function getPriorityBadge(priority: string) {
 const AssignedApplications = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
+  const [applicationsData, setApplicationsData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  // Fetch applications from backend
+  const fetchApplications = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/applications/department/EAMVU')
+      if (!response.ok) throw new Error('Failed to fetch applications')
+      const data = await response.json()
+      
+      // Transform data for assigned view - show only assigned applications
+      const assignedApps = data.filter((app: any) => 
+        app.status === 'ASSIGNED_TO_EAMVU_OFFICER' || 
+        app.status === 'SUBMITTED_BY_SPU' ||
+        app.status === 'SUBMITTED_BY_COPS'
+      ).map((app: any) => ({
+        ...app,
+        id: app.los_id || `APP-${app.id}`,
+        applicantName: app.applicant_name,
+        loanType: app.loan_type,
+        amount: `PKR ${app.loan_amount ? app.loan_amount.toLocaleString() : '0'}`,
+        status: app.status === 'ASSIGNED_TO_EAMVU_OFFICER' ? 'eamvu_agent_assigned' : 'eamvu_new',
+        assignedTo: app.status === 'ASSIGNED_TO_EAMVU_OFFICER' ? "EAMVU Officer" : "Unassigned",
+        priority: app.priority || "Medium",
+        lastUpdate: new Date(app.created_at).toISOString().split('T')[0],
+        address: "Address not specified",
+        phone: "+92-300-0000000",
+        segment: app.loan_type.includes('Business') ? 'SME' : 'Preferred'
+      }))
+      
+      setApplicationsData(assignedApps)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch applications')
+      toast({ title: "Error", description: "Failed to fetch applications", variant: "destructive" })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchApplications()
+  }, [])
 
   const filteredApplications = applicationsData.filter((app) =>
     (app.applicantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -102,6 +148,11 @@ const AssignedApplications = () => {
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Assigned Applications</h2>
           <p className="text-muted-foreground">Applications with assigned field agents for verification</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={fetchApplications} disabled={loading}>
+            {loading ? "Loading..." : "Refresh"}
+          </Button>
         </div>
       </div>
 

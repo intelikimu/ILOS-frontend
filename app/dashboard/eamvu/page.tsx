@@ -40,10 +40,10 @@ interface EAMVUApplication {
 
 // Stats for dashboard - will be calculated from real data
 const getStatsData = (applications: EAMVUApplication[]) => {
-  const submittedToCIU = applications.filter(app => app.status === 'SUBMITTED_TO_CIU').length
-  const submittedToRRU = applications.filter(app => app.status === 'SUBMITTED_TO_RRU').length
-  const accepted = applications.filter(app => app.status === 'Application_Accepted').length
-  const rejected = applications.filter(app => app.status === 'Application_Rejected').length
+  const submittedToCIU = applications.filter(app => app.status === 'submitted_to_ciu').length
+  const submittedToRRU = applications.filter(app => app.status === 'submitted_to_rru').length
+  const accepted = applications.filter(app => app.status === 'application_completed').length
+  const rejected = applications.filter(app => app.status === 'rejected_by_eavmu').length
 
   return [
     {
@@ -87,16 +87,16 @@ const getStatsData = (applications: EAMVUApplication[]) => {
 
 function getStatusBadge(status: string) {
   switch (status) {
-    case "SUBMITTED_TO_CIU":
+    case "submitted_to_ciu":
       return <Badge className="bg-blue-100 text-blue-800">Submitted to CIU</Badge>
-    case "SUBMITTED_TO_RRU":
+    case "submitted_to_rru":
       return <Badge className="bg-yellow-100 text-yellow-800">Submitted to RRU</Badge>
-    case "Application_Accepted":
+    case "application_completed":
       return <Badge className="bg-green-100 text-green-800">Accepted</Badge>
-    case "Application_Rejected":
+    case "rejected_by_eavmu":
       return <Badge variant="destructive">Rejected</Badge>
-    case "Application_Returned":
-      return <Badge className="bg-orange-100 text-orange-800">Returned</Badge>
+    case "returned_by_eavmu_officer":
+      return <Badge className="bg-orange-100 text-orange-800">Returned by Officer</Badge>
     default:
       return <Badge variant="secondary">{status}</Badge>
   }
@@ -140,7 +140,41 @@ export default function EAMVUDashboardPage() {
   const [commentText, setCommentText] = useState("")
   const [existingComments, setExistingComments] = useState<{ [key: string]: string }>({})
   const [allDepartmentComments, setAllDepartmentComments] = useState<{ [key: string]: any[] }>({})
+  const [showAssignDialog, setShowAssignDialog] = useState(false)
+  const [assignmentNotes, setAssignmentNotes] = useState("")
+  const [selectedAgent, setSelectedAgent] = useState("")
   const { toast } = useToast()
+
+  const [availableAgents, setAvailableAgents] = useState<any[]>([])
+
+  // Fetch available agents from backend
+  const fetchAgents = async () => {
+    try {
+      const response = await fetch('/api/agents')
+      if (response.ok) {
+        const agentsData = await response.json()
+        setAvailableAgents(agentsData)
+      } else {
+        console.error('Failed to fetch agents')
+        // Fallback to mock data if API fails
+        setAvailableAgents([
+          { agent_id: "agent-001", name: "Ahmad Hassan", status: "active", assigned_applications: 3 },
+          { agent_id: "agent-002", name: "Fatima Ali", status: "active", assigned_applications: 5 },
+          { agent_id: "agent-003", name: "Muhammad Khan", status: "active", assigned_applications: 2 },
+          { agent_id: "agent-004", name: "Aisha Sheikh", status: "active", assigned_applications: 4 }
+        ])
+      }
+    } catch (error) {
+      console.error('Error fetching agents:', error)
+      // Fallback to mock data
+      setAvailableAgents([
+        { agent_id: "agent-001", name: "Ahmad Hassan", status: "active", assigned_applications: 3 },
+        { agent_id: "agent-002", name: "Fatima Ali", status: "active", assigned_applications: 5 },
+        { agent_id: "agent-003", name: "Muhammad Khan", status: "active", assigned_applications: 2 },
+        { agent_id: "agent-004", name: "Aisha Sheikh", status: "active", assigned_applications: 4 }
+      ])
+    }
+  }
 
   // Function to handle viewing application form data
   const handleViewApplication = async (application: any) => {
@@ -392,9 +426,86 @@ export default function EAMVUDashboardPage() {
     }
   }
 
+  // Handle assigning application to EAMVU Officer
+  const handleAssignToOfficer = async () => {
+    if (!selectedApplication) return
+    
+    try {
+      // Update status in backend using workflow
+      const losId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
+      console.log('EAMVU HEAD assigning to officer - losId:', losId, 'applicationType:', selectedApplication.application_type)
+      const response = await fetch('/api/applications/update-status-workflow', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          losId: losId,
+          status: selectedApplication.status, // Send current status
+          applicationType: selectedApplication.application_type,
+          department: 'EAMVU',
+          action: 'assign',
+          agentId: selectedAgent,
+          assignedBy: 'EAMVU_HEAD',
+          assignmentNotes: assignmentNotes
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.text()
+        console.error('Backend error response:', errorData)
+        throw new Error(`Failed to assign to officer: ${errorData}`)
+      }
+      
+      // Add assignment notes and agent information
+      const selectedAgentInfo = availableAgents.find(agent => agent.agent_id === selectedAgent)
+      let assignmentComment = `ASSIGNED TO OFFICER: ${selectedAgentInfo?.name || 'Unknown Agent'}`
+      if (assignmentNotes.trim()) {
+        assignmentComment += ` - Notes: ${assignmentNotes}`
+      }
+      
+      await fetch('/api/applications/update-comment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          losId: parseInt(losId),
+          fieldName: 'eamvu_comments',
+          commentText: assignmentComment
+        })
+      })
+      
+      // Update application status in frontend
+      const updatedApplications = applicationsData.map(app => 
+        app.id === selectedApplication.id 
+          ? { ...app, status: "assigned_to_eavmu_officer" }
+          : app
+      )
+      setApplicationsData(updatedApplications)
+      
+      toast({
+        title: "Application Assigned",
+        description: "Application has been assigned to EAMVU Officer for investigation",
+      })
+      setSelectedApplication(null)
+      setShowAssignDialog(false)
+      setAssignmentNotes("")
+      setSelectedAgent("")
+    } catch (error) {
+      console.error('Error assigning to officer:', error)
+      toast({
+        title: "Error",
+        description: "Failed to assign application to officer",
+        variant: "destructive"
+      })
+    }
+  }
+
   // Load applications on component mount
   useEffect(() => {
     fetchApplications()
+    fetchAgents()
   }, [])
 
   const recentApplications = applicationsData.slice(0, 5)
@@ -965,12 +1076,20 @@ export default function EAMVUDashboardPage() {
                                     Close
                                   </Button>
                                   <Button
+                                    variant="outline"
+                                    onClick={() => setShowAssignDialog(true)}
+                                    className="bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                  >
+                                    <Users className="mr-2 h-4 w-4" />
+                                    Assign to Officer
+                                  </Button>
+                                  <Button
                                     variant="default"
                                     onClick={handleSubmitToCOPS}
                                     className="bg-green-600 hover:bg-green-700"
                                   >
                                     <CheckCircle className="mr-2 h-4 w-4" />
-                                    Submit to COPS
+                                    Direct Approve
                                   </Button>
                                 </div>
                               </div>
@@ -1001,6 +1120,68 @@ export default function EAMVUDashboardPage() {
                                 />
                               </div>
                             )}
+                          </DialogContent>
+                        </Dialog>
+
+                        {/* Assignment Dialog */}
+                        <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
+                          <DialogContent className="max-w-md">
+                            <DialogHeader>
+                              <DialogTitle>Assign to EAMVU Officer</DialogTitle>
+                              <DialogDescription>
+                                Assign this application to an EAMVU Officer for field verification and investigation.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <Label htmlFor="agent-select">Assign to Agent</Label>
+                                <Select value={selectedAgent} onValueChange={setSelectedAgent}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select an agent" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {availableAgents
+                                      .filter(agent => agent.status === 'active')
+                                      .map((agent) => (
+                                        <SelectItem key={agent.agent_id} value={agent.agent_id}>
+                                          {agent.name} ({agent.assigned_applications} assigned)
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label htmlFor="assignment-notes">Assignment Notes</Label>
+                                <Textarea
+                                  id="assignment-notes"
+                                  value={assignmentNotes}
+                                  onChange={(e) => setAssignmentNotes(e.target.value)}
+                                  placeholder="Enter specific instructions for the officer (e.g., verify employment, check address, investigate income sources)..."
+                                  rows={4}
+                                />
+                              </div>
+                            </div>
+                            <DialogFooter>
+                              <Button 
+                                variant="outline" 
+                                onClick={() => {
+                                  setShowAssignDialog(false)
+                                  setAssignmentNotes("")
+                                  setSelectedAgent("")
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                              <Button 
+                                variant="default" 
+                                onClick={handleAssignToOfficer}
+                                className="bg-blue-600 hover:bg-blue-700"
+                                disabled={!selectedAgent}
+                              >
+                                <Users className="mr-2 h-4 w-4" />
+                                Assign to Officer
+                              </Button>
+                            </DialogFooter>
                           </DialogContent>
                         </Dialog>
                       </div>

@@ -75,14 +75,22 @@ const statsData = [
 
 function getStatusBadge(status: string) {
   switch (status) {
-    case "SUBMITTED_TO_RRU":
-      return <Badge className="bg-green-100 text-green-800">SUBMITTED_TO_RRU</Badge>
-    case "":
-      return <Badge variant="destructive">Rejected</Badge>
-    case "Application_Returned":
-      return <Badge className="bg-yellow-100 text-yellow-800">Returned</Badge>
-    case "SUBMITTED_TO_RRU":
-      return <Badge className="bg-blue-100 text-blue-800">Under Review</Badge>
+    case "rejected_by_spu":
+      return <Badge variant="destructive">Rejected by SPU</Badge>
+    case "rejected_by_cops":
+      return <Badge variant="destructive">Rejected by COPS</Badge>
+    case "rejected_by_eavmu":
+      return <Badge variant="destructive">Rejected by EAMVU</Badge>
+    case "rejected_by_ciu":
+      return <Badge variant="destructive">Rejected by CIU</Badge>
+    case "rejected_by_rru":
+      return <Badge variant="destructive">Rejected by RRU</Badge>
+    case "resolved_by_rru":
+      return <Badge className="bg-green-100 text-green-800">Resolved by RRU</Badge>
+    case "application_completed":
+      return <Badge className="bg-green-100 text-green-800">Completed</Badge>
+    case "returned_by_eavmu_officer":
+      return <Badge className="bg-yellow-100 text-yellow-800">Returned by Officer</Badge>
     default:
       return <Badge variant="secondary">{status}</Badge>
   }
@@ -120,7 +128,7 @@ export default function RRUDashboardPage() {
     const fetchApplications = async () => {
       try {
         setLoading(true)
-        const response = await fetch('/api/applications/rru')
+        const response = await fetch('/api/applications/department/RRU')
         const data = await response.json()
         
         if (response.ok) {
@@ -155,43 +163,45 @@ export default function RRUDashboardPage() {
                           app.los_id.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === "all" || app.status === statusFilter
     
-    // RRU can see applications with final statuses
-    const rruAllowedStatuses = ['Application_Accepted', 'Application_Rejected', 'Application_Returned', 'SUBMITTED_TO_RRU']
+    // RRU can see applications with rejected statuses from all departments and resolved applications
+    const rruAllowedStatuses = ['rejected_by_spu', 'rejected_by_cops', 'rejected_by_eavmu', 'rejected_by_ciu', 'rejected_by_rru', 'resolved_by_rru']
     const isRruAllowed = rruAllowedStatuses.includes(app.status)
     
     if (activeTab === "pending") {
-      return matchesSearch && matchesStatus && app.status === "SUBMITTED_TO_RRU"
-    } else if (activeTab === "approved") {
-      return matchesSearch && matchesStatus && app.status === "Application_Accepted"
+      return matchesSearch && matchesStatus && rruAllowedStatuses.includes(app.status)
+    } else if (activeTab === "resolved") {
+      return matchesSearch && matchesStatus && app.status === "resolved_by_rru"
     } else if (activeTab === "rejected") {
-      return matchesSearch && matchesStatus && app.status === "Application_Rejected"
+      return matchesSearch && matchesStatus && app.status.startsWith("rejected_by_")
     } else if (activeTab === "returned") {
-      return matchesSearch && matchesStatus && app.status === "Application_Returned"
+      return matchesSearch && matchesStatus && app.status === "returned_by_eavmu_officer"
     }
     
     return matchesSearch && matchesStatus && isRruAllowed
   })
 
-  const handleApproveApplication = async () => {
+  const handleResolveApplication = async () => {
     if (!selectedApplication) return
 
     try {
-      const response = await fetch('/api/applications/update-status', {
+      const response = await fetch('/api/applications/update-status-workflow', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           losId: selectedApplication.los_id.replace('LOS-', ''),
-          status: 'Application_Accepted',
-          applicationType: selectedApplication.application_type
+          status: selectedApplication.status,
+          applicationType: selectedApplication.application_type,
+          department: 'RRU',
+          action: 'resolve'
         })
       })
 
       if (response.ok) {
         toast({
-          title: "Application Approved",
-          description: "Application has been approved successfully",
+          title: "Application Resolved",
+          description: "Application has been resolved successfully",
         })
         setSelectedApplication(null)
         setReviewNotes("")
@@ -201,15 +211,15 @@ export default function RRUDashboardPage() {
         const errorData = await response.json()
         toast({
           title: "Error",
-          description: "Failed to approve application",
+          description: "Failed to resolve application",
           variant: "destructive"
         })
       }
     } catch (error) {
-      console.error('Error approving application:', error)
+      console.error('Error resolving application:', error)
       toast({
         title: "Error",
-        description: "Failed to approve application",
+        description: "Failed to resolve application",
         variant: "destructive"
       })
     }
@@ -435,12 +445,12 @@ export default function RRUDashboardPage() {
       </div>
 
       <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="pending">Pending Review</TabsTrigger>
-          <TabsTrigger value="approved">Approved</TabsTrigger>
-          <TabsTrigger value="rejected">Rejected</TabsTrigger>
-          <TabsTrigger value="returned">Returned</TabsTrigger>
-        </TabsList>
+                 <TabsList>
+           <TabsTrigger value="pending">Pending Review</TabsTrigger>
+           <TabsTrigger value="resolved">Resolved</TabsTrigger>
+           <TabsTrigger value="rejected">Rejected</TabsTrigger>
+           <TabsTrigger value="returned">Returned</TabsTrigger>
+         </TabsList>
         <TabsContent value="pending" className="space-y-4">
           {/* Filters */}
           <Card>
@@ -705,12 +715,12 @@ export default function RRUDashboardPage() {
                                   >
                                     Return for Info
                                   </Button>
-                                  <Button 
-                                    onClick={handleApproveApplication}
-                                    className="bg-green-600 hover:bg-green-700"
-                                  >
-                                    Approve Application
-                                  </Button>
+                                                                     <Button 
+                                     onClick={handleResolveApplication}
+                                     className="bg-green-600 hover:bg-green-700"
+                                   >
+                                     Resolve Application
+                                   </Button>
                                 </DialogFooter>
                               </div>
                             )}
@@ -751,40 +761,40 @@ export default function RRUDashboardPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="approved" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Approved Applications</CardTitle>
-              <CardDescription>Applications that have been approved by RRU</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>LOS ID</TableHead>
-                    <TableHead>Applicant</TableHead>
-                    <TableHead>Loan Type</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Approval Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {applicationsData
-                    .filter(app => app.status === "Application_Accepted")
-                    .map((app) => (
-                      <TableRow key={app.id}>
-                        <TableCell className="font-mono text-sm">{app.los_id}</TableCell>
-                        <TableCell>{app.applicant_name}</TableCell>
-                        <TableCell>{app.loan_type}</TableCell>
-                        <TableCell className="font-medium">PKR {Number(app.loan_amount).toLocaleString()}</TableCell>
-                        <TableCell>{new Date(app.created_at).toLocaleDateString()}</TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                 <TabsContent value="resolved" className="space-y-4">
+           <Card>
+             <CardHeader>
+               <CardTitle>Resolved Applications</CardTitle>
+               <CardDescription>Applications that have been resolved by RRU</CardDescription>
+             </CardHeader>
+             <CardContent>
+               <Table>
+                 <TableHeader>
+                   <TableRow>
+                     <TableHead>LOS ID</TableHead>
+                     <TableHead>Applicant</TableHead>
+                     <TableHead>Loan Type</TableHead>
+                     <TableHead>Amount</TableHead>
+                     <TableHead>Resolution Date</TableHead>
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {applicationsData
+                     .filter(app => app.status === "resolved_by_rru")
+                     .map((app) => (
+                       <TableRow key={app.id}>
+                         <TableCell className="font-mono text-sm">{app.los_id}</TableCell>
+                         <TableCell>{app.applicant_name}</TableCell>
+                         <TableCell>{app.loan_type}</TableCell>
+                         <TableCell className="font-medium">PKR {Number(app.loan_amount).toLocaleString()}</TableCell>
+                         <TableCell>{new Date(app.created_at).toLocaleDateString()}</TableCell>
+                       </TableRow>
+                     ))}
+                 </TableBody>
+               </Table>
+             </CardContent>
+           </Card>
+         </TabsContent>
 
         <TabsContent value="rejected" className="space-y-4">
           <Card>

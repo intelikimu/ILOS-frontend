@@ -85,22 +85,22 @@ const navigationByRole: Record<UserRole, any[]> = {
           url: "/dashboard/documents",
           icon: Upload,
         },
-        {
-          title: "Document Status",
-          url: "/dashboard/pb/document-status",
-          icon: FileText,
-        },
+        // {
+        //   title: "Document Status",
+        //   url: "/dashboard/pb/document-status",
+        //   icon: FileText,
+        // },
       ],
     },
     {
       title: "Notifications",
       items: [
-        {
-          title: "Alerts",
-          url: "/dashboard/pb/alerts",
-          icon: Bell,
-          badge: "3",
-        },
+        // {
+        //   title: "Alerts",
+        //   url: "/dashboard/pb/alerts",
+        //   icon: Bell,
+        //   badge: "3",
+        // },
       ],
     },
   ],

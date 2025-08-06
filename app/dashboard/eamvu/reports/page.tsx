@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -133,8 +134,73 @@ const FieldReports = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedReport, setSelectedReport] = useState<any>(null);
+  const [applicationsData, setApplicationsData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  const filteredReports = fieldReportsData.filter((report) => {
+  // Fetch applications from backend - same as main EAMVU dashboard
+  const fetchApplications = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      console.log('🔄 EAMVU Reports: Starting to fetch applications...')
+      
+      const response = await fetch('/api/applications/department/EAMVU', {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
+        cache: 'no-store'
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch applications')
+      }
+      
+      const data = await response.json()
+      console.log('✅ EAMVU Reports: Fetched', data.length, 'applications')
+      
+      setApplicationsData(data)
+    } catch (err) {
+      console.error('❌ EAMVU Reports: Error fetching applications:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch applications')
+      toast({
+        title: "Error",
+        description: "Failed to fetch applications. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Load applications on component mount
+  useEffect(() => {
+    fetchApplications()
+  }, [])
+
+  // Transform real applications data for reports view
+  const fieldReportsFromApplications = applicationsData.map((app, index) => ({
+    id: `FR-2024-${String(index + 1).padStart(3, '0')}`,
+    applicationId: app.los_id || `APP-${app.id}`,
+    applicantName: app.applicant_name,
+    agentName: "EAMVU Agent", // Default agent name
+    visitDate: new Date(app.created_at).toISOString().split('T')[0],
+    reportDate: new Date(app.created_at).toISOString().split('T')[0],
+    status: app.status === 'SUBMITTED_TO_CIU' ? 'verified' : app.status === 'ASSIGNED_TO_EAMVU_OFFICER' ? 'pending' : 'in_review',
+    locationVerified: app.status === 'SUBMITTED_TO_CIU',
+    businessVerified: app.status === 'SUBMITTED_TO_CIU',
+    photosCount: 3, // Default photos count
+    comments: `Field report for ${app.loan_type} application. Status: ${app.status}`,
+    area: app.branch || "Not specified",
+    loanType: app.loan_type,
+    amount: `PKR ${app.loan_amount ? app.loan_amount.toLocaleString() : '0'}`
+  }));
+
+  const filteredReports = fieldReportsFromApplications.filter((report) => {
     const matchesSearch = 
       report.applicantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       report.applicationId.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -145,6 +211,58 @@ const FieldReports = () => {
     return matchesSearch && matchesStatus;
   });
 
+  // Calculate performance metrics from real data
+  const performanceMetrics = {
+    totalReports: fieldReportsFromApplications.length,
+    verifiedReports: fieldReportsFromApplications.filter(report => report.status === 'verified').length,
+    pendingReports: fieldReportsFromApplications.filter(report => report.status === 'pending').length,
+    avgProcessingTime: 3.2, // Default value, can be calculated from real data
+    flaggedReports: fieldReportsFromApplications.filter(report => report.status === 'in_review').length
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Field Reports</h2>
+            <p className="text-muted-foreground">Comprehensive field verification reports and analytics</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <Clock className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground">Loading field reports...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Field Reports</h2>
+            <p className="text-muted-foreground">Comprehensive field verification reports and analytics</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <AlertTriangle className="h-8 w-8 mx-auto mb-4 text-red-500" />
+            <p className="text-red-600 mb-2">Error loading field reports</p>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={fetchApplications} variant="outline">
+              <Clock className="mr-2 h-4 w-4" />
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -153,6 +271,9 @@ const FieldReports = () => {
           <p className="text-muted-foreground">Comprehensive field verification reports and analytics</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={fetchApplications} disabled={loading}>
+            {loading ? "Loading..." : "Refresh"}
+          </Button>
           <Button variant="outline">
             <Download className="mr-2 h-4 w-4" />
             Export Reports

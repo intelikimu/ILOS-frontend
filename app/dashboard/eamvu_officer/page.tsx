@@ -64,6 +64,7 @@ export default function EAMVUOfficerDashboard() {
       const response = await fetch('http://localhost:5000/api/agents')
       if (response.ok) {
         const agentsData = await response.json()
+        console.log('🔄 Agents Data:', agentsData);
         setAvailableAgents(agentsData)
       } else {
         // Fallback to mock data if API fails

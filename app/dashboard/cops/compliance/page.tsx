@@ -228,9 +228,149 @@ export default function ComplianceCheckQueuePage() {
   const handleAssignApplication = (appId: string) => {
     toast({
       title: "Application Assigned",
-      description: `Application ${appId} has been assigned to compliance officer`,
-    })
-  }
+      description: `Application ${appId} has been assigned to a compliance officer.`,
+    });
+  };
+
+  // Export functionality for COPS compliance
+  const handleExport = () => {
+    try {
+      console.log('🔄 Starting COPS compliance export process...');
+      
+      // Create comprehensive report data
+      const reportData = {
+        summary: {
+          totalApplications: complianceStats.totalApplications,
+          completedCompliance: complianceStats.completedCompliance,
+          flaggedCompliance: complianceStats.flaggedCompliance,
+          complianceRate: complianceStats.complianceRate,
+          exportDate: new Date().toLocaleString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          }),
+          department: 'Compliance Operations (COPS)'
+        },
+        applications: complianceQueueData.map(app => ({
+          applicationId: app.id,
+          applicantName: app.applicantName || 'N/A',
+          loanType: app.loanType || 'N/A',
+          amount: app.amount || 'N/A',
+          status: app.complianceStatus || 'Unknown',
+          priority: app.priority || 'Medium',
+          riskLevel: app.riskLevel || 'Medium',
+          assignedTo: app.assignedTo || 'N/A',
+          submissionDate: app.submittedDate || 'N/A',
+          kycStatus: app.kycStatus || 'N/A',
+          amlStatus: app.amlStatus || 'N/A',
+          regulatoryStatus: app.creditScoreStatus || 'N/A',
+          complianceNotes: app.flaggedItems.join(', ') || 'N/A'
+        }))
+      };
+
+      console.log('📊 COPS report data prepared:', reportData);
+
+      // Create CSV content
+      const csvHeaders = [
+        'Application ID',
+        'Applicant Name',
+        'Loan Type',
+        'Amount',
+        'Status',
+        'Priority',
+        'Risk Level',
+        'Assigned To',
+        'Submission Date',
+        'KYC Status',
+        'AML Status',
+        'Regulatory Status',
+        'Compliance Notes'
+      ];
+
+      const csvRows = reportData.applications.map(app => [
+        app.applicationId,
+        app.applicantName,
+        app.loanType,
+        app.amount,
+        app.status,
+        app.priority,
+        app.riskLevel,
+        app.assignedTo,
+        app.submissionDate,
+        app.kycStatus,
+        app.amlStatus,
+        app.regulatoryStatus,
+        app.complianceNotes
+      ]);
+
+      // Add summary section
+      const summaryRows = [
+        [''],
+        ['SUMMARY REPORT'],
+        ['Department', reportData.summary.department],
+        ['Export Date', reportData.summary.exportDate],
+        ['Total Applications', reportData.summary.totalApplications],
+        ['Completed Compliance', reportData.summary.completedCompliance],
+        ['Flagged Compliance', reportData.summary.flaggedCompliance],
+        ['Compliance Rate', `${reportData.summary.complianceRate}%`],
+        [''],
+        ['DETAILED COMPLIANCE APPLICATIONS'],
+        csvHeaders
+      ];
+
+      // Combine summary and data
+      const allRows = [...summaryRows, ...csvRows];
+
+      // Convert to CSV format with better escaping
+      const csvContent = allRows.map(row => 
+        row.map(cell => {
+          const cellStr = String(cell || '');
+          // Escape quotes and wrap in quotes if contains comma, quote, or newline
+          if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+            return `"${cellStr.replace(/"/g, '""')}"`;
+          }
+          return cellStr;
+        }).join(',')
+      ).join('\n');
+
+      console.log('📄 COPS CSV content generated, length:', csvContent.length);
+
+      // Add BOM for better Excel compatibility
+      const BOM = '\uFEFF';
+      const csvWithBOM = BOM + csvContent;
+
+      // Create and download file
+      const blob = new Blob([csvWithBOM], { 
+        type: 'text/csv;charset=utf-8;' 
+      });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `COPS_Compliance_Report_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      console.log('✅ COPS file download triggered');
+
+      toast({
+        title: "Export Successful",
+        description: `COPS compliance report exported with ${complianceQueueData.length} applications and summary statistics.`,
+      });
+
+    } catch (error) {
+      console.error('❌ COPS export error:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export COPS compliance report. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -240,7 +380,7 @@ export default function ComplianceCheckQueuePage() {
           <p className="text-muted-foreground">KYC, AML, and regulatory compliance monitoring</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExport}>
             <Download className="mr-2 h-4 w-4" />
             Export Report
           </Button>

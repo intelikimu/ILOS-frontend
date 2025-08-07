@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Search, Download, BarChart3, PieChart, ArrowUpDown, Calendar, Filter } from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
 
 // Mock data for rejection statistics
 const rejectionStatistics = {
@@ -128,7 +129,162 @@ function getStatusBadge(status: string) {
 export default function RRURejectionAnalysisPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("overview")
-  const [timeframe, setTimeframe] = useState("month")
+  const [timeRange, setTimeRange] = useState("month")
+  const { toast } = useToast()
+
+  // Export functionality for RRU rejection analysis
+  const handleExport = () => {
+    try {
+      console.log('🔄 Starting RRU rejection analysis export process...');
+      
+      // Create comprehensive report data
+      const reportData = {
+        summary: {
+          totalRejections: rejectionStatistics.totalRejections,
+          resumedApplications: rejectionStatistics.resumedApplications,
+          confirmedRejections: rejectionStatistics.confirmedRejections,
+          rejectionRate: rejectionStatistics.rejectionRate,
+          resumeRate: rejectionStatistics.resumeRate,
+          pendingReview: rejectionStatistics.pendingReview,
+          exportDate: new Date().toLocaleString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          }),
+          department: 'Risk Review Unit (RRU)'
+        },
+        rejections: recentRejections.map(app => ({
+          applicationId: app.id,
+          applicantName: app.name || 'N/A',
+          loanType: app.loanType || 'N/A',
+          amount: app.amount || 'N/A',
+          rejectionReason: app.reason || 'N/A',
+          status: app.status || 'Unknown',
+          rejectedDate: app.rejectionDate || 'N/A',
+          assignedTo: 'N/A', // Placeholder for now
+          reviewNotes: 'N/A', // Placeholder for now
+          riskLevel: 'N/A' // Placeholder for now
+        })),
+        reasons: rejectionReasons.map(reason => ({
+          reason: reason.reason,
+          count: reason.count,
+          percentage: reason.percentage
+        }))
+      };
+
+      console.log('📊 RRU report data prepared:', reportData);
+
+      // Create CSV content
+      const csvHeaders = [
+        'Application ID',
+        'Applicant Name',
+        'Loan Type',
+        'Amount',
+        'Rejection Reason',
+        'Status',
+        'Rejected Date',
+        'Assigned To',
+        'Review Notes',
+        'Risk Level'
+      ];
+
+      const csvRows = reportData.rejections.map(app => [
+        app.applicationId,
+        app.applicantName,
+        app.loanType,
+        app.amount,
+        app.rejectionReason,
+        app.status,
+        app.rejectedDate,
+        app.assignedTo,
+        app.reviewNotes,
+        app.riskLevel
+      ]);
+
+      // Add summary section
+      const summaryRows = [
+        [''],
+        ['SUMMARY REPORT'],
+        ['Department', reportData.summary.department],
+        ['Export Date', reportData.summary.exportDate],
+        ['Total Rejections', reportData.summary.totalRejections],
+        ['Resumed Applications', reportData.summary.resumedApplications],
+        ['Confirmed Rejections', reportData.summary.confirmedRejections],
+        ['Rejection Rate', reportData.summary.rejectionRate],
+        ['Resume Rate', reportData.summary.resumeRate],
+        ['Pending Review', reportData.summary.pendingReview],
+        [''],
+        ['REJECTION REASONS ANALYSIS'],
+        ['Reason', 'Count', 'Percentage']
+      ];
+
+      // Add rejection reasons data
+      const reasonsRows = reportData.reasons.map(reason => [
+        reason.reason,
+        reason.count,
+        reason.percentage
+      ]);
+
+      // Add detailed rejections section
+      const detailedSection = [
+        [''],
+        ['DETAILED REJECTED APPLICATIONS'],
+        csvHeaders
+      ];
+
+      // Combine all sections
+      const allRows = [...summaryRows, ...reasonsRows, ...detailedSection, ...csvRows];
+
+      // Convert to CSV format with better escaping
+      const csvContent = allRows.map(row => 
+        row.map(cell => {
+          const cellStr = String(cell || '');
+          // Escape quotes and wrap in quotes if contains comma, quote, or newline
+          if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+            return `"${cellStr.replace(/"/g, '""')}"`;
+          }
+          return cellStr;
+        }).join(',')
+      ).join('\n');
+
+      console.log('📄 RRU CSV content generated, length:', csvContent.length);
+
+      // Add BOM for better Excel compatibility
+      const BOM = '\uFEFF';
+      const csvWithBOM = BOM + csvContent;
+
+      // Create and download file
+      const blob = new Blob([csvWithBOM], { 
+        type: 'text/csv;charset=utf-8;' 
+      });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `RRU_Rejection_Analysis_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      console.log('✅ RRU file download triggered');
+
+      toast({
+        title: "Export Successful",
+        description: `RRU rejection analysis exported with ${recentRejections.length} applications and summary statistics.`,
+      });
+
+    } catch (error) {
+      console.error('❌ RRU export error:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export RRU rejection analysis. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -138,7 +294,7 @@ export default function RRURejectionAnalysisPage() {
           <p className="text-muted-foreground">Analyze rejection patterns and trends</p>
         </div>
         <div className="flex gap-2">
-          <Select value={timeframe} onValueChange={setTimeframe}>
+          <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger className="w-[180px]">
               <Calendar className="mr-2 h-4 w-4" />
               <SelectValue placeholder="Select timeframe" />
@@ -150,7 +306,7 @@ export default function RRURejectionAnalysisPage() {
               <SelectItem value="year">Last Year</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExport}>
             <Download className="mr-2 h-4 w-4" />
             Export
           </Button>

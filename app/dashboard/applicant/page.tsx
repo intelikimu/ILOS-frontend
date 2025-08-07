@@ -55,12 +55,29 @@ export default function ApplicantPage() {
     clearCustomerData()
   }
 
+  // Reset product when account type changes
+  const handleAccountTypeChange = (type: string) => {
+    setAccountType(type)
+    setProduct("")
+    setSubOption("")
+  }
+
   // Next button action
   const handleNext = () => {
     if (!cnic || !product || !customerData) return
     let url = `/dashboard/applicant/${product.toLowerCase()}`
-    if (product === "auto" && subOption) url += `/${subOption.toLowerCase().replace(/\s/g, "-")}`
-    if (product === "creditcard" && subOption) url += `/${subOption.toLowerCase().replace(/\s/g, "-")}`
+    
+    // Handle different product routing
+    if (product === "auto" && subOption) {
+      url += `/${subOption.toLowerCase().replace(/\s/g, "-")}`
+    } else if (product === "creditcard" && subOption) {
+      url += `/${subOption.toLowerCase().replace(/\s/g, "-")}`
+    } else if (product === "smecommercial") {
+      url = `/dashboard/applicant/auto/sme-vehicles` // Route to commercial vehicle form
+    } else if (product === "smeasaan") {
+      url = `/dashboard/applicant/auto/sme-asaan` // Route to SME Asaan form
+    }
+    
     // Add accountType and selectedAccount to url if needed, or to global state/context
     router.push(url)
   }
@@ -174,10 +191,7 @@ export default function ApplicantPage() {
                   type="button"
                   variant={accountType === "conventional" ? "default" : "outline"}
                   className={`w-1/4 px-6 py-2 rounded-lg text-base shadow ${accountType === "conventional" ? " text-white" : ""}`}
-                  onClick={() => {
-                    setAccountType("conventional")
-                    setSelectedAccount("")
-                  }}
+                  onClick={() => handleAccountTypeChange("conventional")}
                 >
                   Conventional
                 </Button>
@@ -185,10 +199,7 @@ export default function ApplicantPage() {
                   type="button"
                   variant={accountType === "islamic" ? "default" : "outline"}
                   className={`w-1/4 px-6 py-2 rounded-lg text-base shadow ${accountType === "islamic" ? " text-white" : ""}`}
-                  onClick={() => {
-                    setAccountType("islamic")
-                    setSelectedAccount("")
-                  }}
+                  onClick={() => handleAccountTypeChange("islamic")}
                 >
                   Islamic
                 </Button>
@@ -223,17 +234,28 @@ export default function ApplicantPage() {
                 setProduct(e.target.value)
                 setSubOption("")
               }}
+              disabled={!accountType}
             >
-              <option value="">Select...</option>
-              <option value="auto">Auto Loan</option>
-              <option value="creditcard">Credit Card</option>
-              <option value="cashplus">Cashplus</option>
-              <option value="ameendrive">Ameen Drive</option>
+              <option value="">{accountType ? "Select..." : "Please select account type first"}</option>
+              {accountType === "conventional" && (
+                <>
+                  <option value="cashplus">Cashplus</option>
+                  <option value="auto">Auto Loan</option>
+                  <option value="creditcard">Credit Card</option>
+                </>
+              )}
+              {accountType === "islamic" && (
+                <>
+                  <option value="ameendrive">Ameen Drive</option>
+                  <option value="smecommercial">SME Commercial Vehicle</option>
+                  <option value="smeasaan">SME Asaan</option>
+                </>
+              )}
             </select>
           </div>
 
           {/* Conditional sub-dropdowns */}
-          {product === "auto" && (
+          {product === "auto" && accountType === "conventional" && (
             <div>
               <label className="block text-sm font-medium mb-1">Auto Subtype</label>
               <select
@@ -243,13 +265,11 @@ export default function ApplicantPage() {
               >
                 <option value="">Select...</option>
                 <option value="PersonalAutoloans">Personal Auto's</option>
-                <option value="sme Vehicles">SME Commercial Vehicles Loan's</option>
-                <option value="SME asaan">SME Asaan</option>
               </select>
             </div>
           )}
 
-          {product === "creditcard" && (
+          {product === "creditcard" && accountType === "conventional" && (
             <div>
               <label className="block text-sm font-medium mb-2">Credit Card Type</label>
               <select
@@ -258,8 +278,7 @@ export default function ApplicantPage() {
                 onChange={e => setSubOption(e.target.value)}
               >
                 <option value="">Select...</option>
-                <option value="Credit Card">ClassicCard</option>
-                <option value="Gold Credit Card">Gold Credit Card</option>
+                <option value="Credit Card">Classic Credit Card</option>
                 <option value="Platinum Credit Card">Platinum Credit Card</option>
               </select>
             </div>
@@ -273,7 +292,8 @@ export default function ApplicantPage() {
               !product ||
               !customerData ||
               loading ||
-              ((product === "auto" || product === "creditcard") && !subOption) ||
+              !accountType ||
+              ((product === "auto" || product === "creditcard") && accountType === "conventional" && !subOption) ||
               (requireAccountType && (!accountType || !selectedAccount))
             }
             onClick={handleNext}
@@ -293,6 +313,11 @@ export default function ApplicantPage() {
               </Button>
               
           {/* Help text for Next button */}
+          {!accountType && customerData && (
+            <div className="text-sm text-gray-600 mt-2 text-center">
+              Please select an account type (Conventional or Islamic) to see available products
+            </div>
+          )}
           {!customerData && cnic.length === 15 && !loading && (
             <div className="text-sm text-gray-600 mt-2 text-center">
               Please wait for customer data to load before proceeding

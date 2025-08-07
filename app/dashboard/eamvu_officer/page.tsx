@@ -125,13 +125,6 @@ export default function EAMVUOfficerDashboard() {
     
     try {
       setLoading(true)
-<<<<<<< HEAD
-      // Fetch applications assigned to specific agent
-      const response = await fetch(`/api/applications/agent/${agentId}`)
-      console.log('🔄 Response:', response);
-      const data = await response.json()
-=======
->>>>>>> 472a0b89ec2a0b20c8ce75b0d5d7fd1d0cfe9fdb
       
       // First, get all EAMVU applications (this endpoint works)
       const eamvuResponse = await fetch('http://localhost:5000/api/applications/department/EAMVU')

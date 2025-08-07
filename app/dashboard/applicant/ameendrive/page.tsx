@@ -59,19 +59,19 @@ const FORM_SECTIONS: { key: SectionKey; label: string }[] = [
 
 // 2. Dummy filled-check logic, update as per your data shape!
 const useSectionFilled = (customerData: any): Record<SectionKey, boolean> => ({
-  product: !!customerData?.productProgram,
-  vehicle: !!customerData?.vehicleDetails,
-  vehicleFacility: !!customerData?.vehicleFacilityDetails,
-  takaful: !!customerData?.takafulDetails,
+  product: !!customerData?.ameenDrive?.productProgram?.productType,
+  vehicle: !!customerData?.ameenDrive?.vehicleDetails?.manufacturer,
+  vehicleFacility: !!customerData?.ameenDrive?.vehicleFacilityDetails?.facilityType,
+  takaful: !!customerData?.ameenDrive?.takafulDetails?.company,
   personal: !!customerData?.personalDetails?.firstName && !!customerData?.personalDetails?.cnic,
-  occupation: !!customerData?.occupation,
-  profession: !!customerData?.professionDetails,
-  incomeBank: !!customerData?.incomeBankDetails,
-  nonTaxPayer: !!customerData?.nonTaxPayer,
-  reference: !!customerData?.referenceDetails,
-  signature: !!customerData?.signatureSection,
-  stamps: !!customerData?.stamps,
-  bankUse: !!customerData?.bankUse,
+  occupation: !!customerData?.ameenDrive?.occupation?.occupationType,
+  profession: !!customerData?.ameenDrive?.professionDetails?.profession,
+  incomeBank: !!customerData?.ameenDrive?.incomeBank?.monthlyIncome,
+  nonTaxPayer: !!customerData?.ameenDrive?.nonTaxPayer?.isTaxPayer,
+  reference: !!(customerData?.ameenDrive?.referenceDetails?.length > 0),
+  signature: !!customerData?.ameenDrive?.signatureSection?.applicantSignature,
+  stamps: !!customerData?.ameenDrive?.stamps?.bankStamp,
+  bankUse: !!customerData?.ameenDrive?.bankUseOnly?.applicationNumber,
 });
 
 export default function AmeenDrivePage() {
@@ -80,8 +80,12 @@ export default function AmeenDrivePage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationEnabled, setValidationEnabled] = useState(true);
-  const [showTestOptions, setShowTestOptions] = useState(false);
   const [validationStatus, setValidationStatus] = useState<{isValid: boolean; missingFields: string[]}>({isValid: true, missingFields: []});
+
+  // Check validation status when component mounts and when customerData changes
+  useEffect(() => {
+    checkValidationStatus();
+  }, [customerData, validationEnabled]);
 
   // Function to get base URL for API calls
   const getBaseUrl = () => {
@@ -102,6 +106,175 @@ export default function AmeenDrivePage() {
     setValidationStatus({
       isValid: errors.length === 0,
       missingFields: errors
+    });
+  };
+
+  // Autofill function for testing
+  const handleAutofill = () => {
+    const testData = {
+      ameenDrive: {
+        productProgram: {
+          productType: 'Ameen Drive',
+          programType: 'Standard',
+          paymentMode: 'Monthly',
+          facilityAmount: '2500000',
+          tenure: '60',
+          branch: 'Main Branch',
+          applicationDate: new Date().toISOString().split('T')[0]
+        },
+        vehicleDetails: {
+          manufacturer: 'Toyota',
+          model: 'Corolla',
+          year: '2023',
+          price: '2500000',
+          engineSize: '1300cc',
+          color: 'White',
+          registrationNumber: 'ABC-123',
+          chassisNumber: 'ABC12345678901234',
+          engineNumber: 'ENG123456789'
+        },
+        vehicleFacilityDetails: {
+          facilityType: 'Auto Finance',
+          facilityAmount: '2500000',
+          facilityTenure: '60',
+          monthlyInstallment: '50000',
+          downPayment: '500000',
+          processingFee: '25000'
+        },
+        takafulDetails: {
+          company: 'Takaful Pakistan',
+          rate: '2.5',
+          trackerCompanyArranged: 'Yes'
+        },
+        occupation: {
+          type: 'Salaried',
+          status: 'Permanent',
+          occupationType: 'Salaried',
+          employerName: 'Tech Solutions Ltd',
+          employerAddress: '123 Business Street, Karachi',
+          employmentDuration: '5',
+          monthlySalary: '150000',
+          designation: 'Software Engineer'
+        },
+        professionDetails: {
+          profession: 'IT/Software',
+          businessName: '',
+          businessAddress: '',
+          businessType: '',
+          monthlyIncome: '150000',
+          businessDuration: ''
+        },
+        incomeBank: {
+          monthlyIncome: '150000',
+          otherIncome: '0',
+          totalMonthlyIncome: '150000',
+          bankName: 'UBL',
+          accountNumber: '1234567890',
+          accountType: 'Current'
+        },
+        nonTaxPayer: {
+          isTaxPayer: 'No',
+          ntnNumber: '',
+          strnNumber: '',
+          taxCertificate: null
+        },
+        referenceDetails: [
+          {
+            id: 1,
+            name: 'Ahmed Khan',
+            cnic: '12345-1234567-1',
+            relation: 'Friend',
+            relationOther: '',
+            address: '456 Reference Street, Karachi',
+            residenceNo: '021-1234567',
+            mobile: '0300-1234567',
+            email: 'ahmed@email.com',
+            businessAddress: '789 Business Ave, Karachi',
+            officePhone: '021-9876543'
+          },
+          {
+            id: 2,
+            name: 'Fatima Ali',
+            cnic: '12345-1234567-2',
+            relation: 'Colleague',
+            relationOther: '',
+            address: '321 Colleague Road, Karachi',
+            residenceNo: '021-1111111',
+            mobile: '0300-2222222',
+            email: 'fatima@email.com',
+            businessAddress: '654 Office Street, Karachi',
+            officePhone: '021-3333333'
+          }
+        ],
+        signatureSection: {
+          signature: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+          applicantSignature: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+          witnessSignature: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+          date: new Date().toISOString().split('T')[0]
+        },
+        stamps: {
+          bankStamp: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+          officerStamp: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+        },
+        bankUseOnly: {
+          applicationNumber: 'AD-2024-001',
+          branchCode: 'BR001',
+          accountOfficer: 'John Doe',
+          officerCode: 'OF001',
+          applicationDate: new Date().toISOString().split('T')[0],
+          approvalDate: new Date().toISOString().split('T')[0],
+          remarks: 'Test application for development purposes'
+        }
+      },
+      personalDetails: {
+        title: 'Mr.',
+        firstName: 'Muhammad',
+        lastName: 'Ahmed',
+        middleName: 'Ali',
+        cnic: '12345-1234567-1',
+        dateOfBirth: '1990-01-01',
+        gender: 'Male',
+        maritalStatus: 'Married',
+        numberOfDependents: '2',
+        education: 'Bachelor',
+        educationOther: '',
+        fatherName: 'Ali Ahmed',
+        motherName: 'Fatima Ahmed',
+        mobileNumber: '0300-1234567',
+        ntn: ''
+      },
+      addressDetails: {
+        currentAddress: {
+          fullAddress: '123 Test Street, Block 5',
+          nearestLandmark: 'Test Landmark',
+          city: 'Karachi',
+          postalCode: '75000',
+          yearsAtAddress: '3',
+          residentialStatus: 'Owned',
+          residentialStatusOther: '',
+          monthlyRent: '0',
+          telephone: '021-1234567'
+        },
+        permanentAddress: {
+          houseNo: '123',
+          street: 'Test Street',
+          city: 'Karachi',
+          postalCode: '75000',
+          telephone: '021-1234567'
+        }
+      },
+      contactDetails: {
+        preferredMailingAddress: 'Current',
+        mobileType: 'Personal',
+        otherContact: ''
+      }
+    };
+
+    updateCustomerData(testData);
+    toast({
+      title: "Form Autofilled",
+      description: "Test data has been populated in the Ameen Drive form.",
+      variant: "default"
     });
   };
 
@@ -593,77 +766,59 @@ export default function AmeenDrivePage() {
         </div>
       </div>
 
-      {/* Test Options Panel */}
-      <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Settings className="w-4 h-4 text-yellow-600" />
-            <span className="text-sm font-medium text-yellow-800">Testing Options</span>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowTestOptions(!showTestOptions)}
-            className="text-yellow-700 border-yellow-300 hover:bg-yellow-100"
-          >
-            {showTestOptions ? 'Hide' : 'Show'} Options
-          </Button>
-        </div>
-        
-        {showTestOptions && (
-          <div className="mt-4 space-y-4">
-            {/* Validation Toggle */}
-            <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-yellow-200">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <div>
-                  <div className="text-sm font-medium text-gray-900">Field Validation</div>
-                  <div className="text-xs text-gray-600">
-                    {validationEnabled ? 'Validation is enabled' : 'Validation is disabled'}
-                  </div>
-                </div>
-              </div>
+      {/* Simple Autofill and Validation Controls */}
+      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAutofill}
+              className="text-green-700 border-green-300 hover:bg-green-50"
+            >
+              <Zap className="w-4 h-4 mr-2" />
+              Autofill Form
+            </Button>
+            <div className="flex items-center gap-2">
               <Switch
                 checked={validationEnabled}
                 onCheckedChange={setValidationEnabled}
                 className="data-[state=checked]:bg-blue-600"
               />
+              <span className="text-sm font-medium text-gray-700">Form Validation</span>
             </div>
-
-
-
-            {/* Status Indicator */}
-            <div className="text-xs text-gray-600 bg-white p-2 rounded border border-yellow-200">
-              <strong>Current Status:</strong> 
-              {validationEnabled ? (
-                validationStatus.isValid ? (
-                  <span className="text-green-600"> ✅ All required fields are filled - Form is ready to submit.</span>
-                ) : (
-                  <span className="text-red-600"> ❌ {validationStatus.missingFields.length} required field(s) missing - Cannot submit form.</span>
-                )
-              ) : (
-                <span className="text-yellow-600"> ⚠️ Validation disabled - Form will submit without checking mandatory fields.</span>
+          </div>
+        </div>
+        
+        {/* Validation Status */}
+        <div className="text-sm text-gray-700">
+          {validationEnabled ? (
+            validationStatus.isValid ? (
+              <span className="text-green-600">✅ All required fields are filled - Form is ready to submit.</span>
+            ) : (
+              <span className="text-red-600">❌ {validationStatus.missingFields.length} required field(s) missing.</span>
+            )
+          ) : (
+            <span className="text-yellow-600">⚠️ Validation disabled - Form will submit without checking mandatory fields.</span>
+          )}
+        </div>
+        
+        {/* Missing Fields List */}
+        {validationEnabled && !validationStatus.isValid && validationStatus.missingFields.length > 0 && (
+          <div className="mt-3 text-xs bg-red-50 border border-red-200 p-3 rounded">
+            <div className="font-medium text-red-800 mb-2">
+              Missing Required Fields ({validationStatus.missingFields.length}):
+            </div>
+            <div className="max-h-32 overflow-y-auto space-y-1">
+              {validationStatus.missingFields.slice(0, 8).map((field, index) => (
+                <div key={index} className="text-red-700">• {field}</div>
+              ))}
+              {validationStatus.missingFields.length > 8 && (
+                <div className="text-red-600 italic">
+                  ... and {validationStatus.missingFields.length - 8} more fields
+                </div>
               )}
             </div>
-
-            {/* Missing Fields List (only show when validation is enabled and there are errors) */}
-            {validationEnabled && !validationStatus.isValid && validationStatus.missingFields.length > 0 && (
-              <div className="text-xs bg-red-50 border border-red-200 p-3 rounded">
-                <div className="font-medium text-red-800 mb-2">
-                  Missing Required Fields ({validationStatus.missingFields.length}):
-                </div>
-                <div className="max-h-32 overflow-y-auto space-y-1">
-                  {validationStatus.missingFields.slice(0, 8).map((field, index) => (
-                    <div key={index} className="text-red-700">• {field}</div>
-                  ))}
-                  {validationStatus.missingFields.length > 8 && (
-                    <div className="text-red-600 italic">
-                      ... and {validationStatus.missingFields.length - 8} more fields
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>
@@ -804,8 +959,6 @@ export default function AmeenDrivePage() {
           <ChevronUp className="w-6 h-6" />
         </button>
       )}
-   
-
     </div>
   );
 }

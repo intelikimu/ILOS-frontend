@@ -39,6 +39,8 @@ export default function DashboardLayout({
       'eamvu': /^\/dashboard\/eamvu/,
       'ciu': /^\/dashboard\/ciu/,
       'rru': /^\/dashboard\/rru/,
+      'risk': /^\/dashboard\/risk/,
+      'compliance': /^\/dashboard\/compliance/,
     }
 
     // Check if user is accessing a role-specific page

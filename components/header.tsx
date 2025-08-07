@@ -29,10 +29,14 @@ export function Header({ userRole = 'pb' }: HeaderProps) {
   const roleDisplayNames: Record<UserRole, string> = {
     'pb': 'Personal Banking',
     'spu': 'Sales Processing Unit',
+    'spu_officer': 'Sales Processing Officer',
     'cops': 'Consumer Operations',
     'eamvu': 'External Asset Management',
+    'eamvu_officer': 'External Asset Management Officer',
     'ciu': 'Central Investigation Unit',
     'rru': 'Rejection Review Unit',
+    'risk': 'Risk Management',
+    'compliance': 'Compliance Department',
   };
   
   const handleLogout = () => {

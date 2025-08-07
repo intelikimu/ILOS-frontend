@@ -9,11 +9,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Progress } from "@/components/ui/progress"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Clock, CheckCircle, AlertTriangle, FileText, Eye, MoreHorizontal, Search, Shield, User, DollarSign, Activity, FolderOpen } from "lucide-react"
+import { Clock, CheckCircle, AlertTriangle, FileText, Eye, MoreHorizontal, Search, Shield, User, DollarSign, Activity, FolderOpen, Calculator } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import DocumentExplorer from "@/components/document-explorer"
+import DBRCalculator from "@/components/dbr-calculator"
 
 // Real data interface for CIU applications
 interface CIUApplication {
@@ -890,6 +891,14 @@ export default function CIUDashboardPage() {
                                       </div>
                                     </CardContent>
                                   </Card>
+                                )}
+
+                                {/* DBR Calculator */}
+                                {selectedApplication && (
+                                  <DBRCalculator 
+                                    losId={selectedApplication.los_id.replace('LOS-', '')} 
+                                    loanType={selectedApplication.loan_type} 
+                                  />
                                 )}
 
                                 {/* View Documents Button */}

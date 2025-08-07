@@ -29,7 +29,9 @@ import {
   ClipboardList,
   FileSearch,
   StickyNote,
-  History
+  History,
+  ShieldAlert,
+  Scale
 } from "lucide-react"
 
 import {
@@ -47,7 +49,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { UserRole as OriginalUserRole } from "@/app/types"
 
-type UserRole = OriginalUserRole | 'spu_officer';
+type UserRole = OriginalUserRole | 'spu_officer' | 'risk' | 'compliance';
 
 // Navigation items by role
 const navigationByRole: Record<UserRole, any[]> = {
@@ -92,17 +94,17 @@ const navigationByRole: Record<UserRole, any[]> = {
         // },
       ],
     },
-    {
-      title: "Notifications",
-      items: [
-        // {
-        //   title: "Alerts",
-        //   url: "/dashboard/pb/alerts",
-        //   icon: Bell,
-        //   badge: "3",
-        // },
-      ],
-    },
+    // {
+    //   title: "Notifications",
+    //   items: [
+    //     // {
+    //     //   title: "Alerts",
+    //     //   url: "/dashboard/pb/alerts",
+    //     //   icon: Bell,
+    //     //   badge: "3",
+    //     // },
+    //   ],
+    // },
   ],
   'spu': [
     {
@@ -119,16 +121,16 @@ const navigationByRole: Record<UserRole, any[]> = {
         //   icon: FileText,
         //   badge: "5",
         // },
-        {
-          title: "Verified Applications",
-          url: "/dashboard/spu/verified",
-          icon: CheckCircle,
-        },
-        {
-          title: "Returned Applications",
-          url: "/dashboard/spu/returned",
-          icon: AlertTriangle,
-        },
+        // {
+        //   title: "Verified Applications",
+        //   url: "/dashboard/spu/verified",
+        //   icon: CheckCircle,
+        // },
+        // {
+        //   title: "Returned Applications",
+        //   url: "/dashboard/spu/returned",
+        //   icon: AlertTriangle,
+        // },
       ],
     },
     // {
@@ -147,33 +149,33 @@ const navigationByRole: Record<UserRole, any[]> = {
     //     },
     //   ],
     // },
-    {
-      title: "Reports",
-      items: [
-        {
-          title: "Reports",
-          url: "/dashboard/spu/reports/daily",
-          icon: BarChart3,
-        },
-      ],
-    },
-    {
-      title: "Notifications",
-      items: [
-        {
-          title: "Alerts",
-          url: "/dashboard/spu/alerts", // Fixed double slash
-          icon: Bell,
-          badge: "3",
-        },
-        {
-          title: "Assignment",
-          url: "/dashboard/spu/assignments", // Fixed double slash
-          icon: Bell,
-          badge: "3",
-        },
-      ],
-    },
+    // {
+    //   title: "Reports",
+    //   items: [
+    //     {
+    //       title: "Reports",
+    //       url: "/dashboard/spu/reports/daily",
+    //       icon: BarChart3,
+    //     },
+    //   ],
+    // },
+    // {
+    //   title: "Notifications",
+    //   items: [
+    //     {
+    //       title: "Alerts",
+    //       url: "/dashboard/spu/alerts", // Fixed double slash
+    //       icon: Bell,
+    //       badge: "3",
+    //     },
+    //     {
+    //       title: "Assignment",
+    //       url: "/dashboard/spu/assignments", // Fixed double slash
+    //       icon: Bell,
+    //       badge: "3",
+    //     },
+    //   ],
+    // },
   ],
   'spu_officer': [
     {
@@ -245,50 +247,50 @@ const navigationByRole: Record<UserRole, any[]> = {
           url: "/dashboard/cops",
           icon: LayoutDashboard,
         },
-        {
-          title: "Data Entry Queue",
-          url: "/dashboard/cops/data-entry",
-          icon: Database,
-          badge: "8",
-        },
-        {
-          title: "Compliance Check",
-          url: "/dashboard/cops/compliance",
-          icon: Shield,
-          badge: "3",
-        },
-        {
-          title: "Processed Applications",
-          url: "/dashboard/cops/processed",
-          icon: CheckCircle,
-        },
+        // {
+        //   title: "Data Entry Queue",
+        //   url: "/dashboard/cops/data-entry",
+        //   icon: Database,
+        //   badge: "8",
+        // },
+        // {
+        //   title: "Compliance Check",
+        //   url: "/dashboard/cops/compliance",
+        //   icon: Shield,
+        //   badge: "3",
+        // },
+        // {
+        //   title: "Processed Applications",
+        //   url: "/dashboard/cops/processed",
+        //   icon: CheckCircle,
+        // },
       ],
     },
-    {
-      title: "Systems",
-      items: [
-        {
-          title: "CAPS Integration",
-          url: "/dashboard/cops/caps",
-          icon: Database,
-        },
-        {
-          title: "CRM System",
-          url: "/dashboard/cops/crm",
-          icon: Users,
-        },
-      ],
-    },
-    {
-      title: "Reports",
-      items: [
-        {
-          title: "Compliance Reports",
-          url: "/dashboard/cops/reports",
-          icon: BarChart3,
-        },
-      ],
-    },
+    // {
+    //   title: "Systems",
+    //   items: [
+    //     {
+    //       title: "CAPS Integration",
+    //       url: "/dashboard/cops/caps",
+    //       icon: Database,
+    //     },
+    //     {
+    //       title: "CRM System",
+    //       url: "/dashboard/cops/crm",
+    //       icon: Users,
+    //     },
+    //   ],
+    // },
+    // {
+    //   title: "Reports",
+    //   items: [
+    //     {
+    //       title: "Compliance Reports",
+    //       url: "/dashboard/cops/reports",
+    //       icon: BarChart3,
+    //     },
+    //   ],
+    // },
   ],
   'eamvu': [
     {
@@ -299,41 +301,53 @@ const navigationByRole: Record<UserRole, any[]> = {
           url: "/dashboard/eamvu",
           icon: LayoutDashboard,
         },
-        {
-          title: "New Applications",
-          url: "/dashboard/eamvu/new",
-          icon: FileText,
-          badge: "6",
-        },
+        // {
+        //   title: "New Applications",
+        //   url: "/dashboard/eamvu/new",
+        //   icon: FileText,
+        //   badge: "6",
+        // },
         {
           title: "Assigned Applications",
           url: "/dashboard/eamvu/assigned",
           icon: Users,
         },
-        {
-          title: "Completed Visits",
-          url: "/dashboard/eamvu/completed",
-          icon: CheckCircle,
-        },
+        // {
+        //   title: "Completed Visits",
+        //   url: "/dashboard/eamvu/completed",
+        //   icon: CheckCircle,
+        // },
       ],
     },
+    // {
+    //   title: "Field Agents",
+    //   items: [
+    //     {
+    //       title: "Agent Management",
+    //       url: "/dashboard/eamvu/agents",
+    //       icon: Users,
+    //     },
+    //     {
+    //       title: "Field Reports",
+    //       url: "/dashboard/eamvu/reports",
+    //       icon: MapPin,
+    //     },
+    //     {
+    //       title: "Visit Photos",
+    //       url: "/dashboard/eamvu/photos",
+    //       icon: Upload,
+    //     },
+    //   ],
+    // },
+  ],
+  'eamvu_officer': [
     {
-      title: "Field Agents",
+      title: "Main",
       items: [
         {
-          title: "Agent Management",
-          url: "/dashboard/eamvu/agents",
-          icon: Users,
-        },
-        {
-          title: "Field Reports",
-          url: "/dashboard/eamvu/reports",
-          icon: MapPin,
-        },
-        {
-          title: "Visit Photos",
-          url: "/dashboard/eamvu/photos",
-          icon: Upload,
+          title: "Dashboard",
+          url: "/dashboard/eamvu_officer",
+          icon: LayoutDashboard,
         },
       ],
     },
@@ -347,55 +361,55 @@ const navigationByRole: Record<UserRole, any[]> = {
           url: "/dashboard/ciu",
           icon: LayoutDashboard,
         },
-        {
-          title: "Pending Applications",
-          url: "/dashboard/ciu/pending-applications",
-          icon: Search,
-          badge: "10",
-        },
-        {
-          title: "Flag Application",
-          url: "/dashboard/ciu/flag-application",
-          icon: AlertTriangle,
-          badge: "3",
-        },
-        {
-          title: "Verification Application",
-          url: "/dashboard/ciu/verification-application",
-          icon: Shield,
-        },
+        // {
+        //   title: "Pending Applications",
+        //   url: "/dashboard/ciu/pending-applications",
+        //   icon: Search,
+        //   badge: "10",
+        // },
+        // {
+        //   title: "Flag Application",
+        //   url: "/dashboard/ciu/flag-application",
+        //   icon: AlertTriangle,
+        //   badge: "3",
+        // },
+        // {
+        //   title: "Verification Application",
+        //   url: "/dashboard/ciu/verification-application",
+        //   icon: Shield,
+        // },
       ],
     },
-    {
-      title: "Verification",
-      items: [
-        {
-          title: "NADRA Checklist",
-          url: "/dashboard/ciu/nadra-checklist",
-          icon: Database,
-        },
-        {
-          title: "Blacklist Check",
-          url: "/dashboard/ciu/blacklist-check",
-          icon: AlertOctagon,
-        },
-        {
-          title: "Final Approval",
-          url: "/dashboard/ciu/final-approval",
-          icon: Stamp,
-        },
-      ],
-    },
-    {
-      title: "Reports",
-      items: [
-        {
-          title: "Investigation Reports",
-          url: "/dashboard/ciu/investigation-report",
-          icon: BarChart3,
-        },
-      ],
-    },
+    // {
+    //   title: "Verification",
+    //   items: [
+    //     {
+    //       title: "NADRA Checklist",
+    //       url: "/dashboard/ciu/nadra-checklist",
+    //       icon: Database,
+    //     },
+    //     {
+    //       title: "Blacklist Check",
+    //       url: "/dashboard/ciu/blacklist-check",
+    //       icon: AlertOctagon,
+    //     },
+    //     {
+    //       title: "Final Approval",
+    //       url: "/dashboard/ciu/final-approval",
+    //       icon: Stamp,
+    //     },
+    //   ],
+    // },
+    // {
+    //   title: "Reports",
+    //   items: [
+    //     {
+    //       title: "Investigation Reports",
+    //       url: "/dashboard/ciu/investigation-report",
+    //       icon: BarChart3,
+    //     },
+    //   ],
+    // },
   ],
   'rru': [
     {
@@ -424,14 +438,70 @@ const navigationByRole: Record<UserRole, any[]> = {
         },
       ],
     },
+    // {
+    //   title: "Reports",
+    //   items: [
+    //     {
+    //       title: "Rejection Analysis",
+    //       url: "/dashboard/rru/rejection-analysis",
+    //       icon: BarChart3,
+    //     },
+    //   ],
+    // },
+  ],
+  'risk': [
     {
-      title: "Reports",
+      title: "Main",
       items: [
         {
-          title: "Rejection Analysis",
-          url: "/dashboard/rru/rejection-analysis",
-          icon: BarChart3,
+          title: "Dashboard",
+          url: "/dashboard/risk",
+          icon: LayoutDashboard,
         },
+        // {
+        //   title: "Risk Assessment",
+        //   url: "/dashboard/risk/assessment",
+        //   icon: ShieldAlert,
+        //   badge: "8",
+        // },
+        // {
+        //   title: "Risk Analysis",
+        //   url: "/dashboard/risk/analysis",
+        //   icon: BarChart3,
+        // },
+        // {
+        //   title: "Risk Reports",
+        //   url: "/dashboard/risk/reports",
+        //   icon: FileText,
+        // },
+      ],
+    },
+  ],
+  'compliance': [
+    {
+      title: "Main",
+      items: [
+        {
+          title: "Dashboard",
+          url: "/dashboard/compliance",
+          icon: LayoutDashboard,
+        },
+        // {
+        //   title: "Compliance Review",
+        //   url: "/dashboard/compliance/review",
+        //   icon: Scale,
+        //   badge: "6",
+        // },
+        // {
+        //   title: "Regulatory Check",
+        //   url: "/dashboard/compliance/regulatory",
+        //   icon: Shield,
+        // },
+        // {
+        //   title: "Compliance Reports",
+        //   url: "/dashboard/compliance/reports",
+        //   icon: FileText,
+        // },
       ],
     },
   ],
@@ -451,8 +521,11 @@ export function AppSidebar({ userRole = 'pb', ...props }: AppSidebarProps) {
     'spu_officer': 'Sales Processing Officer',
     'cops': 'Consumer Operations',
     'eamvu': 'External Asset Management',
+    'eamvu_officer': 'External Asset Management Officer',
     'ciu': 'Central Investigation Unit',
     'rru': 'Rejection Review Unit',
+    'risk': 'Risk Management',
+    'compliance': 'Compliance Department',
   };
 
   return (

@@ -31,7 +31,11 @@ export default function LoginPage() {
       localStorage.setItem("userRole", role);
 
       // Redirect to the appropriate dashboard
-      router.push(`/dashboard/${role}`);
+      if (role === 'pb') {
+        router.push(`/dashboard/${role}/applications`);
+      } else {
+        router.push(`/dashboard/${role}`);
+      }
     } catch (error) {
       console.error("Login failed:", error);
     } finally {
@@ -89,7 +93,7 @@ export default function LoginPage() {
                   <SelectValue placeholder="Select your role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pb/applications">Personal Banking (PB)</SelectItem>
+                  <SelectItem value="pb">Personal Banking (PB)</SelectItem>
                   <SelectItem value="spu">Sales Processing Unit (SPU)</SelectItem>
                   <SelectItem value="spu_officer">Sales Processing Unit Officer (SPU Officer)</SelectItem>
                   <SelectItem value="cops">Consumer Operations (COPS)</SelectItem>
@@ -97,6 +101,8 @@ export default function LoginPage() {
                   <SelectItem value="eamvu_officer">External Asset Management Officer (EAMVU Officer)</SelectItem>
                   <SelectItem value="ciu">Central Investigation Unit (CIU)</SelectItem>
                   <SelectItem value="rru">Rejection Review Unit (RRU)</SelectItem>
+                  <SelectItem value="risk">Risk Management (RISK)</SelectItem>
+                  <SelectItem value="compliance">Compliance Department (COMPLIANCE)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

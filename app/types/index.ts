@@ -240,7 +240,7 @@ export type ApplicationStatus =
   | 'rejected'
   | 'disbursed';
 
-export type UserRole = 'pb' | 'spu' | 'spu_officer' | 'cops' | 'eamvu' | 'eamvu_officer' | 'ciu' | 'rru';
+export type UserRole = 'pb' | 'spu' | 'spu_officer' | 'cops' | 'eamvu' | 'eamvu_officer' | 'ciu' | 'rru' | 'risk' | 'compliance';
 
 export interface User {
   id: string;

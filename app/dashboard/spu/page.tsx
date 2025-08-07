@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
-import { Search, Filter, Clock, CheckCircle, AlertTriangle, FileText, Eye, MoreHorizontal, ArrowRight, ArrowLeft, X, Download, ExternalLink, Check, Ban, User, DollarSign, Activity } from "lucide-react"
+import { Search, Filter, Clock, CheckCircle, AlertTriangle, FileText, Eye, MoreHorizontal, ArrowRight, ArrowLeft, X, Download, ExternalLink, Check, Ban, User, DollarSign, Activity, CheckSquare, FolderOpen } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import DocumentExplorer from "@/components/document-explorer"
 
@@ -147,6 +147,7 @@ export default function SPUDashboardPage() {
   const [selectedApplication, setSelectedApplication] = useState<any>(null)
   const [verificationStep, setVerificationStep] = useState(1)
   const [searchTerm, setSearchTerm] = useState("")
+  const [showViewDialog, setShowViewDialog] = useState(false)
   const [statusFilter, setStatusFilter] = useState("all")
   const [spuApplications, setSpuApplications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -169,6 +170,17 @@ export default function SPUDashboardPage() {
   const [commentText, setCommentText] = useState("")
   const [existingComments, setExistingComments] = useState<{ [key: string]: string }>({})
   const [allDepartmentComments, setAllDepartmentComments] = useState<{ [key: string]: any[] }>({})
+  const [showRejectionOptions, setShowRejectionOptions] = useState(false)
+  const [spuChecklist, setSpuChecklist] = useState({
+    ecib: { checked: false, comment: "" },
+    frmu: { checked: false, comment: "" },
+    negative_list: { checked: false, comment: "" },
+    pep_list: { checked: false, comment: "" },
+    credit_card_30k: { checked: false, comment: "" },
+    black_list: { checked: false, comment: "" },
+    ctl: { checked: false, comment: "" }
+  })
+  const [autoCheckLoading, setAutoCheckLoading] = useState(false)
   const { toast } = useToast()
 
 
@@ -191,6 +203,231 @@ export default function SPUDashboardPage() {
         return 'creditcard'
       default:
         return 'temp'
+    }
+  }
+
+  // Function to handle opening a document in a new tab
+  const handleOpenDocumentInNewTab = async (doc: any) => {
+    if (!selectedApplication) {
+      toast({
+        title: "Error",
+        description: "No application selected",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      const losId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
+      const appTypePath = getApplicationTypePath(selectedApplication.application_type)
+      
+      console.log(`🔍 Looking for document: ${doc.name} for LOS-${losId} in ${appTypePath}`)
+      
+      // First, try to get the actual document list from the API
+      const apiUrl = `/api/documents/${losId}?applicationType=${selectedApplication.application_type}`
+      console.log(`🔍 Fetching documents from: ${apiUrl}`)
+      
+      const response = await fetch(apiUrl)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch documents: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      console.log(`📋 Available documents:`, data.documents)
+      
+      if (!data.exists || !data.documents || data.documents.length === 0) {
+        toast({
+          title: "No Documents Found",
+          description: `No documents found for ${selectedApplication.los_id}`,
+          variant: "destructive"
+        })
+        return
+      }
+      
+      // Improved document matching logic
+      const docName = doc.name.toLowerCase()
+      let foundDoc = null
+      
+      // 1. Try exact match first
+      foundDoc = data.documents.find((file: any) => 
+        file.name.toLowerCase() === docName
+      )
+      if (foundDoc) {
+        console.log(`✅ Exact match found: ${foundDoc.name} for ${doc.name}`)
+      }
+      
+      // 2. Try partial match (document name contains the search term)
+      if (!foundDoc) {
+        foundDoc = data.documents.find((file: any) => 
+          file.name.toLowerCase().includes(docName) || docName.includes(file.name.toLowerCase())
+        )
+        if (foundDoc) {
+          console.log(`✅ Partial match found: ${foundDoc.name} for ${doc.name}`)
+        }
+      }
+      
+      // 3. Try smart mappings for common document types
+      if (!foundDoc) {
+        const docNameMappings: { [key: string]: string[] } = {
+          'cnic': ['cnic', 'id', 'identity', 'national', 'copy'],
+          'photo 1': ['photo', 'picture', 'image', '1'],
+          'photo 2': ['photo', 'picture', 'image', '2'],
+          'salary slip 1': ['salary', 'payslip', 'income', 'employment', 'slip', '1'],
+          'salary slip 2': ['salary', 'payslip', 'income', 'employment', 'slip', '2'],
+          'salary slip 3': ['salary', 'payslip', 'income', 'employment', 'slip', '3'],
+          'bank statement': ['bank', 'statement', 'account'],
+          'business bank statement': ['business', 'bank', 'statement', 'account'],
+          'employment letter': ['employment', 'job', 'work', 'letter'],
+          'verification office/residence document': ['verification', 'office', 'residence', 'address', 'document'],
+          'verification office/residence': ['verification', 'office', 'residence', 'address'],
+          'reference 1 cnic': ['reference', 'ref', '1', 'cnic', 'id'],
+          'reference 2 cnic': ['reference', 'ref', '2', 'cnic', 'id'],
+          'reference 1 contact': ['reference', 'ref', '1', 'contact'],
+          'reference 2 contact': ['reference', 'ref', '2', 'contact'],
+          'calculation sheet': ['calculation', 'sheet', 'formula'],
+          'key fact statement': ['key', 'fact', 'statement', 'kfs'],
+          'loan declaration form': ['loan', 'declaration', 'form'],
+          'business ntn': ['business', 'ntn'],
+          'business letterhead request': ['business', 'letterhead', 'request'],
+          'retrieval letter': ['retrieval', 'letter'],
+          'filer undertaking': ['filer', 'undertaking'],
+          'poa undertaking': ['poa', 'undertaking'],
+          'personal use undertaking': ['personal', 'use', 'undertaking'],
+          'private registration undertaking': ['private', 'registration', 'undertaking'],
+          'financial checklist': ['financial', 'checklist'],
+          'pr checklist': ['pr', 'checklist']
+        }
+        
+        // Find the best matching document type
+        for (const [docType, keywords] of Object.entries(docNameMappings)) {
+          if (docName.includes(docType) || docType.includes(docName)) {
+            console.log(`🔍 Trying smart mapping for: ${docType} with keywords: ${keywords.join(', ')}`)
+            // Look for files that contain any of the keywords
+            foundDoc = data.documents.find((file: any) => 
+              keywords.some(keyword => file.name.toLowerCase().includes(keyword))
+            )
+            if (foundDoc) {
+              console.log(`✅ Smart mapping found: ${foundDoc.name} for ${doc.name} using ${docType}`)
+              break
+            }
+          }
+        }
+      }
+      
+      // 4. If still not found, try to find the most relevant document
+      if (!foundDoc) {
+        // Look for files that contain any word from the document name
+        const docWords = docName.split(' ').filter((word: string) => word.length > 2)
+        console.log(`🔍 Trying word-based matching with words: ${docWords.join(', ')}`)
+        foundDoc = data.documents.find((file: any) => 
+          docWords.some((word: string) => file.name.toLowerCase().includes(word))
+        )
+        if (foundDoc) {
+          console.log(`✅ Word-based match found: ${foundDoc.name} for ${doc.name}`)
+        }
+      }
+      
+      if (foundDoc) {
+        console.log(`✅ Found document: ${foundDoc.name} for ${doc.name}`)
+        
+        // Check file type for preview capability
+        const fileName = foundDoc.name.toLowerCase()
+        const isHtmlFile = fileName.endsWith('.html') || fileName.endsWith('.htm')
+        const isImageFile = fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || 
+                           fileName.endsWith('.png') || fileName.endsWith('.gif') || 
+                           fileName.endsWith('.bmp') || fileName.endsWith('.webp')
+        const isPdfFile = fileName.endsWith('.pdf')
+        const isTextFile = fileName.endsWith('.txt') || fileName.endsWith('.md') || 
+                          fileName.endsWith('.json') || fileName.endsWith('.xml')
+        
+        if (!isHtmlFile && !isImageFile && !isPdfFile && !isTextFile) {
+          toast({
+            title: "Preview not available",
+            description: `This file type (${foundDoc.name.split('.').pop()}) cannot be previewed. Please download it instead.`,
+            variant: "destructive",
+          })
+          return
+        }
+        
+        // Use the blob-based approach like DocumentExplorer component
+        const fileUrl = `http://localhost:8081${foundDoc.path}`
+        console.log(`🔍 Opening file using blob approach: ${fileUrl}`)
+        console.log(`🔍 Found document path: ${foundDoc.path}`)
+        console.log(`🔍 Document name: ${foundDoc.name}`)
+        
+        // Fetch the file content as a blob
+        const response = await fetch(fileUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': '*/*',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        // Get the file content as a blob
+        const fileContent = await response.blob();
+        
+        // Create a blob URL for the file
+        const blobUrl = URL.createObjectURL(fileContent);
+        
+        // Open the blob URL in a new tab
+        const newWindow = window.open(blobUrl, '_blank');
+        
+        if (!newWindow) {
+          toast({
+            title: "Popup blocked",
+            description: "Please allow popups for this site to view files.",
+            variant: "destructive",
+          })
+          return
+        }
+        
+        // Clean up the blob URL after a delay
+        setTimeout(() => {
+          URL.revokeObjectURL(blobUrl);
+        }, 1000);
+        
+        toast({
+          title: "Document Opened",
+          description: `${foundDoc.name} opened in new tab`,
+        })
+        return
+      }
+      
+      // If still not found, show available documents with better formatting
+      const availableDocs = data.documents.map((d: any) => d.name)
+      console.log(`❌ Document not found: ${doc.name}`)
+      console.log(`📋 Available documents:`, availableDocs)
+      
+      toast({
+        title: "Document Not Found",
+        description: `"${doc.name}" not found. Available documents: ${availableDocs.slice(0, 5).join(', ')}${availableDocs.length > 5 ? '...' : ''}`,
+        variant: "destructive"
+      })
+    } catch (error) {
+      console.error('Error viewing document:', error)
+      
+      // Fallback: try opening directly
+      try {
+        console.log('🔄 Trying fallback direct opening...')
+        const fallbackUrl = `http://localhost:8081/explorer/${selectedApplication.application_type}/${selectedApplication.los_id}/${encodeURIComponent(doc.name)}`
+        window.open(fallbackUrl, '_blank')
+        
+        toast({
+          title: "Opening file",
+          description: `Opening ${doc.name} in a new tab...`,
+        })
+      } catch (fallbackError) {
+        console.error('Fallback error:', fallbackError)
+        toast({
+          title: "Error",
+          description: "Failed to open document. Please try again.",
+          variant: "destructive"
+        })
+      }
     }
   }
 
@@ -498,6 +735,19 @@ export default function SPUDashboardPage() {
     return matchesSearch && matchesStatus
   })
 
+  // Filter for new applications (excluding resolved ones)
+  const newApplications = filteredApplications.filter((app) => {
+    return !app.status?.includes('resolved_by_')
+  })
+
+  // Filter for resolved applications
+  const resolvedApplications = spuApplications.filter((app) => {
+    const matchesSearch = app.applicant_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          app.los_id?.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    return matchesSearch && app.status?.includes('resolved_by_')
+  })
+
   const handleVerifyDocument = async (docId: string) => {
     if (!selectedApplication) return
     
@@ -760,6 +1010,105 @@ export default function SPUDashboardPage() {
     })
   }
 
+  const handleOpenDocumentInModal = async (document: any) => {
+    if (!selectedApplication) {
+      toast({
+        title: "Error",
+        description: "No application selected",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      const losId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
+      
+      // Check file type for preview capability
+      const fileName = document.name.toLowerCase()
+      const isHtmlFile = fileName.endsWith('.html') || fileName.endsWith('.htm')
+      const isImageFile = fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || 
+                         fileName.endsWith('.png') || fileName.endsWith('.gif') || 
+                         fileName.endsWith('.bmp') || fileName.endsWith('.webp')
+      const isPdfFile = fileName.endsWith('.pdf')
+      const isTextFile = fileName.endsWith('.txt') || fileName.endsWith('.md') || 
+                        fileName.endsWith('.json') || fileName.endsWith('.xml')
+      
+      if (!isHtmlFile && !isImageFile && !isPdfFile && !isTextFile) {
+        toast({
+          title: "Preview not available",
+          description: `This file type (${document.name.split('.').pop()}) cannot be previewed. Please download it instead.`,
+          variant: "destructive",
+        })
+        return
+      }
+      
+      // Use the blob-based approach like DocumentExplorer component
+      const fileUrl = `http://localhost:8081/explorer/${selectedApplication.application_type}/${selectedApplication.los_id}/${encodeURIComponent(document.name)}`
+      console.log(`🔍 Opening file using blob approach: ${fileUrl}`)
+      
+      // Fetch the file content as a blob
+      const response = await fetch(fileUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': '*/*',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      // Get the file content as a blob
+      const fileContent = await response.blob();
+      
+      // Create a blob URL for the file
+      const blobUrl = URL.createObjectURL(fileContent);
+      
+      // Open the blob URL in a new tab
+      const newWindow = window.open(blobUrl, '_blank');
+      
+      if (!newWindow) {
+        toast({
+          title: "Popup blocked",
+          description: "Please allow popups for this site to view files.",
+          variant: "destructive",
+        })
+        return
+      }
+      
+      // Clean up the blob URL after a delay
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+      }, 1000);
+      
+      toast({
+        title: "Document Opened",
+        description: `${document.name} opened in new tab`,
+      })
+    } catch (error) {
+      console.error('Error viewing document:', error)
+      
+      // Fallback: try opening directly
+      try {
+        console.log('🔄 Trying fallback direct opening...')
+        const fallbackUrl = `http://localhost:8081/explorer/${selectedApplication.application_type}/${selectedApplication.los_id}/${encodeURIComponent(document.name)}`
+        window.open(fallbackUrl, '_blank')
+        
+        toast({
+          title: "Opening file",
+          description: `Opening ${document.name} in a new tab...`,
+        })
+      } catch (fallbackError) {
+        console.error('Fallback error:', fallbackError)
+        toast({
+          title: "Error",
+          description: "Failed to open document. Please try again.",
+          variant: "destructive"
+        })
+      }
+    }
+  }
+
   const handleVerifyApplication = async () => {
     if (!selectedApplication) return
     
@@ -801,17 +1150,19 @@ export default function SPUDashboardPage() {
         throw new Error(`Failed to update status: ${errorData}`)
       }
       
-      // Update application status in frontend
+      const responseData = await response.json()
+      
+      // Update application status in frontend with the actual status from backend
       const updatedApplications = spuApplications.map(app => 
         app.id === selectedApplication.id 
-          ? { ...app, status: "submitted_to_cops" }
+          ? { ...app, status: responseData.status }
           : app
       )
       setSpuApplications(updatedApplications)
       
       toast({
         title: "Application Verified",
-        description: "Application has been verified and sent to COPS",
+        description: responseData.message || "Application has been verified and sent to COPS",
       })
       setSelectedApplication(null)
       setVerificationStep(1)
@@ -834,47 +1185,73 @@ export default function SPUDashboardPage() {
     }
   }
 
-  const handleReturnApplication = async () => {
+  // Enhanced rejection handlers for 4 different options
+  const handleRejectApplication = async (destination: 'rru' | 'risk' | 'compliance' | 'risk_compliance') => {
     if (!selectedApplication) return
     
     try {
-      // Update status in backend
       const losId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
-      console.log('Frontend sending losId:', losId, 'applicationType:', selectedApplication.application_type)
-      const response = await fetch('/api/applications/update-status', {
+      let action = ''
+      let statusMessage = ''
+      
+      switch (destination) {
+        case 'rru':
+          action = 'reject'
+          statusMessage = 'Application sent to Risk Review Unit'
+          break
+        case 'risk':
+          action = 'forward_to_risk'
+          statusMessage = 'Application forwarded to Risk Management'
+          break
+        case 'compliance':
+          action = 'forward_to_compliance'
+          statusMessage = 'Application forwarded to Compliance Department'
+          break
+        case 'risk_compliance':
+          action = 'forward_to_risk_compliance'
+          statusMessage = 'Application forwarded to Risk Management and Compliance Department'
+          break
+      }
+
+      console.log('Frontend sending:', { losId, action, applicationType: selectedApplication.application_type })
+      
+      const response = await fetch('/api/applications/update-status-workflow', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           losId: losId,
-          status: 'SUBMITTED_TO_RRU',
-          applicationType: selectedApplication.application_type
+          status: selectedApplication.status,
+          applicationType: selectedApplication.application_type,
+          department: 'SPU',
+          action: action
         })
       })
 
       if (!response.ok) {
-        const errorData = await response.text()
+        const errorData = await response.json()
         console.error('Backend error response:', errorData)
-        throw new Error(`Failed to update status: ${errorData}`)
+        throw new Error(errorData.error || 'Failed to update status')
       }
       
       // Update application status in frontend
       const updatedApplications = spuApplications.map(app => 
         app.id === selectedApplication.id 
-          ? { ...app, status: "submitted_to_rru" }
+          ? { ...app, status: `forwarded_to_${destination}` }
           : app
       )
       setSpuApplications(updatedApplications)
       
       toast({
-        title: "Application Sent to RRU",
-        description: "Application has been sent to Risk Review Unit",
+        title: "Application Forwarded",
+        description: statusMessage,
       })
+      
       setSelectedApplication(null)
       setVerificationStep(1)
       setVerificationComments("")
-      // State is now scoped per application, no need to clear
+      setShowRejectionOptions(false)
       setFieldVerification({
         nameVerified: false,
         cnicVerified: false,
@@ -891,10 +1268,352 @@ export default function SPUDashboardPage() {
       })
     }
   }
+
+  // Load SPU checklist for selected application
+  const loadSpuChecklist = async (losId: string) => {
+    try {
+      const numericLosId = losId.replace('LOS-', '')
+      const response = await fetch(`/api/applications/spu-checklist/${numericLosId}`)
+      
+      if (response.ok) {
+        const data = await response.json()
+        const checklistData: any = {
+          ecib: { checked: false, comment: "" },
+          frmu: { checked: false, comment: "" },
+          negative_list: { checked: false, comment: "" },
+          pep_list: { checked: false, comment: "" },
+          credit_card_30k: { checked: false, comment: "" },
+          black_list: { checked: false, comment: "" },
+          ctl: { checked: false, comment: "" }
+        }
+        
+        data.checklist.forEach((item: any) => {
+          if (checklistData[item.check_type]) {
+            checklistData[item.check_type] = {
+              checked: item.is_checked || false,
+              comment: item.comment_text || ""
+            }
+          }
+        })
+        
+        setSpuChecklist(checklistData)
+      }
+    } catch (error) {
+      console.error('Error loading SPU checklist:', error)
+    }
+  }
+
+  // Update SPU checklist item
+  const updateSpuChecklistItem = async (checkType: string, isChecked: boolean, comment: string) => {
+    if (!selectedApplication) return
+    
+    try {
+      const losId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
+      
+      const response = await fetch('/api/applications/update-spu-checklist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          losId: losId,
+          checkType: checkType,
+          isChecked: isChecked,
+          comment: comment
+        })
+      })
+
+      if (response.ok) {
+        setSpuChecklist(prev => ({
+          ...prev,
+          [checkType]: { checked: isChecked, comment: comment }
+        }))
+        
+        toast({
+          title: "Checklist Updated",
+          description: `${checkType.toUpperCase()} check updated successfully`,
+        })
+      } else {
+        throw new Error('Failed to update checklist')
+      }
+    } catch (error) {
+      console.error('Error updating checklist:', error)
+      toast({
+        title: "Error",
+        description: "Failed to update checklist",
+        variant: "destructive"
+      })
+    }
+  }
+
+  // Handle auto check all compliance checks
+  const handleAutoCheckAll = async () => {
+    if (!selectedApplication) {
+      toast({
+        title: "Error",
+        description: "No application selected",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setAutoCheckLoading(true)
+    
+    try {
+      // Extract the application ID from the LOS ID
+      const losId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
+      
+      console.log('🔍 Fetching form data for application:', {
+        selectedApplication: selectedApplication.los_id || selectedApplication.id,
+        losId: losId,
+        applicationType: selectedApplication.application_type
+      })
+      
+      // Fetch form data using the applications/form endpoint
+      const formResponse = await fetch(`http://localhost:5000/api/applications/form/${losId}`)
+      
+      if (!formResponse.ok) {
+        throw new Error(`Failed to fetch form data: ${formResponse.status}`)
+      }
+      
+      const formData = await formResponse.json()
+      console.log('📋 Fetched form data:', formData)
+      
+      // Extract CNIC from form data with multiple possible field names
+      const cnic = formData.cnic ||
+                   formData.applicant_cnic ||
+                   formData.id_no ||
+                   formData.personal_details?.cnic ||
+                   formData.personalInformation?.cnic ||
+                   formData.formData?.cnic
+      
+      console.log('🔍 Final CNIC extraction result:', {
+        selectedApplication: selectedApplication.los_id || selectedApplication.id,
+        applicationType: selectedApplication.application_type,
+        extractedCnic: cnic,
+        formDataFields: Object.keys(formData)
+      })
+      
+      if (!cnic) {
+        setAutoCheckLoading(false)
+        toast({
+          title: "Error",
+          description: `CNIC not found in form data for ${selectedApplication.application_type} application.`,
+          variant: "destructive"
+        })
+        return
+      }
+
+      // Show which CNIC is being used for checking
+      toast({
+        title: "Starting Auto Check",
+        description: `Running compliance checks for CNIC: ${cnic}`,
+      })
+      
+      // Call the combined check API
+      const response = await fetch('http://localhost:5000/api/check-all', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cnic: cnic })
+      })
+
+      if (!response.ok) {
+        throw new Error(`API responded with status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      
+      if (data.success && data.results) {
+        // Process each check result and update the checklist
+        const updatedChecklist = { ...spuChecklist }
+        let checkResults: { [key: string]: { status: string, comment: string } } = {}
+
+        // Process each API result
+        data.results.forEach((result: any) => {
+          if (!result || !result.url) {
+            console.warn('⚠️ Invalid result structure:', result)
+            return
+          }
+
+          // Handle network errors or missing endpoints
+          if (result.error) {
+            console.warn(`⚠️ Error for ${result.url}:`, result.error)
+            return
+          }
+
+          const url = result.url
+          const checkData = result.data
+
+          console.log(`🔍 Processing check result for ${url}:`, checkData)
+
+          if (url.includes('/pep/check')) {
+            const status = checkData?.exists ? 'FLAGGED' : 'CLEAR'
+            const comment = checkData?.exists 
+              ? `PEP Match Found: ${checkData.name || 'Unknown'} (${checkData.category || 'Unknown'})`
+              : 'No PEP match found'
+            checkResults.pep_list = { status, comment }
+          }
+          
+          else if (url.includes('/frms/check')) {
+            const status = checkData?.fraud ? 'FLAGGED' : 'CLEAR'
+            const comment = checkData?.fraud 
+              ? `Fraud Risk Detected: ${checkData.status || 'High Risk'} (Risk Score: ${checkData.risk_score || 'N/A'}) - ${checkData.remarks || 'No details'}`
+              : 'No fraud indicators found'
+            checkResults.frmu = { status, comment }
+          }
+          
+          else if (url.includes('/sbp-blacklist/check')) {
+            const status = checkData?.blacklisted ? 'FLAGGED' : 'CLEAR'
+            const comment = checkData?.blacklisted 
+              ? `Blacklist Match: ${checkData.record?.customer || 'Record found'}`
+              : 'Not found in SBP blacklist'
+            checkResults.black_list = { status, comment }
+          }
+          
+          else if (url.includes('/ecib-reports/check')) {
+            const status = checkData?.exists ? 'FLAGGED' : 'CLEAR'
+            const comment = checkData?.exists 
+              ? `eCIB Record Found: ${checkData.customer_name || 'Unknown'} - Outstanding: PKR ${checkData.total_balance_outstanding || '0'}`
+              : 'No eCIB record found'
+            checkResults.ecib = { status, comment }
+          }
+          
+          else if (url.includes('/internal-watchlist/check')) {
+            const status = (checkData?.name && checkData.name.trim()) ? 'FLAGGED' : 'CLEAR'
+            const comment = (checkData?.name && checkData.name.trim())
+              ? `Watchlist Match: ${checkData.name} - ${checkData.action_required || 'Review Required'} - ${checkData.remarks || 'No details'}`
+              : 'No internal watchlist match found'
+            checkResults.negative_list = { status, comment }
+          }
+          
+          else if (url.includes('/nadra-verisys/check')) {
+            const status = checkData?.exists ? 'FLAGGED' : 'CLEAR'
+            const comment = checkData?.exists 
+              ? `NADRA Verisys Record Found: ${checkData.details || 'Record exists'}`
+              : 'NADRA Verisys verification passed'
+            // Map to CTL check as it's the closest equivalent
+            checkResults.ctl = { status, comment }
+          }
+          
+          else if (url.includes('/ccl/check')) {
+            const status = checkData?.exists ? 'FLAGGED' : 'CLEAR'
+            const comment = checkData?.exists 
+              ? `CCL Record Found: ${checkData.cust_name || 'Customer'} - ${checkData.remarks || 'No details'}`
+              : 'No CCL record found'
+            // Map to credit_card_30k check as it's related to credit card limits
+            checkResults.credit_card_30k = { status, comment }
+          }
+        })
+
+        // Log the results for debugging
+        console.log('🎯 Processed check results:', checkResults)
+        
+        // Update each checklist item based on results
+        const losId = selectedApplication.los_id?.replace('LOS-', '') || selectedApplication.id?.split('-')[1]
+        let successfulUpdates = 0
+        let failedUpdates = 0
+        
+        for (const [checkKey, result] of Object.entries(checkResults)) {
+          try {
+            const isCleared = result.status === 'CLEAR'
+            const timestamp = new Date().toLocaleString()
+            const finalComment = `🤖 Auto-checked (${timestamp}): ${result.comment}`
+            
+            // Update the checklist item
+            await updateSpuChecklistItem(checkKey, isCleared, finalComment)
+            successfulUpdates++
+            console.log(`✅ Successfully updated ${checkKey}: ${result.status}`)
+          } catch (error) {
+            console.error(`❌ Failed to update ${checkKey}:`, error)
+            failedUpdates++
+          }
+        }
+
+        const flaggedCount = Object.values(checkResults).filter(r => r.status === 'FLAGGED').length
+        
+        toast({
+          title: "Auto Check Completed",
+          description: `${successfulUpdates} checks completed successfully. Found ${flaggedCount} flagged items${failedUpdates > 0 ? `. ${failedUpdates} updates failed.` : '.'}`,
+        })
+      } else {
+        throw new Error('Invalid response format from check API')
+      }
+    } catch (error) {
+      console.error('Error in auto check:', error)
+      toast({
+        title: "Auto Check Failed",
+        description: error instanceof Error ? error.message : "Failed to perform automated compliance checks. Please check manually.",
+        variant: "destructive"
+      })
+    } finally {
+      setAutoCheckLoading(false)
+    }
+  }
   
+  // Handle forwarding resolved applications to normal workflow
+  const handleForwardResolved = async (application: any, action: string) => {
+    try {
+      const losId = application.los_id?.replace('LOS-', '') || application.id?.split('-')[1]
+      
+      console.log('Frontend sending:', { 
+        losId, 
+        action, 
+        applicationType: application.application_type,
+        status: 'submitted_by_spu',
+        department: 'SPU'
+      })
+
+      const response = await fetch('/api/applications/update-status-workflow', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          losId: losId,
+          status: 'submitted_by_spu',
+          applicationType: application.application_type,
+          department: 'SPU',
+          action: action
+        }),
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        toast({
+          title: "Application Forwarded",
+          description: "Resolved application has been verified and forwarded to EAMVU and COPS",
+        })
+        
+        // Update local state to remove the application from resolved tab
+        const updatedApplications = spuApplications.map(app =>
+          app.id === application.id ? { ...app, status: 'submitted_by_spu' } : app
+        )
+        setSpuApplications(updatedApplications)
+        
+        // Refresh applications
+        fetchSpuApplications()
+      } else {
+        throw new Error(result.error || 'Failed to forward application')
+      }
+    } catch (error) {
+      console.error('Error forwarding resolved application:', error)
+      toast({
+        title: "Error",
+        description: "Failed to forward resolved application",
+        variant: "destructive"
+      })
+    }
+  }
+
   const handleViewApplication = async (application: any) => {
     try {
       console.log('🔄 Fetching form data for application:', application.los_id);
+      
+      // Load SPU checklist for the selected application
+      await loadSpuChecklist(application.los_id);
       
       // Extract the numeric part from los_id (e.g., "LOS-18" -> "18")
       console.log(application);
@@ -997,7 +1716,8 @@ export default function SPUDashboardPage() {
 
     <Tabs defaultValue="new" value={activeTab} onValueChange={setActiveTab}>
       <TabsList>
-        <TabsTrigger value="new">New Applications</TabsTrigger>
+        <TabsTrigger value="new">New Applications ({newApplications.length})</TabsTrigger>
+        <TabsTrigger value="resolved">Resolved ({resolvedApplications.length})</TabsTrigger>
         {/* <TabsTrigger value="verified">Verified</TabsTrigger>
         <TabsTrigger value="returned">Returned</TabsTrigger> */}
       </TabsList>
@@ -1073,14 +1793,14 @@ export default function SPUDashboardPage() {
                       Loading applications...
                     </TableCell>
                   </TableRow>
-                ) : filteredApplications.length === 0 ? (
+                ) : newApplications.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-4">
-                      No applications found.
+                      No new applications found.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredApplications.map((app) => (
+                  newApplications.map((app) => (
                     <TableRow key={app.id}>
                       <TableCell className="font-mono text-sm">{app.los_id}</TableCell>
                       <TableCell>
@@ -1103,399 +1823,30 @@ export default function SPUDashboardPage() {
                       </TableCell>
                                              <TableCell className="text-right">
                          <div className="flex gap-2 justify-end">
-                           <Dialog>
-                             <DialogTrigger asChild>
-                               <Button
-                                 variant="outline"
-                                 size="sm"
-                                 onClick={() => handleViewApplication(app)}
-                               >
-                                 <Eye className="mr-2 h-4 w-4" />
-                                 View
-                               </Button>
-                             </DialogTrigger>
-                             <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
-                               <DialogHeader className="sticky top-0 bg-white z-10 pb-4 border-b">
-                                 <DialogTitle>Application Details - {selectedApplication?.los_id}</DialogTitle>
-                                 <DialogDescription>
-                                   Complete application information for SPU verification
-                                 </DialogDescription>
-                               </DialogHeader>
-                               {selectedApplication && (
-                                 <div className="overflow-y-auto max-h-[calc(90vh-120px)] space-y-6 pr-2">
-                                   {/* Basic Information Section */}
-                                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                     <Card>
-                                       <CardHeader>
-                                         <CardTitle className="text-lg flex items-center gap-2">
-                                           <User className="h-5 w-5" />
-                                           Applicant Information
-                                         </CardTitle>
-                                       </CardHeader>
-                                       <CardContent className="space-y-3">
-                                         <div className="grid grid-cols-2 gap-2 text-sm">
-                                           <span className="font-medium">Full Name:</span>
-                                           <span>{selectedApplication.formData?.first_name} {selectedApplication.formData?.middle_name} {selectedApplication.formData?.last_name}</span>
-                                           <span className="font-medium">Age:</span>
-                                           <span>{selectedApplication.formData?.age || 0} years</span>
-                                           <span className="font-medium">Monthly Income:</span>
-                                           <span>{selectedApplication.formData?.net_monthly_income ? `PKR ${selectedApplication.formData.net_monthly_income.toLocaleString()}` : 'Not provided'}</span>
-                                           <span className="font-medium">Branch:</span>
-                                           <span>{selectedApplication.formData?.branch_code || 'Not provided'}</span>
-                                           <span className="font-medium">Application Date:</span>
-                                           <span>{selectedApplication.formData?.created_at ? new Date(selectedApplication.formData.created_at).toLocaleDateString() : 'Not provided'}</span>
-                                           <span className="font-medium">Status:</span>
-                                           <span>{getStatusBadge(selectedApplication.status)}</span>
-                                         </div>
-                                       </CardContent>
-                                     </Card>
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             onClick={async () => {
+                               await handleViewApplication(app)
+                               setShowViewDialog(true)
+                             }}
+                           >
+                             <Eye className="mr-2 h-4 w-4" />
+                             View
+                           </Button>
+                           
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             onClick={() => {
+                               setSelectedApplication(app)
+                               setShowDocumentExplorer(true)
+                             }}
+                           >
+                             <FolderOpen className="mr-2 h-4 w-4" />
+                             Documents
+                           </Button>
 
-                                     <Card>
-                                       <CardHeader>
-                                         <CardTitle className="text-lg flex items-center gap-2">
-                                           <DollarSign className="h-5 w-5" />
-                                           Loan Details
-                                         </CardTitle>
-                                       </CardHeader>
-                                       <CardContent className="space-y-3">
-                                         <div className="grid grid-cols-2 gap-2 text-sm">
-                                           <span className="font-medium">Loan Type:</span>
-                                           <span>{selectedApplication.loan_type}</span>
-                                           <span className="font-medium">Amount:</span>
-                                           <span className="font-semibold text-green-600">PKR {selectedApplication.loan_amount?.toLocaleString()}</span>
-                                           <span className="font-medium">Status:</span>
-                                           <span>{getStatusBadge(selectedApplication.status)}</span>
-                                           <span className="font-medium">Priority:</span>
-                                           <span>{selectedApplication.priority}</span>
-                                           <span className="font-medium">LOS ID:</span>
-                                           <span>{selectedApplication.los_id}</span>
-                                         </div>
-                                       </CardContent>
-                                     </Card>
-
-                                     <Card>
-                                       <CardHeader>
-                                         <CardTitle className="text-lg flex items-center gap-2">
-                                           <Activity className="h-5 w-5" />
-                                           Application Progress
-                                         </CardTitle>
-                                       </CardHeader>
-                                       <CardContent className="space-y-3">
-                                         <div className="space-y-2">
-                                           <div className="flex items-center justify-between">
-                                             <span className="text-sm font-medium">Completion</span>
-                                             <span className="text-sm font-bold">85%</span>
-                                           </div>
-                                           <Progress value={85} className="w-full" />
-                                           <div className="text-xs text-muted-foreground">
-                                             15% remaining
-                                           </div>
-                                         </div>
-                                       </CardContent>
-                                     </Card>
-                                   </div>
-
-                                   {/* Form Data Section */}
-                                   {selectedApplication.formData && (
-                                     <Card>
-                                       <CardHeader>
-                                         <CardTitle className="text-lg flex items-center gap-2">
-                                           <FileText className="h-5 w-5" />
-                                           Application Form Data
-                                         </CardTitle>
-                                         <CardDescription>
-                                           Complete form data retrieved from database
-                                         </CardDescription>
-                                       </CardHeader>
-                                       <CardContent>
-                                         <div className="space-y-6">
-                                           {/* Personal Information */}
-                                           <div>
-                                             <h4 className="font-semibold mb-3 text-blue-600">Personal Information</h4>
-                                             <div className="grid grid-cols-2 gap-3 text-sm">
-                                               <div><span className="font-medium">Full Name:</span> {selectedApplication.formData.first_name} {selectedApplication.formData.middle_name} {selectedApplication.formData.last_name}</div>
-                                               <div><span className="font-medium">Title:</span> {selectedApplication.formData.title || 'Not provided'}</div>
-                                               <div><span className="font-medium">CNIC:</span> {selectedApplication.formData.cnic}</div>
-                                               <div><span className="font-medium">NTN:</span> {selectedApplication.formData.ntn || 'Not provided'}</div>
-                                               <div><span className="font-medium">Date of Birth:</span> {selectedApplication.formData.date_of_birth || 'Not provided'}</div>
-                                               <div><span className="font-medium">Gender:</span> {selectedApplication.formData.gender || 'Not provided'}</div>
-                                               <div><span className="font-medium">Marital Status:</span> {selectedApplication.formData.marital_status || 'Not provided'}</div>
-                                               <div><span className="font-medium">Father/Husband Name:</span> {selectedApplication.formData.father_or_husband_name}</div>
-                                               <div><span className="font-medium">Mother's Maiden Name:</span> {selectedApplication.formData.mother_maiden_name || 'Not provided'}</div>
-                                               <div><span className="font-medium">Education:</span> {selectedApplication.formData.education_qualification || 'Not provided'}</div>
-                                               <div><span className="font-medium">Preferred Mailing Address:</span> {selectedApplication.formData.preferred_mailing_address || 'Not provided'}</div>
-                                               <div><span className="font-medium">Application Source:</span> {selectedApplication.formData.application_source || 'Not provided'}</div>
-                                               <div><span className="font-medium">Program Code:</span> {selectedApplication.formData.program_code || 'Not provided'}</div>
-                                               <div><span className="font-medium">Channel Code:</span> {selectedApplication.formData.channel_code || 'Not provided'}</div>
-                                               <div><span className="font-medium">Branch Code:</span> {selectedApplication.formData.branch_code || 'Not provided'}</div>
-                                             </div>
-                                           </div>
-
-                                           {/* Contact Information */}
-                                           <div>
-                                             <h4 className="font-semibold mb-3 text-green-600">Contact Information</h4>
-                                             <div className="grid grid-cols-2 gap-3 text-sm">
-                                               <div><span className="font-medium">Mobile:</span> {selectedApplication.formData.mobile}</div>
-                                               <div><span className="font-medium">Mobile Type:</span> {selectedApplication.formData.mobile_type || 'Not provided'}</div>
-                                               <div><span className="font-medium">Current Phone:</span> {selectedApplication.formData.tel_current}</div>
-                                               <div><span className="font-medium">Permanent Phone:</span> {selectedApplication.formData.tel_permanent || 'Not provided'}</div>
-                                               <div><span className="font-medium">Other Contact:</span> {selectedApplication.formData.other_contact || 'Not provided'}</div>
-                                             </div>
-                                           </div>
-
-                                           {/* Address Information */}
-                                           <div>
-                                             <h4 className="font-semibold mb-3 text-purple-600">Address Information</h4>
-                                             <div className="grid grid-cols-2 gap-3 text-sm">
-                                               <div><span className="font-medium">Current Address:</span> {selectedApplication.formData.address}</div>
-                                               <div><span className="font-medium">Permanent Address:</span> {selectedApplication.formData.permanent_street}, {selectedApplication.formData.permanent_city}</div>
-                                               <div><span className="font-medium">City:</span> {selectedApplication.formData.city}</div>
-                                               <div><span className="font-medium">Permanent City:</span> {selectedApplication.formData.permanent_city}</div>
-                                               <div><span className="font-medium">Postal Code:</span> {selectedApplication.formData.postal_code}</div>
-                                               <div><span className="font-medium">Residing Since:</span> {selectedApplication.formData.residing_since || 'Not provided'}</div>
-                                               <div><span className="font-medium">House No:</span> {selectedApplication.formData.permanent_house_no || 'Not provided'}</div>
-                                               <div><span className="font-medium">Nearest Landmark:</span> {selectedApplication.formData.nearest_landmark || 'Not provided'}</div>
-                                             </div>
-                                           </div>
-
-                                           {/* Employment Information */}
-                                           <div>
-                                             <h4 className="font-semibold mb-3 text-orange-600">Employment Information</h4>
-                                             <div className="grid grid-cols-2 gap-3 text-sm">
-                                               <div><span className="font-medium">Employment Status:</span> {selectedApplication.formData.employment_status}</div>
-                                               <div><span className="font-medium">Company Name:</span> {selectedApplication.formData.company_name || 'Not provided'}</div>
-                                               <div><span className="font-medium">Company Type:</span> {selectedApplication.formData.company_type || 'Not provided'}</div>
-                                               <div><span className="font-medium">Designation:</span> {selectedApplication.formData.designation || 'Not provided'}</div>
-                                               <div><span className="font-medium">Grade Level:</span> {selectedApplication.formData.grade_level || 'Not provided'}</div>
-                                               <div><span className="font-medium">Department:</span> {selectedApplication.formData.department || 'Not provided'}</div>
-                                               <div><span className="font-medium">Office Phone 1:</span> {selectedApplication.formData.office_tel1 || 'Not provided'}</div>
-                                               <div><span className="font-medium">Office Phone 2:</span> {selectedApplication.formData.office_tel2 || 'Not provided'}</div>
-                                               <div><span className="font-medium">Office Fax:</span> {selectedApplication.formData.office_fax || 'Not provided'}</div>
-                                               <div><span className="font-medium">Office Extension:</span> {selectedApplication.formData.office_ext || 'Not provided'}</div>
-                                               <div><span className="font-medium">Office Area:</span> {selectedApplication.formData.office_area || 'Not provided'}</div>
-                                               <div><span className="font-medium">Office City:</span> {selectedApplication.formData.office_city || 'Not provided'}</div>
-                                               <div><span className="font-medium">Office Street:</span> {selectedApplication.formData.office_street || 'Not provided'}</div>
-                                               <div><span className="font-medium">Office House No:</span> {selectedApplication.formData.office_house_no || 'Not provided'}</div>
-                                               <div><span className="font-medium">Office Landmark:</span> {selectedApplication.formData.office_landmark || 'Not provided'}</div>
-                                               <div><span className="font-medium">Office Postal Code:</span> {selectedApplication.formData.office_postal_code || 'Not provided'}</div>
-                                               <div><span className="font-medium">SM Employee No:</span> {selectedApplication.formData.sm_employee_no || 'Not provided'}</div>
-                                               <div><span className="font-medium">SO Employee No:</span> {selectedApplication.formData.so_employee_no || 'Not provided'}</div>
-                                               <div><span className="font-medium">PB BM Employee No:</span> {selectedApplication.formData.pb_bm_employee_no || 'Not provided'}</div>
-                                             </div>
-                                           </div>
-
-                                           {/* Loan Information */}
-                                           <div>
-                                             <h4 className="font-semibold mb-3 text-red-600">Loan Information</h4>
-                                             <div className="grid grid-cols-2 gap-3 text-sm">
-                                               <div><span className="font-medium">Amount Requested:</span> PKR {selectedApplication.formData.amount_requested?.toLocaleString()}</div>
-                                               <div><span className="font-medium">Purpose of Loan:</span> {selectedApplication.formData.purpose_of_loan || 'Not provided'}</div>
-                                               <div><span className="font-medium">Tenure:</span> {selectedApplication.formData.tenure || 'Not provided'} years</div>
-                                               <div><span className="font-medium">Min Amount Acceptable:</span> {selectedApplication.formData.min_amount_acceptable ? `PKR ${selectedApplication.formData.min_amount_acceptable.toLocaleString()}` : 'Not provided'}</div>
-                                               <div><span className="font-medium">Max Affordable Installment:</span> {selectedApplication.formData.max_affordable_installment ? `PKR ${selectedApplication.formData.max_affordable_installment.toLocaleString()}` : 'Not provided'}</div>
-                                             </div>
-                                           </div>
-
-                                           {/* Financial Information */}
-                                           <div>
-                                             <h4 className="font-semibold mb-3 text-indigo-600">Financial Information</h4>
-                                             <div className="grid grid-cols-2 gap-3 text-sm">
-                                               <div><span className="font-medium">Gross Monthly Salary:</span> {selectedApplication.formData.gross_monthly_salary ? `PKR ${selectedApplication.formData.gross_monthly_salary.toLocaleString()}` : 'Not provided'}</div>
-                                               <div><span className="font-medium">Net Monthly Income:</span> {selectedApplication.formData.net_monthly_income ? `PKR ${selectedApplication.formData.net_monthly_income.toLocaleString()}` : 'Not provided'}</div>
-                                               <div><span className="font-medium">Other Monthly Income:</span> {selectedApplication.formData.other_monthly_income ? `PKR ${selectedApplication.formData.other_monthly_income.toLocaleString()}` : 'Not provided'}</div>
-                                               <div><span className="font-medium">Other Income Sources:</span> {selectedApplication.formData.other_income_sources || 'Not provided'}</div>
-                                               <div><span className="font-medium">Monthly Rent:</span> {selectedApplication.formData.monthly_rent ? `PKR ${selectedApplication.formData.monthly_rent.toLocaleString()}` : 'Not provided'}</div>
-                                               <div><span className="font-medium">UBL Account Number:</span> {selectedApplication.formData.ubl_account_number || 'Not provided'}</div>
-                                               <div><span className="font-medium">Is UBL Customer:</span> {selectedApplication.formData.is_ubl_customer ? 'Yes' : 'No'}</div>
-                                               <div><span className="font-medium">Customer ID:</span> {selectedApplication.formData.customer_id || 'Not provided'}</div>
-                                               <div><span className="font-medium">Accommodation Type:</span> {selectedApplication.formData.accommodation_type || 'Not provided'}</div>
-                                               <div><span className="font-medium">Dependants:</span> {selectedApplication.formData.dependants || 'Not provided'}</div>
-                                               <div><span className="font-medium">Experience (Current):</span> {selectedApplication.formData.exp_current_years || 'Not provided'} years</div>
-                                               <div><span className="font-medium">Experience (Previous):</span> {selectedApplication.formData.exp_prev_years || 'Not provided'} years</div>
-                                               <div><span className="font-medium">Previous Employer:</span> {selectedApplication.formData.prev_employer_name || 'Not provided'}</div>
-                                             </div>
-                                           </div>
-
-                                           {/* Credit Cards Clean */}
-                                           {selectedApplication.formData.credit_cards_clean && selectedApplication.formData.credit_cards_clean.length > 0 && (
-                                             <div>
-                                               <h4 className="font-semibold mb-3 text-emerald-600">Clean Credit Cards</h4>
-                                               <div className="space-y-3">
-                                                 {selectedApplication.formData.credit_cards_clean.map((card: any, index: number) => (
-                                                   <div key={card.id} className="border rounded-lg p-3 bg-green-50">
-                                                     <div className="grid grid-cols-2 gap-2 text-sm">
-                                                       <div><span className="font-medium">Bank Name:</span> {card.bank_name}</div>
-                                                       <div><span className="font-medium">Approved Limit:</span> PKR {card.approved_limit?.toLocaleString()}</div>
-                                                     </div>
-                                                   </div>
-                                                 ))}
-                                               </div>
-                                             </div>
-                                           )}
-
-                                           {/* Credit Cards Secured */}
-                                           {selectedApplication.formData.credit_cards_secured && selectedApplication.formData.credit_cards_secured.length > 0 && (
-                                             <div>
-                                               <h4 className="font-semibold mb-3 text-amber-600">Secured Credit Cards</h4>
-                                               <div className="space-y-3">
-                                                 {selectedApplication.formData.credit_cards_secured.map((card: any, index: number) => (
-                                                   <div key={card.id} className="border rounded-lg p-3 bg-yellow-50">
-                                                     <div className="grid grid-cols-2 gap-2 text-sm">
-                                                       <div><span className="font-medium">Bank Name:</span> {card.bank_name}</div>
-                                                       <div><span className="font-medium">Approved Limit:</span> PKR {card.approved_limit?.toLocaleString()}</div>
-                                                     </div>
-                                                   </div>
-                                                 ))}
-                                               </div>
-                                             </div>
-                                           )}
-
-                                           {/* Personal Loans Secured */}
-                                           {selectedApplication.formData.personal_loans_secured && selectedApplication.formData.personal_loans_secured.length > 0 && (
-                                             <div>
-                                               <h4 className="font-semibold mb-3 text-red-600">Secured Personal Loans</h4>
-                                               <div className="space-y-3">
-                                                 {selectedApplication.formData.personal_loans_secured.map((loan: any, index: number) => (
-                                                   <div key={loan.id} className="border rounded-lg p-3 bg-red-50">
-                                                     <div className="grid grid-cols-2 gap-2 text-sm">
-                                                       <div><span className="font-medium">Bank Name:</span> {loan.bank_name}</div>
-                                                       <div><span className="font-medium">Approved Limit:</span> PKR {loan.approved_limit?.toLocaleString()}</div>
-                                                       <div><span className="font-medium">Outstanding Amount:</span> PKR {loan.outstanding_amount?.toLocaleString()}</div>
-                                                       <div><span className="font-medium">As of Date:</span> {loan.as_of}</div>
-                                                     </div>
-                                                   </div>
-                                                 ))}
-                                               </div>
-                                             </div>
-                                           )}
-
-                                           {/* Other Facilities */}
-                                           {selectedApplication.formData.other_facilities && selectedApplication.formData.other_facilities.length > 0 && (
-                                             <div>
-                                               <h4 className="font-semibold mb-3 text-blue-600">Other Banking Facilities</h4>
-                                               <div className="space-y-3">
-                                                 {selectedApplication.formData.other_facilities.map((facility: any, index: number) => (
-                                                   <div key={facility.id} className="border rounded-lg p-3 bg-blue-50">
-                                                     <div className="grid grid-cols-2 gap-2 text-sm">
-                                                       <div><span className="font-medium">Nature:</span> {facility.nature}</div>
-                                                       <div><span className="font-medium">Bank Name:</span> {facility.bank_name}</div>
-                                                       <div><span className="font-medium">Approved Limit:</span> PKR {facility.approved_limit?.toLocaleString()}</div>
-                                                       <div><span className="font-medium">Current Outstanding:</span> PKR {facility.current_outstanding?.toLocaleString()}</div>
-                                                     </div>
-                                                   </div>
-                                                 ))}
-                                               </div>
-                                             </div>
-                                           )}
-
-                                           {/* References */}
-                                           {selectedApplication.formData.references && selectedApplication.formData.references.length > 0 && (
-                                             <div>
-                                               <h4 className="font-semibold mb-3 text-teal-600">References</h4>
-                                               <div className="space-y-3">
-                                                 {selectedApplication.formData.references.map((ref: any, index: number) => (
-                                                   <div key={ref.id} className="border rounded-lg p-3 bg-gray-50">
-                                                     <div className="font-medium text-sm mb-2">Reference {index + 1}</div>
-                                                     <div className="grid grid-cols-2 gap-2 text-sm">
-                                                       <div><span className="font-medium">Name:</span> {ref.name || 'Not provided'}</div>
-                                                       <div><span className="font-medium">Relationship:</span> {ref.relationship || 'Not provided'}</div>
-                                                       <div><span className="font-medium">Mobile:</span> {ref.mobile || 'Not provided'}</div>
-                                                       <div><span className="font-medium">CNIC:</span> {ref.cnic || 'Not provided'}</div>
-                                                       <div><span className="font-medium">Address:</span> {ref.street}, {ref.city}</div>
-                                                     </div>
-                                                   </div>
-                                                 ))}
-                                               </div>
-                                             </div>
-                                           )}
-
-                                           {/* Comments Section */}
-                                           <div>
-                                             <h4 className="font-semibold mb-3 text-purple-600">All Department Comments</h4>
-                                             {allDepartmentComments[selectedApplication.los_id.replace('LOS-', '')] && 
-                                              allDepartmentComments[selectedApplication.los_id.replace('LOS-', '')].length > 0 ? (
-                                               <div className="space-y-3">
-                                                 {allDepartmentComments[selectedApplication.los_id.replace('LOS-', '')].map((comment: any, index: number) => (
-                                                   <div key={index} className={`border rounded-lg p-3 ${
-                                                     comment.department === 'PB' ? 'bg-blue-50 border-blue-200' :
-                                                     comment.department === 'SPU' ? 'bg-green-50 border-green-200' :
-                                                     comment.department === 'COPS' ? 'bg-purple-50 border-purple-200' :
-                                                     comment.department === 'EAMVU' ? 'bg-orange-50 border-orange-200' :
-                                                     comment.department === 'CIU' ? 'bg-red-50 border-red-200' :
-                                                     comment.department === 'RRU' ? 'bg-indigo-50 border-indigo-200' :
-                                                     'bg-gray-50 border-gray-200'
-                                                   }`}>
-                                                     <div className="flex justify-between items-start mb-2">
-                                                       <span className={`text-xs font-medium px-2 py-1 rounded ${
-                                                         comment.department === 'PB' ? 'bg-blue-100 text-blue-800' :
-                                                         comment.department === 'SPU' ? 'bg-green-100 text-green-800' :
-                                                         comment.department === 'COPS' ? 'bg-purple-100 text-purple-800' :
-                                                         comment.department === 'EAMVU' ? 'bg-orange-100 text-orange-800' :
-                                                         comment.department === 'CIU' ? 'bg-red-100 text-red-800' :
-                                                         comment.department === 'RRU' ? 'bg-indigo-100 text-indigo-800' :
-                                                         'bg-gray-100 text-gray-800'
-                                                       }`}>
-                                                         {comment.department}
-                                                       </span>
-                                                     </div>
-                                                     <p className="text-sm text-gray-700">
-                                                       {comment.comment_text}
-                                                     </p>
-                                                   </div>
-                                                 ))}
-                                               </div>
-                                             ) : (
-                                               <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                                                 <p className="text-sm text-gray-500 italic">
-                                                   No comments from any department yet
-                                                 </p>
-                                               </div>
-                                             )}
-                                           </div>
-
-                                           {/* Raw Data (for debugging) */}
-                                           <details className="mt-4">
-                                             <summary className="cursor-pointer text-sm font-medium text-gray-600">View Raw Data</summary>
-                                             <div className="mt-2 bg-gray-50 p-4 rounded-lg">
-                                               <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
-                                                 {JSON.stringify(selectedApplication.formData, null, 2)}
-                                               </pre>
-                                             </div>
-                                           </details>
-                                         </div>
-                                       </CardContent>
-                                     </Card>
-                                   )}
-
-                                   <div className="flex gap-2">
-                                     <Button
-                                       variant="outline"
-                                       onClick={() => handleOpenDocumentExplorer(selectedApplication)}
-                                     >
-                                       <FileText className="mr-2 h-4 w-4" />
-                                       View Documents
-                                     </Button>
-                                     <Button
-                                       variant="outline"
-                                       onClick={() => {
-                                         setSelectedApplication(null);
-                                         setVerificationStep(1);
-                                       }}
-                                     >
-                                       Close
-                                     </Button>
-                                     <Button
-                                       onClick={() => {
-                                         setVerificationStep(1);
-                                       }}
-                                     >
-                                       Start Verification
-                                     </Button>
-                                   </div>
-                                 </div>
-                               )}
-                             </DialogContent>
-                           </Dialog>
                            
                            <Dialog>
                              <DialogTrigger asChild>
@@ -1602,6 +1953,16 @@ export default function SPUDashboardPage() {
                                               <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
                                                   <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleOpenDocumentInNewTab(doc)}
+                                                    title="View Document"
+                                                    className="text-blue-600 hover:text-blue-800"
+                                                  >
+                                                    <Eye className="h-4 w-4 mr-1" />
+                                                    View
+                                                  </Button>
+                                                  <Button
                                                     variant="outline"
                                                     size="sm"
                                                     onClick={() => handleVerifyDocument(doc.id)}
@@ -1674,6 +2035,88 @@ export default function SPUDashboardPage() {
                                     </CardContent>
                                   </Card>
 
+                                  {/* SPU Compliance Checklist */}
+                                  <Card className="mb-4">
+                                    <CardHeader>
+                                      <div className="flex items-center justify-between">
+                                        <div>
+                                          <CardTitle className="text-lg flex items-center gap-2">
+                                            <CheckSquare className="h-5 w-5 text-blue-600" />
+                                            SPU Compliance Checklist
+                                          </CardTitle>
+                                          <CardDescription>
+                                            Complete all required compliance checks before processing
+                                          </CardDescription>
+                                        </div>
+                                        <Button
+                                          onClick={handleAutoCheckAll}
+                                          disabled={!selectedApplication || autoCheckLoading}
+                                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                                          size="sm"
+                                        >
+                                          {autoCheckLoading ? (
+                                            <>
+                                              <Activity className="h-4 w-4 mr-2 animate-spin" />
+                                              Checking...
+                                            </>
+                                          ) : (
+                                            <>
+                                              <CheckCircle className="h-4 w-4 mr-2" />
+                                              Auto Check All
+                                            </>
+                                          )}
+                                        </Button>
+                                      </div>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                      {[
+                                        { key: 'ecib', label: 'eCIB – Source SBP', description: 'If Defaulter (unpaid credit history) then application sent to Risk Policy unit for approval.' },
+                                        { key: 'frmu', label: 'FRMU – Source UBL', description: 'Check for API. If output is No Record then pass. If output shows Name & NIC then red flag for fraud and application forwarded to Risk Policy unit & Compliance unit for approvals.' },
+                                        { key: 'negative_list', label: 'Negative (Watch) List – Source UBL Excel', description: 'If Name/CNIC appears on Excel report then send to Compliance unit for approval.' },
+                                        { key: 'pep_list', label: 'PEP List – Source international databases Excel', description: 'If Name appears on Excel report then send to Compliance unit for approval.' },
+                                        { key: 'credit_card_30k', label: '$30K Credit Card List – Source SBP', description: 'If Name/CNIC appears on Excel report then send to Risk Policy for approval.' },
+                                        { key: 'black_list', label: 'Black List – Source UBL Excel', description: 'If Name/CNIC appears on Excel report then send to Risk Policy for approval.' },
+                                        { key: 'ctl', label: 'CTL – Source UBL', description: 'Check for API. Shows history of past credit cards. If output is No Record then pass. If output shows Name/CNIC then send application to Risk Policy for approval.' }
+                                      ].map((item) => (
+                                        <div key={item.key} className="border rounded-lg p-4">
+                                          <div className="flex items-start gap-3">
+                                            <Checkbox
+                                              checked={(spuChecklist as any)[item.key]?.checked || false}
+                                              onCheckedChange={(checked) => {
+                                                const newComment = (spuChecklist as any)[item.key]?.comment || ""
+                                                updateSpuChecklistItem(item.key, checked as boolean, newComment)
+                                              }}
+                                              className="mt-1"
+                                            />
+                                            <div className="flex-1">
+                                              <Label className="font-medium text-sm">{item.label}</Label>
+                                              <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
+                                              <Textarea
+                                                placeholder="Add comments for this check..."
+                                                value={(spuChecklist as any)[item.key]?.comment || ""}
+                                                onChange={(e) => {
+                                                  const newComment = e.target.value
+                                                  const isChecked = (spuChecklist as any)[item.key]?.checked || false
+                                                  setSpuChecklist(prev => ({
+                                                    ...prev,
+                                                    [item.key]: { checked: isChecked, comment: newComment }
+                                                  }))
+                                                }}
+                                                onBlur={(e) => {
+                                                  const newComment = e.target.value
+                                                  const isChecked = (spuChecklist as any)[item.key]?.checked || false
+                                                  updateSpuChecklistItem(item.key, isChecked, newComment)
+                                                }}
+                                                className="mt-2 text-xs"
+                                                rows={2}
+                                              />
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </CardContent>
+                                  </Card>
+
                                   <div className="flex justify-between pb-4">
                                     <Button
                                       variant="outline"
@@ -1682,12 +2125,60 @@ export default function SPUDashboardPage() {
                                       Cancel
                                     </Button>
                                     <div className="space-x-2">
-                                      <Button variant="destructive" onClick={handleReturnApplication}>
-                                        Send to RRU
-                                      </Button>
-                                      <Button onClick={handleVerifyApplication}>
-                                        Verify & Send to COPS
-                                      </Button>
+                                      {!showRejectionOptions ? (
+                                        <>
+                                          <Button 
+                                            variant="destructive" 
+                                            onClick={() => setShowRejectionOptions(true)}
+                                          >
+                                            Reject Application
+                                          </Button>
+                                          <Button onClick={handleVerifyApplication}>
+                                            Verify & Send to COPS
+                                          </Button>
+                                        </>
+                                      ) : (
+                                        <div className="flex flex-col gap-2">
+                                          <p className="text-sm font-medium">Forward application to:</p>
+                                          <div className="flex gap-2 flex-wrap">
+                                            <Button 
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => handleRejectApplication('rru')}
+                                            >
+                                              Risk Review Unit (RRU)
+                                            </Button>
+                                            <Button 
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => handleRejectApplication('risk')}
+                                            >
+                                              Risk Management
+                                            </Button>
+                                            <Button 
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => handleRejectApplication('compliance')}
+                                            >
+                                              Compliance Department
+                                            </Button>
+                                            <Button 
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => handleRejectApplication('risk_compliance')}
+                                            >
+                                              Risk & Compliance
+                                            </Button>
+                                          </div>
+                                          <Button 
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setShowRejectionOptions(false)}
+                                          >
+                                            Cancel Rejection
+                                          </Button>
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 </div>
@@ -1698,6 +2189,133 @@ export default function SPUDashboardPage() {
                           </DialogContent>
                         </Dialog>
                          </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      {/* Resolved Applications Tab */}
+      <TabsContent value="resolved" className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Resolved Applications</CardTitle>
+            <CardDescription>Applications resolved by Risk Management and Compliance Department</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>LOS ID</TableHead>
+                  <TableHead>Applicant</TableHead>
+                  <TableHead>Loan Type</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Resolved By</TableHead>
+                  <TableHead>Comments</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-4">
+                      Loading resolved applications...
+                    </TableCell>
+                  </TableRow>
+                ) : resolvedApplications.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-4">
+                      No resolved applications found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  resolvedApplications.map((app) => (
+                    <TableRow key={app.id}>
+                      <TableCell className="font-mono text-sm">{app.los_id}</TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{app.applicant_name}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{app.loan_type}</TableCell>
+                      <TableCell className="font-medium">
+                        PKR {parseInt(app.loan_amount || '0').toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={
+                          app.status === 'resolved_by_risk' 
+                            ? "bg-blue-100 text-blue-800" 
+                            : "bg-green-100 text-green-800"
+                        }>
+                          {app.status === 'resolved_by_risk' ? 'Resolved by Risk' : 'Resolved by Compliance'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {app.status === 'resolved_by_risk' ? 'Risk Management' : 'Compliance Department'}
+                      </TableCell>
+                      <TableCell className="max-w-48">
+                        <div className="text-sm text-muted-foreground">
+                          {app.risk_resolve_comment || app.compliance_resolve_comment ? (
+                            <div className="bg-blue-50 p-2 rounded text-xs">
+                              <span className="font-medium text-blue-600">
+                                {app.status === 'resolved_by_risk' ? 'Risk Comment: ' : 'Compliance Comment: '}
+                              </span>
+                              <div className="mt-1 text-gray-700">
+                                {app.risk_resolve_comment || app.compliance_resolve_comment}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">No resolve comment provided</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={async () => {
+                              await handleViewApplication(app)
+                              setShowViewDialog(true)
+                            }}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            View
+                          </Button>
+                          
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedApplication(app)
+                              setShowDocumentExplorer(true)
+                            }}
+                          >
+                            <FolderOpen className="h-4 w-4 mr-1" />
+                            Documents
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="sm" variant="default">
+                                Forward
+                                <ArrowRight className="h-4 w-4 ml-1" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => handleForwardResolved(app, 'verify')}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Verify & Forward to EAMVU/COPS
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -1768,7 +2386,7 @@ export default function SPUDashboardPage() {
                                    <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => window.open(`http://localhost:8081/explorer/ilos_loan_application_documents/${selectedApplication?.application_type}/${selectedApplication?.los_id}/${selectedDocument.name}`, '_blank')}
+                    onClick={() => handleOpenDocumentInModal(selectedDocument)}
                   >
                    <ExternalLink className="h-4 w-4 mr-2" />
                    Open in New Tab
@@ -1846,6 +2464,288 @@ export default function SPUDashboardPage() {
               />
              </div>
            )}
+         </DialogContent>
+       </Dialog>
+
+       {/* View Application Dialog - Controlled */}
+       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+         <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+           <DialogHeader className="sticky top-0 bg-white z-10 pb-4 border-b">
+             <DialogTitle>Application Details - {selectedApplication?.los_id}</DialogTitle>
+             <DialogDescription>
+               Complete application information for SPU verification
+             </DialogDescription>
+           </DialogHeader>
+           {selectedApplication && (
+             <div className="overflow-y-auto max-h-[calc(90vh-120px)] space-y-6 pr-2">
+               {/* Basic Information Section */}
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 <Card>
+                   <CardHeader>
+                     <CardTitle className="text-lg flex items-center gap-2">
+                       <User className="h-5 w-5" />
+                       Applicant Information
+                     </CardTitle>
+                   </CardHeader>
+                   <CardContent className="space-y-3">
+                     <div className="grid grid-cols-2 gap-2 text-sm">
+                       <span className="font-medium">Full Name:</span>
+                       <span>{selectedApplication.formData?.first_name} {selectedApplication.formData?.middle_name} {selectedApplication.formData?.last_name}</span>
+                       <span className="font-medium">Age:</span>
+                       <span>{selectedApplication.formData?.age || 0} years</span>
+                       <span className="font-medium">Monthly Income:</span>
+                       <span>{selectedApplication.formData?.net_monthly_income ? `PKR ${selectedApplication.formData.net_monthly_income.toLocaleString()}` : 'Not provided'}</span>
+                       <span className="font-medium">Branch:</span>
+                       <span>{selectedApplication.formData?.branch_code || 'Not provided'}</span>
+                       <span className="font-medium">Application Date:</span>
+                       <span>{selectedApplication.formData?.created_at ? new Date(selectedApplication.formData.created_at).toLocaleDateString() : 'Not provided'}</span>
+                       <span className="font-medium">Status:</span>
+                       <span>{getStatusBadge(selectedApplication.status)}</span>
+                     </div>
+                   </CardContent>
+                 </Card>
+
+                 <Card>
+                   <CardHeader>
+                     <CardTitle className="text-lg flex items-center gap-2">
+                       <DollarSign className="h-5 w-5" />
+                       Loan Details
+                     </CardTitle>
+                   </CardHeader>
+                   <CardContent className="space-y-3">
+                     <div className="grid grid-cols-2 gap-2 text-sm">
+                       <span className="font-medium">Loan Type:</span>
+                       <span>{selectedApplication.loan_type}</span>
+                       <span className="font-medium">Amount:</span>
+                       <span className="font-semibold text-green-600">PKR {selectedApplication.loan_amount?.toLocaleString()}</span>
+                       <span className="font-medium">Status:</span>
+                       <span>{getStatusBadge(selectedApplication.status)}</span>
+                       <span className="font-medium">Priority:</span>
+                       <span>{selectedApplication.priority}</span>
+                       <span className="font-medium">LOS ID:</span>
+                       <span>{selectedApplication.los_id}</span>
+                     </div>
+                   </CardContent>
+                 </Card>
+
+                 <Card>
+                   <CardHeader>
+                     <CardTitle className="text-lg flex items-center gap-2">
+                       <Activity className="h-5 w-5" />
+                       Application Progress
+                     </CardTitle>
+                   </CardHeader>
+                   <CardContent className="space-y-3">
+                     <div className="space-y-2">
+                       <div className="flex items-center justify-between">
+                         <span className="text-sm font-medium">Completion</span>
+                         <span className="text-sm font-bold">85%</span>
+                       </div>
+                       <Progress value={85} className="w-full" />
+                       <div className="text-xs text-muted-foreground">
+                         15% remaining
+                       </div>
+                     </div>
+                   </CardContent>
+                 </Card>
+               </div>
+
+               {/* Form Data Section */}
+               {selectedApplication.formData && (
+                 <Card>
+                   <CardHeader>
+                     <CardTitle className="text-lg flex items-center gap-2">
+                       <FileText className="h-5 w-5" />
+                       Application Form Data
+                     </CardTitle>
+                     <CardDescription>
+                       Complete form data retrieved from database
+                     </CardDescription>
+                   </CardHeader>
+                   <CardContent>
+                     <div className="space-y-6">
+                       {/* Personal Information */}
+                       <div>
+                         <h4 className="font-medium mb-3 text-blue-600">Personal Information</h4>
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                           <div><span className="font-medium">First Name:</span> {selectedApplication.formData.first_name || 'N/A'}</div>
+                           <div><span className="font-medium">Middle Name:</span> {selectedApplication.formData.middle_name || 'N/A'}</div>
+                           <div><span className="font-medium">Last Name:</span> {selectedApplication.formData.last_name || 'N/A'}</div>
+                           <div><span className="font-medium">Date of Birth:</span> {selectedApplication.formData.date_of_birth ? new Date(selectedApplication.formData.date_of_birth).toLocaleDateString() : 'N/A'}</div>
+                           <div><span className="font-medium">CNIC:</span> {selectedApplication.formData.cnic || 'N/A'}</div>
+                           <div><span className="font-medium">Gender:</span> {selectedApplication.formData.gender || 'N/A'}</div>
+                           <div><span className="font-medium">Marital Status:</span> {selectedApplication.formData.marital_status || 'N/A'}</div>
+                           <div><span className="font-medium">Nationality:</span> {selectedApplication.formData.nationality || 'N/A'}</div>
+                           <div><span className="font-medium">Religion:</span> {selectedApplication.formData.religion || 'N/A'}</div>
+                         </div>
+                       </div>
+
+                       {/* Contact Information */}
+                       <div>
+                         <h4 className="font-medium mb-3 text-blue-600">Contact Information</h4>
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                           <div><span className="font-medium">Phone:</span> {selectedApplication.formData.phone || 'N/A'}</div>
+                           <div><span className="font-medium">Email:</span> {selectedApplication.formData.email || 'N/A'}</div>
+                           <div><span className="font-medium">Address:</span> {selectedApplication.formData.address || 'N/A'}</div>
+                           <div><span className="font-medium">City:</span> {selectedApplication.formData.city || 'N/A'}</div>
+                           <div><span className="font-medium">Province:</span> {selectedApplication.formData.province || 'N/A'}</div>
+                           <div><span className="font-medium">Postal Code:</span> {selectedApplication.formData.postal_code || 'N/A'}</div>
+                         </div>
+                       </div>
+
+                       {/* Financial Information */}
+                       <div>
+                         <h4 className="font-medium mb-3 text-blue-600">Financial Information</h4>
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                           <div><span className="font-medium">Net Monthly Income:</span> {selectedApplication.formData.net_monthly_income ? `PKR ${selectedApplication.formData.net_monthly_income.toLocaleString()}` : 'N/A'}</div>
+                           <div><span className="font-medium">Employment Type:</span> {selectedApplication.formData.employment_type || 'N/A'}</div>
+                           <div><span className="font-medium">Company Name:</span> {selectedApplication.formData.company_name || 'N/A'}</div>
+                           <div><span className="font-medium">Designation:</span> {selectedApplication.formData.designation || 'N/A'}</div>
+                           <div><span className="font-medium">Experience Years:</span> {selectedApplication.formData.experience_years || 'N/A'}</div>
+                           <div><span className="font-medium">Bank Name:</span> {selectedApplication.formData.bank_name || 'N/A'}</div>
+                         </div>
+                       </div>
+                     </div>
+                   </CardContent>
+                 </Card>
+               )}
+
+               {/* Risk/Compliance Resolve Comments Section */}
+               {(selectedApplication.risk_resolve_comment || selectedApplication.compliance_resolve_comment) && (
+                 <Card>
+                   <CardHeader>
+                     <CardTitle className="text-lg flex items-center gap-2">
+                       <FileText className="h-5 w-5" />
+                       Risk/Compliance Resolution Comments
+                     </CardTitle>
+                     <CardDescription>
+                       Comments provided by Risk Management and Compliance Department
+                     </CardDescription>
+                   </CardHeader>
+                   <CardContent>
+                     <div className="space-y-4">
+                       {selectedApplication.risk_resolve_comment && (
+                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                           <div className="flex items-center gap-2 mb-2">
+                             <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                             <Label className="font-medium text-blue-800">Risk Management Resolution</Label>
+                           </div>
+                           <p className="text-sm text-blue-700">{selectedApplication.risk_resolve_comment}</p>
+                         </div>
+                       )}
+                       {selectedApplication.compliance_resolve_comment && (
+                         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                           <div className="flex items-center gap-2 mb-2">
+                             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                             <Label className="font-medium text-green-800">Compliance Department Resolution</Label>
+                           </div>
+                           <p className="text-sm text-green-700">{selectedApplication.compliance_resolve_comment}</p>
+                         </div>
+                       )}
+                     </div>
+                   </CardContent>
+                 </Card>
+               )}
+
+               {/* SPU Checklist Section */}
+               {spuChecklist && Object.keys(spuChecklist).length > 0 && (
+                 <Card>
+                   <CardHeader>
+                     <CardTitle className="text-lg flex items-center gap-2">
+                       <CheckSquare className="h-5 w-5" />
+                       SPU Risk Checklist
+                     </CardTitle>
+                     <CardDescription>
+                       Risk checks performed by SPU team
+                     </CardDescription>
+                   </CardHeader>
+                   <CardContent>
+                     <div className="space-y-4">
+                       {[
+                         { key: 'ecib', label: 'eCIB – Source SBP', description: 'If Defaulter (unpaid credit history) then application sent to Risk Policy unit for approval.' },
+                         { key: 'frmu', label: 'FRMU – Source UBL', description: 'Check for API. If output is No Record then pass. If output shows Name & NIC then red flag for fraud and application forwarded to Risk Policy unit & Compliance unit.' },
+                         { key: 'negative_list', label: 'Negative (Watch) List – Source UBL Excel', description: 'If Name/CNIC appears on Excel report then send to Compliance unit for approval.' },
+                         { key: 'pep_list', label: 'PEP List – Source international databases Excel', description: 'If Name appears on Excel report then send to Compliance unit for approval.' },
+                         { key: 'credit_card_30k', label: '$30K Credit Card List – Source SBP', description: 'If Name/CNIC appears on Excel report then send to Risk Policy for approval.' },
+                         { key: 'black_list', label: 'Black List – Source UBL Excel', description: 'If Name/CNIC appears on Excel report then send to Risk Policy for approval.' },
+                         { key: 'ctl', label: 'CTL – Source UBL', description: 'Check for API. Shows history of past credit cards. If output is No Record then pass. If output shows Name/CNIC then send application to Risk Policy for approval.' }
+                       ].map((item) => {
+                         const checklistItem = (spuChecklist as any)[item.key]
+                         return (
+                           <div key={item.key} className="border rounded-lg p-4">
+                             <div className="flex items-start gap-3">
+                               <div className="flex items-center space-x-2">
+                                 <Checkbox 
+                                   checked={checklistItem?.checked || false}
+                                   disabled={true}
+                                 />
+                               </div>
+                               <div className="flex-1">
+                                 <Label className="text-sm font-medium">{item.label}</Label>
+                                 <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
+                                 {checklistItem?.comment && (
+                                   <div className="mt-2">
+                                     <Label className="text-xs font-medium text-blue-600">SPU Comment:</Label>
+                                     <p className="text-xs text-gray-700 bg-blue-50 p-2 rounded mt-1">{checklistItem.comment}</p>
+                                   </div>
+                                 )}
+                               </div>
+                             </div>
+                           </div>
+                         )
+                       })}
+                     </div>
+                   </CardContent>
+                 </Card>
+               )}
+
+               {/* Document Explorer Section */}
+               <Card>
+                 <CardHeader>
+                   <div className="flex items-center justify-between">
+                     <div>
+                       <CardTitle className="text-lg flex items-center gap-2">
+                         <FolderOpen className="h-5 w-5" />
+                         Application Documents
+                       </CardTitle>
+                       <CardDescription>
+                         Browse and view all documents uploaded for this application
+                       </CardDescription>
+                     </div>
+                     <Button
+                       variant="outline"
+                       size="sm"
+                       onClick={() => setShowDocumentExplorer(true)}
+                     >
+                       <FolderOpen className="h-4 w-4 mr-2" />
+                       Open in Full View
+                     </Button>
+                   </div>
+                 </CardHeader>
+                 <CardContent>
+                   <div className="max-h-96 overflow-y-auto">
+                     <DocumentExplorer 
+                       losId={selectedApplication?.los_id?.replace('LOS-', '') || selectedApplication?.id?.split('-')[1]}
+                       applicationType={selectedApplication?.application_type}
+                       onFileSelect={(file) => {
+                         // Handle file selection if needed
+                         console.log('Selected file:', file)
+                       }}
+                     />
+                   </div>
+                 </CardContent>
+               </Card>
+             </div>
+           )}
+
+           <DialogFooter className="sticky bottom-0 bg-white border-t pt-4">
+             <Button variant="outline" onClick={() => {
+               setShowViewDialog(false)
+               setSelectedApplication(null)
+             }}>
+               Close
+             </Button>
+           </DialogFooter>
          </DialogContent>
        </Dialog>
     </div>

@@ -164,7 +164,7 @@ export default function RRUDashboardPage() {
     const matchesStatus = statusFilter === "all" || app.status === statusFilter
     
     // RRU can see applications with rejected statuses from all departments and resolved applications
-    const rruAllowedStatuses = ['rejected_by_spu', 'rejected_by_cops', 'rejected_by_eavmu', 'rejected_by_ciu', 'rejected_by_rru', 'resolved_by_rru']
+    const rruAllowedStatuses = ['rejected_by_spu', 'rejected_by_cops', 'rejected_by_eavmu', 'rejected_by_ciu', 'rejected_by_rru', 'resolved_by_rru',  'SUBMITTED_TO_RRU']
     const isRruAllowed = rruAllowedStatuses.includes(app.status)
     
     if (activeTab === "pending") {

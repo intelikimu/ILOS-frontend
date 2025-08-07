@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Search, Filter, RefreshCw, CheckCircle, Calendar, Clock, Download, Eye, FileText, ArrowUpDown, ChevronDown, Printer } from "lucide-react"
+import { toast } from "@/components/ui/use-toast"
 
 // Mock data for verified applications
 const verifiedApplications = [
@@ -163,6 +164,138 @@ export default function SPUVerifiedPage() {
   // Get unique loan types
   const uniqueLoanTypes = Array.from(new Set(verifiedApplications.map(app => app.loanType)))
 
+  // Export functionality for SPU verified applications
+  const handleExport = () => {
+    try {
+      console.log('🔄 Starting SPU verified applications export process...');
+      
+      // Create comprehensive report data
+      const reportData = {
+        summary: {
+          totalVerified: totalVerified,
+          totalVerifiedWithConditions: totalVerifiedWithConditions,
+          totalDocumentsVerified: totalDocumentsVerified,
+          exportDate: new Date().toLocaleString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          }),
+          department: 'Strategic Planning Unit (SPU)'
+        },
+        applications: verifiedApplications.map(app => ({
+          applicationId: app.id,
+          applicantName: app.applicant || 'N/A',
+          loanType: app.loanType || 'N/A',
+          amount: app.amount || 'N/A',
+          status: app.status || 'Unknown',
+          verificationDate: app.verificationDate || 'N/A',
+          verifiedDocuments: app.verifiedDocuments || 0,
+          totalDocuments: app.totalDocuments || 0,
+          verificationNotes: app.verificationNotes || 'N/A',
+          assignedTo: app.assignedTo || 'N/A',
+          processingTime: app.processingTime || 'N/A'
+        }))
+      };
+
+      console.log('📊 SPU report data prepared:', reportData);
+
+      // Create CSV content
+      const csvHeaders = [
+        'Application ID',
+        'Applicant Name',
+        'Loan Type',
+        'Amount',
+        'Status',
+        'Verification Date',
+        'Verified Documents',
+        'Total Documents',
+        'Verification Notes',
+        'Assigned To',
+        'Processing Time'
+      ];
+
+      const csvRows = reportData.applications.map(app => [
+        app.applicationId,
+        app.applicantName,
+        app.loanType,
+        app.amount,
+        app.status,
+        app.verificationDate,
+        app.verifiedDocuments,
+        app.totalDocuments,
+        app.verificationNotes,
+        app.assignedTo,
+        app.processingTime
+      ]);
+
+      // Add summary section
+      const summaryRows = [
+        [''],
+        ['SUMMARY REPORT'],
+        ['Department', reportData.summary.department],
+        ['Export Date', reportData.summary.exportDate],
+        ['Total Verified', reportData.summary.totalVerified],
+        ['Verified with Conditions', reportData.summary.totalVerifiedWithConditions],
+        ['Total Documents Verified', reportData.summary.totalDocumentsVerified],
+        [''],
+        ['DETAILED VERIFIED APPLICATIONS'],
+        csvHeaders
+      ];
+
+      // Combine summary and data
+      const allRows = [...summaryRows, ...csvRows];
+
+      // Convert to CSV format with better escaping
+      const csvContent = allRows.map(row => 
+        row.map(cell => {
+          const cellStr = String(cell || '');
+          // Escape quotes and wrap in quotes if contains comma, quote, or newline
+          if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+            return `"${cellStr.replace(/"/g, '""')}"`;
+          }
+          return cellStr;
+        }).join(',')
+      ).join('\n');
+
+      console.log('📄 SPU CSV content generated, length:', csvContent.length);
+
+      // Add BOM for better Excel compatibility
+      const BOM = '\uFEFF';
+      const csvWithBOM = BOM + csvContent;
+
+      // Create and download file
+      const blob = new Blob([csvWithBOM], { 
+        type: 'text/csv;charset=utf-8;' 
+      });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `SPU_Verified_Applications_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      console.log('✅ SPU file download triggered');
+
+      toast({
+        title: "Export Successful",
+        description: `SPU verified applications exported with ${verifiedApplications.length} applications and summary statistics.`,
+      });
+
+    } catch (error) {
+      console.error('❌ SPU export error:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export SPU verified applications. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -172,7 +305,7 @@ export default function SPUVerifiedPage() {
         </div>
         
         <div className="flex gap-2 w-full md:w-auto">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExport}>
             <Download className="mr-2 h-4 w-4" />
             Export
           </Button>

@@ -42,92 +42,11 @@ import {
 } from "lucide-react"
 import Link from "next/link";
 
-// Application statistics
-const applicationStats = {
-  totalApplications: 156,
-  draftApplications: 23,
-  submittedApplications: 89,
-  approvedApplications: 34,
-  rejectedApplications: 10,
-  avgProcessingTime: "4.2 days",
-  approvalRate: 77.3,
-  totalLoanAmount: "PKR 245,000,000",
-};
 
-function getStatusBadge(status: string) {
-  switch (status) {
-    case "draft":
-      return <Badge variant="outline">Draft</Badge>;
-    case "submitted_to_spu":
-      return <Badge className="bg-blue-100 text-blue-800">Submitted to SPU</Badge>;
-    case "returned_from_spu":
-      return <Badge variant="destructive">Returned from SPU</Badge>;
-    case "approved":
-      return <Badge className="bg-green-100 text-green-800">Approved</Badge>;
-    case "rejected":
-      return <Badge className="bg-red-100 text-red-800">Rejected</Badge>;
-    case "disbursed":
-      return <Badge className="bg-purple-100 text-purple-800">Disbursed</Badge>;
-    default:
-      return <Badge>{status}</Badge>;
-  }
-}
 
-function getPriorityBadge(priority: string) {
-  switch (priority) {
-    case "high":
-      return <Badge className="bg-red-100 text-red-800">High</Badge>;
-    case "medium":
-      return <Badge className="bg-yellow-100 text-yellow-800">Medium</Badge>;
-    case "low":
-      return <Badge className="bg-green-100 text-green-800">Low</Badge>;
-    default:
-      return <Badge variant="secondary">{priority}</Badge>;
-  }
-}
 
-function getRiskLevelBadge(risk: string) {
-  switch (risk) {
-    case "low":
-      return <Badge className="bg-green-100 text-green-800">Low Risk</Badge>;
-    case "medium":
-      return <Badge className="bg-yellow-100 text-yellow-800">Medium Risk</Badge>;
-    case "high":
-      return <Badge className="bg-red-100 text-red-800">High Risk</Badge>;
-    default:
-      return <Badge variant="secondary">{risk}</Badge>;
-  }
-}
 
-function getDocumentStatusBadge(status: string) {
-  switch (status) {
-    case "submitted":
-      return <Badge className="bg-blue-100 text-blue-800">Submitted</Badge>;
-    case "verified":
-      return <Badge className="bg-green-100 text-green-800">Verified</Badge>;
-    case "missing":
-      return <Badge className="bg-red-100 text-red-800">Missing</Badge>;
-    case "revision_required":
-      return <Badge className="bg-orange-100 text-orange-800">Revision Required</Badge>;
-    case "not_required":
-      return <Badge variant="outline">Not Required</Badge>;
-    default:
-      return <Badge variant="secondary">{status}</Badge>;
-  }
-}
 
-function getTimelineStatusIcon(status: string) {
-  switch (status) {
-    case "completed":
-      return <CheckCircle className="h-4 w-4 text-green-600" />;
-    case "current":
-      return <Clock className="h-4 w-4 text-blue-600" />;
-    case "pending":
-      return <Clock className="h-4 w-4 text-gray-400" />;
-    default:
-      return <Clock className="h-4 w-4 text-gray-400" />;
-  }
-}
 
 export default function MyApplicationsPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -139,9 +58,277 @@ export default function MyApplicationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDocumentExplorer, setShowDocumentExplorer] = useState(false);
+  
+  // Application statistics - will be calculated from real data
+  const [applicationStats, setApplicationStats] = useState({
+    totalApplications: 0,
+    draftApplications: 0,
+    submittedApplications: 0,
+    approvedApplications: 0,
+    rejectedApplications: 0,
+    avgProcessingTime: "0 days",
+    approvalRate: 0,
+    totalLoanAmount: "PKR 0",
+    totalLoanAmountNumeric: 0,
+  });
+
+  // Available statuses and loan types for filters
+  const [availableStatuses, setAvailableStatuses] = useState<string[]>([]);
+  const [availableLoanTypes, setAvailableLoanTypes] = useState<string[]>([]);
+  
   const { toast } = useToast();
 
+  // Progress calculation based on application status
+  const calculateProgressPercentage = (status: string): number => {
+    // Define the complete workflow stages and their progress percentages
+    const workflowStages = {
+      // Initial stages (0-20%)
+      'draft': 5,
+      'PB_SUBMITTED': 10,
+      'submitted_by_pb': 15,
+      
+      // SPU stages (20-35%)
+      'submitted_by_spu': 25,
+      'spu_verified': 30,
+      'spu_returned': 20, // Returned but still in progress
+      
+      // COPS stages (35-50%)
+      'cops_data_entry': 40,
+      'cops_compliance_check': 45,
+      'cops_verified': 50,
+      'submitted_by_cops': 50,
+      
+      // EAMVU stages (50-70%)
+      'eamvu_new': 55,
+      'assigned_to_eavmu_officer': 60,
+      'eamvu_agent_assigned': 60,
+      'eamvu_visit_complete': 65,
+      'returned_by_eavmu_officer': 60, // Returned but still in progress
+      'submitted_by_eavmu': 70,
+      'eamvu_verified': 70,
+      
+      // CIU stages (70-90%)
+      'submitted_to_ciu': 75,
+      'ciu_review': 80,
+      'ciu_flagged': 75, // Flagged but still in progress
+      'ciu_verified': 85,
+      
+      // RRU stages (85-95%)
+      'rru_review': 90,
+      'rru_resumed': 95,
+      'rru_returned': 85, // Returned but still in progress
+      'resolved_by_rru': 95,
+      
+      // Final stages (95-100%)
+      'application_completed': 100,
+      'approved': 100,
+      'conditional_approved': 100,
+      'disbursed': 100,
+      
+      // Rejected states (still count as progress)
+      'rejected_by_spu': 20,
+      'rejected_by_cops': 50,
+      'rejected_by_eavmu': 70,
+      'rejected_by_ciu': 85,
+      'rejected_by_rru': 95,
+      'rejected': 100
+    };
+    
+    return (workflowStages as Record<string, number>)[status] || 0;
+  };
 
+  // Get current workflow stage name
+  const getCurrentWorkflowStage = (status: string): string => {
+    const stageMapping = {
+      // Initial stages
+      'draft': 'Application Draft',
+      'PB_SUBMITTED': 'PB Submitted',
+      'submitted_by_pb': 'PB Processing',
+      
+      // SPU stages
+      'submitted_by_spu': 'SPU Review',
+      'spu_verified': 'SPU Verified',
+      'spu_returned': 'SPU Returned',
+      
+      // COPS stages
+      'cops_data_entry': 'COPS Data Entry',
+      'cops_compliance_check': 'COPS Compliance',
+      'cops_verified': 'COPS Verified',
+      'submitted_by_cops': 'COPS Processing',
+      
+      // EAMVU stages
+      'eamvu_new': 'EAMVU New',
+      'assigned_to_eavmu_officer': 'EAMVU Officer Assigned',
+      'eamvu_agent_assigned': 'EAMVU Agent Assigned',
+      'eamvu_visit_complete': 'EAMVU Visit Complete',
+      'returned_by_eavmu_officer': 'EAMVU Officer Returned',
+      'submitted_by_eavmu': 'EAMVU Processing',
+      'eamvu_verified': 'EAMVU Verified',
+      
+      // CIU stages
+      'submitted_to_ciu': 'CIU Review',
+      'ciu_review': 'CIU Processing',
+      'ciu_flagged': 'CIU Flagged',
+      'ciu_verified': 'CIU Verified',
+      
+      // RRU stages
+      'rru_review': 'RRU Review',
+      'rru_resumed': 'RRU Resumed',
+      'rru_returned': 'RRU Returned',
+      'resolved_by_rru': 'RRU Resolved',
+      
+      // Final stages
+      'application_completed': 'Application Completed',
+      'approved': 'Approved',
+      'conditional_approved': 'Conditionally Approved',
+      'disbursed': 'Disbursed',
+      
+      // Rejected states
+      'rejected_by_spu': 'Rejected by SPU',
+      'rejected_by_cops': 'Rejected by COPS',
+      'rejected_by_eavmu': 'Rejected by EAMVU',
+      'rejected_by_ciu': 'Rejected by CIU',
+      'rejected_by_rru': 'Rejected by RRU',
+      'rejected': 'Rejected'
+    };
+    
+    return (stageMapping as Record<string, string>)[status] || 'Unknown Stage';
+  };
+
+  // Calculate statistics from applications data
+  const calculateStatistics = (applications: any[]) => {
+    const totalApplications = applications.length;
+    
+    // Count applications by status
+    const statusCounts = applications.reduce((acc, app) => {
+      const status = app.status || 'unknown';
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    // Calculate specific counts
+    const draftApplications = statusCounts['draft'] || 0;
+    const submittedApplications = Object.keys(statusCounts).filter(status => 
+      status.includes('submitted') || status.includes('assigned') || status.includes('review')
+    ).reduce((sum, status) => sum + (statusCounts[status] || 0), 0);
+    
+    const approvedApplications = (statusCounts['application_completed'] || 0) + 
+                               (statusCounts['approved'] || 0) + 
+                               (statusCounts['disbursed'] || 0);
+    
+    const rejectedApplications = Object.keys(statusCounts).filter(status => 
+      status.includes('rejected')
+    ).reduce((sum, status) => sum + (statusCounts[status] || 0), 0);
+    
+    // Calculate approval rate
+    const approvalRate = totalApplications > 0 ? 
+      ((approvedApplications / totalApplications) * 100).toFixed(1) : "0";
+    
+    // Calculate total loan amount
+    const totalLoanAmount = applications.reduce((sum, app) => {
+      const amount = app.loan_amount || 0;
+      return sum + amount;
+    }, 0);
+    
+    // Calculate average processing time (mock calculation for now)
+    const avgProcessingTime = totalApplications > 0 ? "3.5 days" : "0 days";
+    
+    return {
+      totalApplications,
+      draftApplications,
+      submittedApplications,
+      approvedApplications,
+      rejectedApplications,
+      avgProcessingTime,
+      approvalRate: parseFloat(approvalRate),
+      totalLoanAmount: `PKR ${totalLoanAmount.toLocaleString()}`,
+      totalLoanAmountNumeric: totalLoanAmount
+    };
+  };
+
+  // Extract unique statuses and loan types for filters
+  const extractFilterOptions = (applications: any[]) => {
+    const statuses = [...new Set(applications.map(app => app.status).filter(Boolean))];
+    const loanTypes = [...new Set(applications.map(app => app.loanType).filter(Boolean))];
+    
+    return { statuses, loanTypes };
+  };
+
+  // Helper functions for badges and icons
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "draft":
+        return <Badge variant="outline">Draft</Badge>;
+      case "submitted_to_spu":
+        return <Badge className="bg-blue-100 text-blue-800">Submitted to SPU</Badge>;
+      case "returned_from_spu":
+        return <Badge variant="destructive">Returned from SPU</Badge>;
+      case "approved":
+        return <Badge className="bg-green-100 text-green-800">Approved</Badge>;
+      case "rejected":
+        return <Badge className="bg-red-100 text-red-800">Rejected</Badge>;
+      case "disbursed":
+        return <Badge className="bg-purple-100 text-purple-800">Disbursed</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
+  };
+
+  const getPriorityBadge = (priority: string) => {
+    switch (priority) {
+      case "high":
+        return <Badge className="bg-red-100 text-red-800">High</Badge>;
+      case "medium":
+        return <Badge className="bg-yellow-100 text-yellow-800">Medium</Badge>;
+      case "low":
+        return <Badge className="bg-green-100 text-green-800">Low</Badge>;
+      default:
+        return <Badge variant="secondary">{priority}</Badge>;
+    }
+  };
+
+  const getRiskLevelBadge = (risk: string) => {
+    switch (risk) {
+      case "low":
+        return <Badge className="bg-green-100 text-green-800">Low Risk</Badge>;
+      case "medium":
+        return <Badge className="bg-yellow-100 text-yellow-800">Medium Risk</Badge>;
+      case "high":
+        return <Badge className="bg-red-100 text-red-800">High Risk</Badge>;
+      default:
+        return <Badge variant="secondary">{risk}</Badge>;
+    }
+  };
+
+  const getDocumentStatusBadge = (status: string) => {
+    switch (status) {
+      case "submitted":
+        return <Badge className="bg-blue-100 text-blue-800">Submitted</Badge>;
+      case "verified":
+        return <Badge className="bg-green-100 text-green-800">Verified</Badge>;
+      case "missing":
+        return <Badge className="bg-red-100 text-red-800">Missing</Badge>;
+      case "revision_required":
+        return <Badge className="bg-orange-100 text-orange-800">Revision Required</Badge>;
+      case "not_required":
+        return <Badge variant="outline">Not Required</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
+  const getTimelineStatusIcon = (status: string) => {
+    switch (status) {
+      case "completed":
+        return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case "current":
+        return <Clock className="h-4 w-4 text-blue-600" />;
+      case "pending":
+        return <Clock className="h-4 w-4 text-gray-400" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-400" />;
+    }
+  };
 
   // Fetch applications from backend
   const fetchApplications = async () => {
@@ -190,7 +377,7 @@ export default function MyApplicationsPage() {
         priority: app.priority || 'medium',
         submittedDate: app.submittedDate || app.submitted_date || new Date().toISOString(),
         lastUpdate: app.lastUpdate || app.last_update || new Date().toISOString(),
-        completionPercentage: app.completionPercentage || app.completion_percentage || 0,
+        completionPercentage: calculateProgressPercentage(app.status || 'draft'),
         branch: app.branch || 'Main Branch',
         // Mock data for fields not in database
         creditScore: app.creditScore || Math.floor(Math.random() * 200) + 600,
@@ -232,13 +419,40 @@ export default function MyApplicationsPage() {
       
       console.log('✅ Mapped applications:', mappedApplications);
       console.log('✅ Setting applications state with', mappedApplications.length, 'applications');
+      
+      // Log progress calculations for debugging
+      mappedApplications.forEach((app: any, index: number) => {
+        console.log(`📊 Application ${index + 1} (${app.id}): Status="${app.status}", Progress=${calculateProgressPercentage(app.status)}%, Stage="${getCurrentWorkflowStage(app.status)}"`);
+      });
+      
+      // Calculate and set statistics
+      const stats = calculateStatistics(mappedApplications);
+      setApplicationStats(stats);
+      console.log('📈 Calculated statistics:', stats);
+      console.log('📊 Status breakdown:', {
+        total: stats.totalApplications,
+        draft: stats.draftApplications,
+        inProgress: stats.submittedApplications,
+        approved: stats.approvedApplications,
+        rejected: stats.rejectedApplications,
+        approvalRate: `${stats.approvalRate}%`,
+        totalAmount: stats.totalLoanAmount
+      });
+      
+      // Extract filter options
+      const { statuses, loanTypes } = extractFilterOptions(mappedApplications);
+      setAvailableStatuses(statuses);
+      setAvailableLoanTypes(loanTypes);
+      console.log('🔍 Available statuses for filter:', statuses);
+      console.log('🔍 Available loan types for filter:', loanTypes);
+      
       setApplications(mappedApplications);
     } catch (err) {
       console.error('❌ Error fetching applications:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch applications');
       
       // Fallback to mock data if API fails
-      setApplications([
+      const mockApplications = [
         {
           id: "UBL-2024-001240",
           applicantName: "Ali Raza",
@@ -248,7 +462,7 @@ export default function MyApplicationsPage() {
           priority: "medium",
           submittedDate: "2024-01-15 14:30:25",
           lastUpdate: "2024-01-18 10:45:15",
-          completionPercentage: 95,
+          completionPercentage: calculateProgressPercentage("submitted_to_spu"),
           creditScore: 720,
           monthlyIncome: "PKR 120,000",
           age: 32,
@@ -278,7 +492,7 @@ export default function MyApplicationsPage() {
           priority: "low",
           submittedDate: "2024-01-12 09:20:30",
           lastUpdate: "2024-01-19 16:15:45",
-          completionPercentage: 60,
+          completionPercentage: calculateProgressPercentage("draft"),
           creditScore: 680,
           monthlyIncome: "PKR 85,000",
           age: 28,
@@ -307,7 +521,7 @@ export default function MyApplicationsPage() {
           priority: "high",
           submittedDate: "2024-01-08 11:45:20",
           lastUpdate: "2024-01-19 14:20:10",
-          completionPercentage: 85,
+          completionPercentage: calculateProgressPercentage("returned_from_spu"),
           creditScore: 750,
           monthlyIncome: "PKR 200,000",
           age: 45,
@@ -338,7 +552,7 @@ export default function MyApplicationsPage() {
           priority: "high",
           submittedDate: "2024-01-05 08:30:15",
           lastUpdate: "2024-01-19 11:30:25",
-          completionPercentage: 100,
+          completionPercentage: calculateProgressPercentage("approved"),
           creditScore: 800,
           monthlyIncome: "PKR 350,000",
           age: 35,
@@ -362,7 +576,18 @@ export default function MyApplicationsPage() {
             { date: "2024-01-22", event: "Disbursement", status: "current" },
           ],
         },
-      ]);
+      ];
+      
+      // Calculate and set statistics for mock data
+      const stats = calculateStatistics(mockApplications);
+      setApplicationStats(stats);
+      
+      // Extract filter options for mock data
+      const { statuses, loanTypes } = extractFilterOptions(mockApplications);
+      setAvailableStatuses(statuses);
+      setAvailableLoanTypes(loanTypes);
+      
+      setApplications(mockApplications);
     } finally {
       setLoading(false);
     }
@@ -498,8 +723,171 @@ export default function MyApplicationsPage() {
     fetchApplications();
     toast({
       title: "Refreshed",
-      description: "Application data has been refreshed.",
+      description: "Application data and statistics have been refreshed.",
     });
+  };
+
+  // Export functionality
+  const handleExport = () => {
+    try {
+      console.log('🔄 Starting export process...');
+      
+      // Create comprehensive report data with better formatting
+      const reportData = {
+        summary: {
+          totalApplications: applicationStats.totalApplications,
+          approvedApplications: applicationStats.approvedApplications,
+          inProgressApplications: applicationStats.submittedApplications,
+          draftApplications: applicationStats.draftApplications,
+          rejectedApplications: applicationStats.rejectedApplications,
+          approvalRate: `${applicationStats.approvalRate}%`,
+          totalLoanAmount: applicationStats.totalLoanAmount,
+          exportDate: new Date().toLocaleString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          }),
+          department: 'Personal Banking (PB)'
+        },
+        applications: applications.map(app => ({
+          losId: app.id,
+          applicantName: app.applicantName || 'N/A',
+          loanType: app.loanType || 'N/A',
+          amount: app.amount || 'PKR 0',
+          status: app.status || 'Unknown',
+          workflowStage: getCurrentWorkflowStage(app.status) || 'Unknown Stage',
+          progressPercentage: calculateProgressPercentage(app.status) || 0,
+          priority: app.priority || 'Medium',
+          riskLevel: app.riskLevel || 'Medium',
+          submittedDate: app.submittedDate ? new Date(app.submittedDate).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+          }) : 'N/A',
+          lastUpdate: app.lastUpdate ? new Date(app.lastUpdate).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+          }) : 'N/A',
+          branch: app.branch || 'N/A',
+          creditScore: app.creditScore || 'N/A',
+          monthlyIncome: app.monthlyIncome || 'N/A',
+          estimatedProcessingTime: app.estimatedProcessingTime || 'N/A',
+          missingDocuments: getMissingDocumentsCount(app.documents) || 0
+        }))
+      };
+
+      console.log('📊 Report data prepared:', reportData);
+
+      // Create better formatted CSV content with proper headers
+      const csvHeaders = [
+        'LOS ID',
+        'Applicant Name',
+        'Loan Type',
+        'Amount',
+        'Status',
+        'Workflow Stage',
+        'Progress (%)',
+        'Priority',
+        'Risk Level',
+        'Submitted Date',
+        'Last Updated',
+        'Branch',
+        'Credit Score',
+        'Monthly Income',
+        'Processing Time',
+        'Missing Documents'
+      ];
+
+      const csvRows = reportData.applications.map(app => [
+        app.losId,
+        app.applicantName,
+        app.loanType,
+        app.amount,
+        app.status,
+        app.workflowStage,
+        app.progressPercentage,
+        app.priority,
+        app.riskLevel,
+        app.submittedDate,
+        app.lastUpdate,
+        app.branch,
+        app.creditScore,
+        app.monthlyIncome,
+        app.estimatedProcessingTime,
+        app.missingDocuments
+      ]);
+
+      // Create better formatted summary section
+      const summaryRows = [
+        [''],
+        ['SUMMARY REPORT'],
+        ['Department', reportData.summary.department],
+        ['Export Date', reportData.summary.exportDate],
+        ['Total Applications', reportData.summary.totalApplications],
+        ['Approved Applications', reportData.summary.approvedApplications],
+        ['In Progress Applications', reportData.summary.inProgressApplications],
+        ['Draft Applications', reportData.summary.draftApplications],
+        ['Rejected Applications', reportData.summary.rejectedApplications],
+        ['Approval Rate', reportData.summary.approvalRate],
+        ['Total Loan Amount', reportData.summary.totalLoanAmount],
+        [''],
+        ['DETAILED APPLICATIONS'],
+        csvHeaders
+      ];
+
+      // Combine summary and data
+      const allRows = [...summaryRows, ...csvRows];
+
+      // Convert to CSV format with better escaping
+      const csvContent = allRows.map(row => 
+        row.map(cell => {
+          const cellStr = String(cell || '');
+          // Escape quotes and wrap in quotes if contains comma, quote, or newline
+          if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+            return `"${cellStr.replace(/"/g, '""')}"`;
+          }
+          return cellStr;
+        }).join(',')
+      ).join('\n');
+
+      console.log('📄 CSV content generated, length:', csvContent.length);
+
+      // Add BOM for better Excel compatibility
+      const BOM = '\uFEFF';
+      const csvWithBOM = BOM + csvContent;
+
+      // Create and download file with better MIME type
+      const blob = new Blob([csvWithBOM], { 
+        type: 'text/csv;charset=utf-8;' 
+      });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `PB_Applications_Report_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      console.log('✅ File download triggered');
+
+      toast({
+        title: "Export Successful",
+        description: `Report exported with ${applications.length} applications and summary statistics.`,
+      });
+
+    } catch (error) {
+      console.error('❌ Export error:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export report. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const getMissingDocumentsCount = (documents: any[]) => {
@@ -561,7 +949,7 @@ export default function MyApplicationsPage() {
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExport}>
             <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
@@ -581,7 +969,16 @@ export default function MyApplicationsPage() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{applicationStats.totalApplications}</div>
+            <div className="text-2xl font-bold">
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Loading...
+                </div>
+              ) : (
+                applicationStats.totalApplications
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">All time applications</p>
           </CardContent>
         </Card>
@@ -592,7 +989,16 @@ export default function MyApplicationsPage() {
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{applicationStats.approvedApplications}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Loading...
+                </div>
+              ) : (
+                applicationStats.approvedApplications
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">Successful approvals</p>
           </CardContent>
         </Card>
@@ -603,7 +1009,16 @@ export default function MyApplicationsPage() {
             <Clock className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{applicationStats.submittedApplications}</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Loading...
+                </div>
+              ) : (
+                applicationStats.submittedApplications
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">Under review</p>
           </CardContent>
         </Card>
@@ -614,7 +1029,16 @@ export default function MyApplicationsPage() {
             <TrendingUp className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{applicationStats.approvalRate}%</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Loading...
+                </div>
+              ) : (
+                `${applicationStats.approvalRate}%`
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">Success rate</p>
           </CardContent>
         </Card>
@@ -623,9 +1047,9 @@ export default function MyApplicationsPage() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="applications">Applications</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger className="w-full" value="applications">Applications</TabsTrigger>
+          {/* <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger> */}
         </TabsList>
 
         <TabsContent value="applications" className="space-y-4">
@@ -651,11 +1075,11 @@ export default function MyApplicationsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="submitted_to_spu">Submitted to SPU</SelectItem>
-                      <SelectItem value="returned_from_spu">Returned from SPU</SelectItem>
-                      <SelectItem value="approved">Approved</SelectItem>
-                      <SelectItem value="rejected">Rejected</SelectItem>
+                      {availableStatuses.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {getCurrentWorkflowStage(status)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <Select value={loanTypeFilter} onValueChange={setLoanTypeFilter}>
@@ -664,17 +1088,11 @@ export default function MyApplicationsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="Personal Loan">Personal Loan</SelectItem>
-                      <SelectItem value="Auto Loan">Auto Loan</SelectItem>
-                      <SelectItem value="Business Loan">Business Loan</SelectItem>
-                      <SelectItem value="SME Loan">SME Loan</SelectItem>
-                      <SelectItem value="Home Loan">Home Loan</SelectItem>
-                      <SelectItem value="CashPlus Loan">CashPlus Loan</SelectItem>
-                      <SelectItem value="Auto Loan">Auto Loan</SelectItem>
-                      <SelectItem value="AmeenDrive Loan">AmeenDrive Loan</SelectItem>
-                      <SelectItem value="Commercial Vehicle Loan">Commercial Vehicle Loan</SelectItem>
-                      <SelectItem value="Platinum Credit Card">Platinum Credit Card</SelectItem>
-                      <SelectItem value="Classic Credit Card">Classic Credit Card</SelectItem>
+                      {availableLoanTypes.map((loanType) => (
+                        <SelectItem key={loanType} value={loanType}>
+                          {loanType}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -723,8 +1141,11 @@ export default function MyApplicationsPage() {
                         <TableCell>
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                              <Progress value={app.completionPercentage} className="h-2 w-16" />
-                              <span className="text-sm text-muted-foreground">{app.completionPercentage}%</span>
+                              <Progress value={calculateProgressPercentage(app.status)} className="h-2 w-16" />
+                              <span className="text-sm text-muted-foreground">{calculateProgressPercentage(app.status)}%</span>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {getCurrentWorkflowStage(app.status)}
                             </div>
                             {getMissingDocumentsCount(app.documents) > 0 && (
                               <Badge variant="destructive" className="text-xs">
@@ -823,14 +1244,18 @@ export default function MyApplicationsPage() {
                                           <div className="space-y-2">
                                             <div className="flex items-center justify-between">
                                               <span className="text-sm font-medium">Completion</span>
-                                              <span className="text-sm font-bold">{selectedApplication.completionPercentage}%</span>
+                                              <span className="text-sm font-bold">{calculateProgressPercentage(selectedApplication.status)}%</span>
                                             </div>
-                                            <Progress value={selectedApplication.completionPercentage} className="w-full" />
+                                            <Progress value={calculateProgressPercentage(selectedApplication.status)} className="w-full" />
                                             <div className="text-xs text-muted-foreground">
-                                              {selectedApplication.completionPercentage < 100 
-                                                ? `${100 - selectedApplication.completionPercentage}% remaining`
+                                              {calculateProgressPercentage(selectedApplication.status) < 100 
+                                                ? `${100 - calculateProgressPercentage(selectedApplication.status)}% remaining`
                                                 : "Application complete"
                                               }
+                                            </div>
+                                            <div className="mt-2 p-2 bg-blue-50 rounded-lg">
+                                              <div className="text-xs font-medium text-blue-800">Current Stage:</div>
+                                              <div className="text-sm text-blue-700">{getCurrentWorkflowStage(selectedApplication.status)}</div>
                                             </div>
                                           </div>
                                         </CardContent>

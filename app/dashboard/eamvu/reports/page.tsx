@@ -182,6 +182,151 @@ const FieldReports = () => {
     fetchApplications()
   }, [])
 
+  // Export functionality for EAMVU reports
+  const handleExport = () => {
+    try {
+      console.log('🔄 Starting EAMVU reports export process...');
+      
+      // Create comprehensive report data
+      const reportData = {
+        summary: {
+          totalReports: performanceMetrics.totalReports,
+          verifiedReports: performanceMetrics.verifiedReports,
+          pendingReports: performanceMetrics.pendingReports,
+          flaggedReports: performanceMetrics.flaggedReports,
+          avgProcessingTime: performanceMetrics.avgProcessingTime,
+          exportDate: new Date().toLocaleString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          }),
+          department: 'External Asset Management (EAMVU)'
+        },
+        reports: fieldReportsFromApplications.map(report => ({
+          reportId: report.id,
+          applicationId: report.applicationId,
+          applicantName: report.applicantName || 'N/A',
+          agentName: report.agentName || 'N/A',
+          visitDate: report.visitDate || 'N/A',
+          reportDate: report.reportDate || 'N/A',
+          status: report.status || 'Unknown',
+          locationVerified: report.locationVerified ? 'Yes' : 'No',
+          businessVerified: report.businessVerified ? 'Yes' : 'No',
+          photosCount: report.photosCount || 0,
+          comments: report.comments || 'N/A',
+          area: report.area || 'N/A',
+          loanType: report.loanType || 'N/A',
+          amount: report.amount || 'N/A'
+        }))
+      };
+
+      console.log('📊 EAMVU report data prepared:', reportData);
+
+      // Create CSV content
+      const csvHeaders = [
+        'Report ID',
+        'Application ID',
+        'Applicant Name',
+        'Agent Name',
+        'Visit Date',
+        'Report Date',
+        'Status',
+        'Location Verified',
+        'Business Verified',
+        'Photos Count',
+        'Comments',
+        'Area',
+        'Loan Type',
+        'Amount'
+      ];
+
+      const csvRows = reportData.reports.map(report => [
+        report.reportId,
+        report.applicationId,
+        report.applicantName,
+        report.agentName,
+        report.visitDate,
+        report.reportDate,
+        report.status,
+        report.locationVerified,
+        report.businessVerified,
+        report.photosCount,
+        report.comments,
+        report.area,
+        report.loanType,
+        report.amount
+      ]);
+
+      // Add summary section
+      const summaryRows = [
+        [''],
+        ['SUMMARY REPORT'],
+        ['Department', reportData.summary.department],
+        ['Export Date', reportData.summary.exportDate],
+        ['Total Reports', reportData.summary.totalReports],
+        ['Verified Reports', reportData.summary.verifiedReports],
+        ['Pending Reports', reportData.summary.pendingReports],
+        ['Flagged Reports', reportData.summary.flaggedReports],
+        ['Average Processing Time', `${reportData.summary.avgProcessingTime} days`],
+        [''],
+        ['DETAILED FIELD REPORTS'],
+        csvHeaders
+      ];
+
+      // Combine summary and data
+      const allRows = [...summaryRows, ...csvRows];
+
+      // Convert to CSV format with better escaping
+      const csvContent = allRows.map(row => 
+        row.map(cell => {
+          const cellStr = String(cell || '');
+          // Escape quotes and wrap in quotes if contains comma, quote, or newline
+          if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+            return `"${cellStr.replace(/"/g, '""')}"`;
+          }
+          return cellStr;
+        }).join(',')
+      ).join('\n');
+
+      console.log('📄 EAMVU CSV content generated, length:', csvContent.length);
+
+      // Add BOM for better Excel compatibility
+      const BOM = '\uFEFF';
+      const csvWithBOM = BOM + csvContent;
+
+      // Create and download file
+      const blob = new Blob([csvWithBOM], { 
+        type: 'text/csv;charset=utf-8;' 
+      });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `EAMVU_Field_Reports_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      console.log('✅ EAMVU file download triggered');
+
+      toast({
+        title: "Export Successful",
+        description: `EAMVU field reports exported with ${fieldReportsFromApplications.length} reports and summary statistics.`,
+      });
+
+    } catch (error) {
+      console.error('❌ EAMVU export error:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export EAMVU reports. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Transform real applications data for reports view
   const fieldReportsFromApplications = applicationsData.map((app, index) => ({
     id: `FR-2024-${String(index + 1).padStart(3, '0')}`,
@@ -274,7 +419,7 @@ const FieldReports = () => {
           <Button variant="outline" onClick={fetchApplications} disabled={loading}>
             {loading ? "Loading..." : "Refresh"}
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExport}>
             <Download className="mr-2 h-4 w-4" />
             Export Reports
           </Button>

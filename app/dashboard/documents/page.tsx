@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Upload, FileText, Eye, Check, X, Download, AlertCircle, Server, ExternalLink, Grid, List, Search, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,6 +38,7 @@ interface UploadFile {
 }
 
 const DocumentManagement: React.FC = () => {
+  const router = useRouter();
   const [selectedFiles, setSelectedFiles] = useState<UploadFile[]>([]);
   const [loan_type, setloan_type] = useState<string>('');
   const [losId, setLosId] = useState<string>('');
@@ -318,8 +320,14 @@ const DocumentManagement: React.FC = () => {
         }
       }
 
-      // Switch to explorer tab to show the uploaded files
-      setActiveTab('explorer');
+      // Show success message and redirect to dashboard
+      toast({
+        title: "Upload Complete!",
+        description: `Successfully uploaded ${selectedFiles.length} document(s). Redirecting to dashboard...`,
+      });
+      
+      // Redirect to PB applications dashboard after successful upload
+      router.push('/dashboard/pb/applications');
     } finally {
       setIsUploading(false);
     }
